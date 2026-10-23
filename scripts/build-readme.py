@@ -40,7 +40,7 @@ Seventeen scripting hosts, nine runnable compositions: compute a result, then tu
 {grid(cards, 3)}
 
 Click a picture to explore its host. These are copied snapshots, credited in [image attribution](docs/ATTRIBUTION.md).
-**Preview** marks the next wave: lmimg, lmaudio and lmshark. Planned repository links may remain unavailable until their owners publish; the nine compositions below use released hosts.
+**Preview** marks the next wave: lmimg, lmaudio and lmshark. All seventeen repositories are public; check each host's releases for binary availability. The nine compositions below use released hosts.
 
 ## Run a composition
 

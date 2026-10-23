@@ -143,15 +143,19 @@ def check(network=False):
     print(f"PASS: {len(hosts)} attributed host previews, {len(examples)} cross-host scripts, {len(images)} valid PNG/GIF previews and all local links")
     if network:
         planned = [h["repo"] for h in hosts if not h["repo_available"]]
+        checked, skipped = 0, 0
         for url in sorted(remote):
             if os.environ.get("GITHUB_EVENT_NAME") == "pull_request" and url.startswith(RAW):
                 print(f"SKIP not-yet-published PR URL (local file checked): {url}")
+                skipped += 1
                 continue
             if any(url == prefix or url.startswith(prefix + "/") for prefix in planned):
                 print(f"SKIP planned upstream publication: {url}")
+                skipped += 1
                 continue
             check_http(url)
-        print("PASS: published HTTP links (planned upstream links explicitly excluded)")
+            checked += 1
+        print(f"PASS: {checked} published HTTP links; {skipped} explicitly reported skips")
     else:
         print("SKIP: HTTP availability checks; run ./test.sh --network")
 
