@@ -1,0 +1,91 @@
+# SPDX-License-Identifier: MIT
+# A design sweep assembled into a report figure: lmnum integrates the unit-step
+# response of a second-order system for six damping ratios and measures each
+# overshoot against the textbook value exp(-pi zeta / sqrt(1 - zeta^2)); lmplot
+# draws one small panel per case; lmimg assembles the six panels into a labelled
+# contact sheet with a header band, the way a batch of results is prepared for
+# a report, without any image tools outside the hosts.
+mkdir("build/sweep");
+mkdir("images");
+zetas = [0.05, 0.2, 0.5, 0.7, 1.0, 2.0];
+sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let zetas = num.parse("0.05 0.2 0.5 0.7 1.0 2.0");
+for (i in range(0, 6)) {
+  let zeta = zetas.get(0, i);
+  let sys = num.ode(2);
+  sys.param("omega", 1.0).param("zeta", zeta);
+  sys.rhs(0, "y1");
+  sys.rhs(1, "omega*omega*(1.0 - y0) - 2*zeta*omega*y1");
+  sys.init(0, 0.0).init(1, 0.0);
+  sys.tol(0.00000001, 0.0000000001);
+  let sol = sys.solve(0.0, 20.0, 801);
+  sol.save_csv("build/sweep/step_" + str(i) + ".csv");
+  let peak = sol.col(1).max();
+  let overshoot = max(100.0 * (peak - 1.0), 0.0);
+  if (zeta < 1.0) {
+    num.assert_close(overshoot, 100.0 * pow(2.718281828459045, -3.141592653589793 * zeta / sqrt(1.0 - zeta * zeta)), 0.2);
+  } else {
+    num.assert_close(overshoot, 0.0, 0.001);
+  }
+  num.print("row," + str(i) + "," + str(zeta) + "," + str(overshoot));
+}
+end _dsl_
+savedsl(sim, "build/sweep/sim.dslb");
+r = system ${dsl_cli(sim)} --dsl build/sweep/sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+overshoot = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+for (line in lines(r.stdout)) {
+  f = split(line, ",");
+  if (f[0] == "row") { overshoot[round(num(f[1]))] = num(f[3]); }
+}
+
+titles = []; colors = [];
+for (i in range(0, 6)) {
+  zeta = zetas[i];
+  kind = zeta < 1.0 ? "underdamped" : (zeta == 1.0 ? "critically damped" : "overdamped");
+  push(colors, zeta < 1.0 ? "#2563eb" : (zeta == 1.0 ? "#059669" : "#dc2626"));
+  push(titles, sprintf("zeta = %.2f (%s): %.0f%%", zeta, kind, overshoot[i]));
+}
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#e4e9ef'; unset key");
+plot.cmd("set xrange [0:20]; set yrange [0:2]; set xtics 5 font ',9'; set ytics 0.5 font ',9'");
+plot.cmd("set xlabel 'omega t' font ',9' offset 0,0.5; set ylabel 'response' font ',9'");
+plot.cmd("set lmargin 6; set rmargin 1.5; set tmargin 1.8; set bmargin 2.8");
+plot.cmd("set arrow 1 from 0, 1 to 20, 1 nohead dt 2 lc rgb '#94a3b8'");
+for (i in range(0, 6)) {
+  let title = ${titles[0]};
+  let color = ${colors[0]};
+  if (i == 1) { title = ${titles[1]}; color = ${colors[1]}; }
+  if (i == 2) { title = ${titles[2]}; color = ${colors[2]}; }
+  if (i == 3) { title = ${titles[3]}; color = ${colors[3]}; }
+  if (i == 4) { title = ${titles[4]}; color = ${colors[4]}; }
+  if (i == 5) { title = ${titles[5]}; color = ${colors[5]}; }
+  plot.png("build/sweep/panel_" + str(i) + ".png", 300, 230);
+  plot.cmd("set title '" + title + "' font ',9'");
+  plot.cmd("plot 'build/sweep/step_" + str(i) + ".csv' using 1:2 with lines lw 2.2 lc rgb '" + color + "'");
+  plot.close();
+}
+end _dsl_
+savedsl(draw, "build/sweep/draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/sweep/draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+sheet = _dsl_ cli="lmimg" install="github:lmctl-ai/lmimg@latest";
+let grid = img.montage();
+for (i in range(0, 6)) {
+  grid.add(img.open("build/sweep/panel_" + str(i) + ".png"));
+}
+let panels = grid.render(3, 0, 1.0, 1.0, 1.0, 1.0);
+img.assert_true(panels.width() == 900 && panels.height() == 460);
+let board = img.canvas(900, 540, 1.0, 1.0, 1.0, 1.0);
+board.rect(0.0, 0.0, 900.0, 56.0, 0.06, 0.09, 0.16, 1.0);
+board.text(16.0, 16.0, "Second-order step response: damping ratio sweep", 20.0, 1.0, 1.0, 1.0, 1.0);
+board.text(16.0, 40.0, "lmnum integrates each case and checks its overshoot (the percentage in each title) against exp(-pi zeta / sqrt(1 - zeta^2)); lmplot draws the panels; lmimg assembles the sheet", 11.0, 0.80, 0.85, 0.92, 1.0);
+board.blend(panels, "over", 1.0, 0, 64);
+board.text(720.0, 524.0, "sheet assembled by lmimg", 10.0, 0.45, 0.50, 0.58, 1.0);
+board.save("images/showcase-14-num-sweep-contact-sheet.png");
+end _dsl_
+savedsl(sheet, "build/sweep/sheet.dslb");
+r = system ${dsl_cli(sheet)} --dsl build/sweep/sheet.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-14-num-sweep-contact-sheet.png");

@@ -13,7 +13,7 @@ savedsl(sim, "build/fluid.dslb");
 r = system ${dsl_cli(sim)} --dsl build/fluid.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
-plot.png("images/fluid-poisson-plot.png", 900, 560);
+plot.png("images/showcase-06-fluid-poisson-plot.png", 900, 560);
 plot.cmd("set datafile separator ','");
 plot.cmd("set title 'lmfluid Poisson solution: u = x^2 + y^2'");
 plot.cmd("set xlabel 'x (model units)'"); plot.cmd("set ylabel 'y (model units)'");
@@ -25,4 +25,4 @@ end _dsl_
 savedsl(plot, "build/plot.dslb");
 r = system ${dsl_cli(plot)} --dsl build/plot.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
-println("wrote images/fluid-poisson-plot.png");
+println("wrote images/showcase-06-fluid-poisson-plot.png");

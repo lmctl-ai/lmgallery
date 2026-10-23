@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: MIT
-# lmspace propagates a Hohmann transfer. The complete 61-sample trajectory is
-# converted to lmcad keyframes, which renders every neighbouring state as a
-# short tube around Earth in a deterministic headless scene.
+# lmspace propagates a Hohmann transfer from a 7000 km circular orbit to
+# geostationary radius (42164 km). The complete 61-sample trajectory is converted
+# to lmcad keyframes, which renders it as an orange tube between the grey
+# departure and arrival circles, with yellow markers at equal time intervals:
+# they bunch together near apogee, where the spacecraft is slowest (Kepler II).
 mkdir("build");
 mkdir("images");
 sim = _dsl_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
@@ -32,25 +34,33 @@ let keys = read_keyframes_csv("build/orbit-keys.csv");
 let earth_mat = material().color(0.12, 0.32, 0.78).roughness(0.5);
 let orbit_mat = material().color(0.95, 0.45, 0.08).roughness(0.35).specular(0.4);
 let marker_mat = material().color(0.98, 0.84, 0.25).roughness(0.3);
+let ring_mat = material().color(0.55, 0.60, 0.68).roughness(0.6);
 scene.sphere(6.378, earth_mat).position(0.0, 0.0, 0.0);
+# departure (7000 km) and arrival (42164 km) circular orbits as thin rings
+for (i in range(0, 180)) {
+  let a0 = float(i) * 0.03490658503988659;
+  let a1 = float(i + 1) * 0.03490658503988659;
+  scene.tube_between(7.0 * cos(a0), 7.0 * sin(a0), 0.0, 7.0 * cos(a1), 7.0 * sin(a1), 0.0, 0.18, ring_mat);
+  scene.tube_between(42.164 * cos(a0), 42.164 * sin(a0), 0.0, 42.164 * cos(a1), 42.164 * sin(a1), 0.0, 0.18, ring_mat);
+}
 for (segment in range(0, keys.len() - 1)) {
   let a = keys.at(segment);
   let b = keys.at(segment + 1);
-  scene.tube_between(a.x(), a.y(), a.z(), b.x(), b.y(), b.z(), 0.25, orbit_mat);
+  scene.tube_between(a.x(), a.y(), a.z(), b.x(), b.y(), b.z(), 0.32, orbit_mat);
 }
 for (k in range(0, keys.len())) {
-  if (k % 10 == 0) {
+  if (k % 6 == 0) {
     let p = keys.at(k);
-    scene.sphere(0.45, marker_mat).position(p.x(), p.y(), p.z());
+    scene.sphere(0.8, marker_mat).position(p.x(), p.y(), p.z());
   }
 }
-scene.camera(38.0, -17.5, 5.5, 60.0, -17.5, 5.5, 0.0);
+scene.camera(34.0, -19.0, -38.0, 112.0, -19.0, 0.0, 0.0);
 scene.directional_light(-0.6, -1.0, -0.4, 0.9);
 scene.fill_light(0.8, -0.2, 0.8, 0.25);
 scene.background(0.95, 0.97, 1.0);
-scene.render_png("images/space-orbit-cad.png", 900, 600);
+scene.render_png("images/showcase-04-space-orbit-cad.png", 900, 600);
 end _dsl_
 savedsl(cad, "build/cad.dslb");
 r = system ${dsl_cli(cad)} --dsl build/cad.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
-println("wrote images/space-orbit-cad.png");
+println("wrote images/showcase-04-space-orbit-cad.png");

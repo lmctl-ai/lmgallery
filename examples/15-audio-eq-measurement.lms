@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: MIT
+# Designed versus measured: lmaudio designs a three-band equalizer (low shelf,
+# presence peak, high shelf) as biquads, then measures the chain the way a test
+# bench does, by passing a unit impulse through it and taking the spectrum of
+# what comes out. A plucked string is sent through the same chain to show what
+# the EQ does to a real signal. lmplot overlays design and measurement.
+mkdir("build/eq");
+mkdir("images");
+a = _dsl_ cli="lmaudio" install="github:lmctl-ai/lmaudio@latest";
+let sr = 48000;
+let low = audio.biquad_design("lowshelf", 150.0, 0.707, -8.0, sr);
+let mid = audio.biquad_design("peak", 2500.0, 1.5, 9.0, sr);
+let high = audio.biquad_design("highshelf", 9000.0, 0.707, 4.0, sr);
+low.save_response_csv("build/eq/design_low.csv", 400, 20.0, 20000.0);
+mid.save_response_csv("build/eq/design_mid.csv", 400, 20.0, 20000.0);
+high.save_response_csv("build/eq/design_high.csv", 400, 20.0, 20000.0);
+audio.assert_close(mid.db_at(2500.0), 9.0, 0.05);
+audio.assert_close(low.db_at(20.0), -8.0, 0.2);
+# measure the whole chain with an impulse: its spectrum is the chain's magnitude response
+let impulse = audio.impulse(1.0, 0.1, 1.0, sr);
+let measured = high.apply(mid.apply(low.apply(impulse)));
+let response = measured.spectrum("rect", 65536);
+let ref = impulse.spectrum("rect", 65536);
+# the impulse spectrum is flat, so its level is the 0 dB reference for the measured chain
+response.save_csv("build/eq/measured.csv", 20000.0);
+ref.save_csv("build/eq/reference.csv", 20000.0);
+let ratio_2500 = response.mag_at_freq(2500.0) / ref.mag_at_freq(2500.0);
+let design_2500 = low.gain_at(2500.0) * mid.gain_at(2500.0) * high.gain_at(2500.0);
+audio.assert_close(ratio_2500, design_2500, 0.02 * design_2500);
+let ratio_50 = response.mag_at_freq(50.0) / ref.mag_at_freq(50.0);
+let design_50 = low.gain_at(50.0) * mid.gain_at(50.0) * high.gain_at(50.0);
+audio.assert_close(ratio_50, design_50, 0.03 * design_50);
+# a plucked string before and after the chain
+let string = audio.pluck(220.0, 1.5, 0.8, 0.9, 0.996, sr);
+let eq_string = high.apply(mid.apply(low.apply(string)));
+string.spectrum("hann", 16384).save_csv("build/eq/string_dry.csv", 12000.0);
+eq_string.spectrum("hann", 16384).save_csv("build/eq/string_eq.csv", 12000.0);
+string.concat(audio.silence(sr, 0.3)).concat(eq_string).normalize(0.9).save_wav("build/eq/pluck_dry_then_eq.wav", 16);
+end _dsl_
+savedsl(a, "build/eq/audio.dslb");
+r = system ${dsl_cli(a)} --dsl build/eq/audio.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+# reference level: the dB column of the flat impulse spectrum at its 1 kHz bin
+ref_db = 0.0; found = 0;
+for (line in lines(read_file("build/eq/reference.csv"))) {
+  f = split(line, ",");
+  if (f.len() >= 3 && found == 0 && num(f[0]) > 1000.0) { ref_db = num(f[2]); found = 1; }
+}
+assert(found == 1, "reference spectrum not parsed");
+
+plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-15-audio-eq-measurement.png", 900, 560);
+plot.cmd("set datafile separator ','; ref_db = " + str(${ref_db}));
+plot.cmd("set multiplot title 'Three-band equalizer: designed biquads against the impulse-measured chain (lmaudio), drawn by lmplot' font ',12'");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#e4e9ef'; set logscale x; set xrange [20:20000]");
+plot.cmd("set xtics (20, 50, 100, 200, 500, '1k' 1000, '2k' 2000, '5k' 5000, '10k' 10000, '20k' 20000) font ',9'");
+plot.cmd("set lmargin at screen 0.07; set rmargin at screen 0.56; set tmargin at screen 0.86; set bmargin at screen 0.13");
+plot.cmd("set title 'magnitude response: each band as designed, chain as measured' font ',11'");
+plot.cmd("set xlabel 'frequency (Hz)'; set ylabel 'gain (dB)'; set yrange [-12:14]; set key bottom right font ',9' box opaque");
+plot.cmd("plot 'build/eq/design_low.csv' using 1:3 with lines lw 1.6 dt 2 lc rgb '#0284c7' title 'low shelf -8 dB at 150 Hz', 'build/eq/design_mid.csv' using 1:3 with lines lw 1.6 dt 2 lc rgb '#f59e0b' title 'peak +9 dB at 2.5 kHz, Q 1.5', 'build/eq/design_high.csv' using 1:3 with lines lw 1.6 dt 2 lc rgb '#7c3aed' title 'high shelf +4 dB at 9 kHz', 'build/eq/measured.csv' every 30::1 using 1:($3 - ref_db) with points pt 7 ps 0.45 lc rgb '#111827' title 'chain measured from an impulse'");
+plot.cmd("set lmargin at screen 0.65; set rmargin at screen 0.97; set tmargin at screen 0.86; set bmargin at screen 0.13");
+plot.cmd("set title 'plucked string (220 Hz) through the chain' font ',11'");
+plot.cmd("set xrange [100:12000]; set xtics (100, 200, 500, '1k' 1000, '2k' 2000, '5k' 5000, '10k' 10000) font ',9'");
+plot.cmd("set xlabel 'frequency (Hz)'; set ylabel 'level (dB)'; set yrange [-90:0]; set key top right font ',9' box opaque");
+plot.cmd("plot 'build/eq/string_dry.csv' using 1:3 with lines lw 1.2 lc rgb '#94a3b8' title 'dry', 'build/eq/string_eq.csv' using 1:3 with lines lw 1.2 lc rgb '#dc2626' title 'equalized'");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(plot, "build/eq/plot.dslb");
+r = system ${dsl_cli(plot)} --dsl build/eq/plot.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-15-audio-eq-measurement.png");

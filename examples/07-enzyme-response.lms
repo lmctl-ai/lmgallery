@@ -1,21 +1,63 @@
 # SPDX-License-Identifier: MIT
-# Enzyme response: lmbio computes three substrate time courses; lmplot compares
-# product formation. The renderer consumes simulation CSVs, not hand-entered data.
+# Michaelis-Menten from mechanism: lmbio integrates the elementary reactions
+# E + S <-> ES -> E + P at ten substrate levels (0.05 to 5.9, geometric steps) and measures the quasi-steady
+# reaction rate in each run. lmplot then shows those measured rates falling on
+# the hyperbola v = Vmax S / (Km + S) with Km = (koff + kcat) / kon = 0.4375 and
+# Vmax = kcat E0 = 0.03, which the mechanism never states explicitly.
 mkdir("build/enzyme");
 compute = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
-let m = bio.model("enzyme_response").compartment("cell", 1.0).species("E", "cell", 0.02).species("S", "cell", 1.0).species("ES", "cell", 0.0).species("P", "cell", 0.0);
+let m = bio.model("michaelis_menten").compartment("cell", 1.0).species("E", "cell", 0.02).species("S", "cell", 1.0).species("ES", "cell", 0.0).species("P", "cell", 0.0);
 m.param("kon", 8.0).param("koff", 2.0).param("kcat", 1.5);
 m.reaction("bind", "E + S -> ES", "kon*E*S").reversible("bind", "koff*ES").reaction("turnover", "ES -> E + P", "kcat*ES");
-for (i in range(0, 3)) { let s0 = 0.25 * pow(4.0, float(i)); m.set("S", s0); let result = m.simulate(0.0, 12.0, 121); bio.assert_true(result.final("P") > 0.0); result.save_csv("build/enzyme/response_" + str(i) + ".csv"); }
+m.tol(0.0000000001, 0.000000000001);
+let km = (2.0 + 1.5) / 8.0;
+let vmax = 1.5 * 0.02;
+for (i in range(0, 10)) {
+  let s0 = 0.05 * pow(1.7, float(i));
+  m.set("E", 0.02).set("S", s0).set("ES", 0.0).set("P", 0.0);
+  let result = m.simulate(0.0, 1.4, 141);
+  result.save_csv("build/enzyme/course_" + str(i) + ".csv");
+  # rate over 1.0..1.4 time units, after the ES transient; paired with the mean substrate in that window
+  let rate = (result.value("P", 140) - result.value("P", 100)) / 0.4;
+  let s_mean = 0.5 * (result.value("S", 100) + result.value("S", 140));
+  let predicted = vmax * s_mean / (km + s_mean);
+  bio.assert_close(rate, predicted, 0.03 * predicted);
+  bio.print("row," + str(s_mean) + "," + str(rate) + "," + str(predicted));
+}
+bio.print("constants," + str(km) + "," + str(vmax));
 end _dsl_
 savedsl(compute, "build/enzyme/compute.dslb");
 r = system ${dsl_cli(compute)} --dsl build/enzyme/compute.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
+let csv = "s_mean,rate,michaelis_menten\n";
+let km = 0.0; let vmax = 0.0;
+for (line in split(r.stdout, "\n")) {
+  if (starts_with(line, "row,")) { csv = csv + substr(line, 4) + "\n"; }
+  if (starts_with(line, "constants,")) { let parts = split(line, ","); km = num(parts[1]); vmax = num(parts[2]); }
+}
+write_file("build/enzyme/rates.csv", csv);
+assert(km > 0.4 && vmax > 0.02);
 mkdir("images");
 plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-07-enzyme-response.png", 900, 560);
-plot.cmd("set datafile separator ','; set title 'Enzyme response: substrate drives product formation'; set xlabel 'Time (minutes)'; set ylabel 'Concentration'; set grid back lc rgb '#e4e9ef'; set key left top");
-plot.cmd("plot 'build/enzyme/response_0.csv' using 1:5 with lines lw 3 lc rgb '#4c78a8' title 'P, S0 = 0.25', 'build/enzyme/response_1.csv' using 1:5 with lines lw 3 lc rgb '#f58518' title 'P, S0 = 1', 'build/enzyme/response_2.csv' using 1:5 with lines lw 3 lc rgb '#54a24b' title 'P, S0 = 4'");
+plot.cmd("set datafile separator ','; km = " + str(${km}) + "; vmax = " + str(${vmax}));
+plot.cmd("set multiplot title 'Michaelis-Menten kinetics measured from the elementary mechanism (lmbio runs, lmplot figure)' font ',13'");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#e4e9ef'");
+plot.cmd("set lmargin at screen 0.10; set rmargin at screen 0.56; set tmargin at screen 0.86; set bmargin at screen 0.13");
+plot.cmd("set title 'rate against substrate: ten simulations and the hyperbola' font ',11'");
+plot.cmd("set xlabel 'substrate S (mean over the measuring window)'; set ylabel 'reaction rate v = dP/dt' offset 1.5,0");
+plot.cmd("set xrange [0:6.1]; set yrange [0:0.033]; set key bottom right font ',9' box opaque");
+plot.cmd("set arrow 1 from 0, vmax to 6.1, vmax nohead dt 2 lc rgb '#64748b'");
+plot.cmd("set arrow 2 from km, 0 to km, vmax/2 nohead dt 2 lc rgb '#64748b'");
+plot.cmd("set label 1 'Vmax = kcat E0' at 4.3, vmax*1.04 font ',9' tc rgb '#475569'");
+plot.cmd("set label 2 sprintf('Km = %.3f', km) at km + 0.1, 0.002 font ',9' tc rgb '#475569'");
+plot.cmd("plot vmax*x/(km + x) with lines lw 2.4 lc rgb '#f58518' title 'Vmax S / (Km + S)', 'build/enzyme/rates.csv' every ::1 using 1:2 with points pt 7 ps 1.5 lc rgb '#4c78a8' title 'measured in lmbio'");
+plot.cmd("unset arrow; unset label");
+plot.cmd("set lmargin at screen 0.66; set rmargin at screen 0.97; set tmargin at screen 0.86; set bmargin at screen 0.13");
+plot.cmd("set title 'product time courses: slopes saturate' font ',11'");
+plot.cmd("set xlabel 'time'; set ylabel 'product P'; set xrange [0:1.4]; set yrange [0:0.042]; set key top left font ',9'");
+plot.cmd("plot 'build/enzyme/course_1.csv' using 1:5 with lines lw 2.2 lc rgb '#cbd5e1' title 'S0 = 0.085', 'build/enzyme/course_3.csv' using 1:5 with lines lw 2.2 lc rgb '#93c5fd' title 'S0 = 0.25', 'build/enzyme/course_6.csv' using 1:5 with lines lw 2.2 lc rgb '#3b82f6' title 'S0 = 1.2', 'build/enzyme/course_9.csv' using 1:5 with lines lw 2.2 lc rgb '#1e3a8a' title 'S0 = 5.9'");
+plot.cmd("unset multiplot");
 plot.close();
 end _dsl_
 savedsl(plot, "build/enzyme/draw.dslb");

@@ -64,6 +64,12 @@ def preview_info(path):
     return width, height
 
 
+def showcase_width_ok(path):
+    """Composition previews are 900 px wide; animated GIFs may be narrower to stay under the size budget."""
+    width = preview_info(path)[0]
+    return width == 900 if Path(path).suffix == ".png" else 600 <= width <= 900
+
+
 class HTMLLinks(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -104,7 +110,7 @@ def check(network=False):
     hosts = json.loads((ROOT / "catalog.json").read_text())
     examples = json.loads((ROOT / "showcases.json").read_text())
     assert {h["name"] for h in hosts} == HOSTS and len(hosts) == len(HOSTS), "host catalog mismatch"
-    assert 8 <= len(examples) <= 10, "expected 8–10 cross-host examples"
+    assert len(examples) >= 14, "expected at least 14 cross-host examples"
     assert len({e["file"] for e in examples}) == len(examples), "duplicate script"
     assert {str(p.relative_to(ROOT)) for p in (ROOT / "examples").glob("*.lms")} == {e["file"] for e in examples}, "unlisted or missing script"
     images = []
@@ -128,8 +134,9 @@ def check(network=False):
         assert 'schema="' not in source and "../" not in source, f"checkout-dependent script: {e['file']}"
         assert "savedsl(" in source and "dsl_cli(" in source and "system" in source, f"compile-only script: {e['file']}"
         assert e["output"].startswith("images/") and e["output"] in source, f"invalid output: {e['file']}"
+        assert Path(e["output"]).suffix == Path(e["image"]).suffix, f"preview format differs from output: {e['file']}"
         assert f'lmctl autorun {RAW}{e["file"]}' in readme, f"missing autorun caption: {e['file']}"
-        assert png_info(ROOT / e["image"])[0] == 900, f"showcase must be 900px wide: {e['image']}"
+        assert showcase_width_ok(ROOT / e["image"]), f"showcase must be 900px wide (animations 600–900): {e['image']}"
         images.append(e["image"])
     assert len(set(images)) == len(images), "duplicate image destination"
     assert {str(p.relative_to(ROOT)) for p in (ROOT / "docs/images").iterdir() if p.suffix in (".png", ".gif")} == set(images), "unlisted or missing preview"

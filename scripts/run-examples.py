@@ -11,7 +11,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests"))
-from check_gallery import png_info
+from check_gallery import preview_info, showcase_width_ok
 
 
 def main():
@@ -39,8 +39,8 @@ def main():
             raise SystemExit(f"FAILED {e['file']} (exit {result.returncode}); log: {work / 'autorun.log'}\n{result.stdout[-1500:]}\n{result.stderr[-1500:]}")
         output = work / e["output"]
         assert output.is_file(), f"autorun did not render {e['output']}; log: {work / 'autorun.log'}"
-        width, height = png_info(output)
-        assert width == 900, f"unexpected showcase width: {width}"
+        width, height = preview_info(output)
+        assert showcase_width_ok(output), f"unexpected showcase width: {width}"
         if args.update:
             shutil.copyfile(output, ROOT / e["image"])
         records.append({"script": e["file"], "target": target, "workdir": str(work), "exit_code": result.returncode, "output": e["output"], "width": width, "height": height, "bytes": output.stat().st_size, "sha256": hashlib.sha256(output.read_bytes()).hexdigest()})

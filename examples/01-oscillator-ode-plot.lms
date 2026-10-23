@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: MIT
-# A damped engineering oscillator: lmnum integrates the ODE, then lmplot renders
-# the displacement and velocity produced by that same numerical solution.
+# A damped engineering oscillator with a known answer: lmnum integrates
+# x'' + 2 zeta omega x' + omega^2 x = 0 (omega = 2 rad/s, zeta = 0.08) with CVODE,
+# then lmplot builds a three-panel dashboard from that solution: the time series
+# against the closed-form response, the phase portrait, and the mechanical energy
+# decaying inside its exp(-2 zeta omega t) envelope.
 mkdir("images");
 mkdir("data");
 sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
@@ -13,6 +16,10 @@ sys.tol(0.00000001, 0.0000000001);
 let sol = sys.solve(0.0, 12.0, 1201);
 sol.save_csv("data/oscillator.csv");
 num.assert_close(sol.get(0, 1), 1.0, 0.000001);
+# closed form at t = 12 s: x = e^{-zeta w t} (cos(wd t) + zeta w / wd sin(wd t))
+let wd = 2.0 * sqrt(1.0 - 0.08 * 0.08);
+let x12 = pow(2.718281828459045, -0.16 * 12.0) * (cos(wd * 12.0) + 0.16 / wd * sin(wd * 12.0));
+num.assert_close(sol.get(1200, 1), x12, 0.00001);
 num.assert_close(sol.get(1200, 1), 0.04079380257785417, 0.000001);
 end _dsl_
 savedsl(sim, "data/oscillator-sim.dslb");
@@ -20,12 +27,29 @@ r = system ${dsl_cli(sim)} --dsl data/oscillator-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
-plot.png("images/showcase-01-oscillator.png", 900, 540);
-plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'");
-plot.cmd("set title 'Damped oscillator: CVODE solution from lmnum' font ',15'");
+plot.png("images/showcase-01-oscillator.png", 900, 560);
+plot.cmd("w = 2.0; z = 0.08; wd = w*sqrt(1-z**2)");
+plot.cmd("xa(t) = exp(-z*w*t)*(cos(wd*t) + z*w/wd*sin(wd*t))");
+plot.cmd("set multiplot title 'Damped oscillator: lmnum CVODE solution, checked against the closed form' font ',14'");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'; set key font ',9' samplen 2");
+# left: time series against the analytic response
+plot.cmd("set lmargin at screen 0.07; set rmargin at screen 0.60; set tmargin at screen 0.88; set bmargin at screen 0.12");
+plot.cmd("set title 'omega = 2 rad/s, zeta = 0.08, x(0) = 1 m' font ',11'");
 plot.cmd("set xlabel 'time [s]'; set ylabel 'x [m] / v [m/s]'");
 plot.cmd("set xrange [0:12]; set yrange [-2:2]; set key top right box opaque");
-plot.cmd("plot 'data/oscillator.csv' using 1:2 with lines lw 2.6 lc rgb '#2563eb' title 'displacement x(t)', 'data/oscillator.csv' using 1:3 with lines lw 2.2 lc rgb '#dc2626' title 'velocity v(t)'");
+plot.cmd("plot 'data/oscillator.csv' using 1:2 with lines lw 2.6 lc rgb '#2563eb' title 'x(t) numerical', 'data/oscillator.csv' using 1:3 with lines lw 2.2 lc rgb '#dc2626' title 'v(t) numerical', xa(x) with lines dt 2 lw 1.6 lc rgb '#111827' title 'x(t) closed form', exp(-z*w*x) with lines dt 3 lw 1.2 lc rgb '#64748b' title 'envelope e^{-zeta omega t}', -exp(-z*w*x) with lines dt 3 lw 1.2 lc rgb '#64748b' notitle");
+# right top: phase portrait spirals into the origin
+plot.cmd("set lmargin at screen 0.70; set rmargin at screen 0.97; set tmargin at screen 0.88; set bmargin at screen 0.58");
+plot.cmd("set title 'phase portrait' font ',11'; set xlabel 'x [m]'; set ylabel 'v [m/s]'");
+plot.cmd("set xrange [-1.2:1.2]; set yrange [-2.2:2.2]; unset key");
+plot.data("START", "1 0\n");
+plot.cmd("plot 'data/oscillator.csv' using 2:3 with lines lw 1.8 lc rgb '#7c3aed', $START with points pt 7 ps 1.2 lc rgb '#111827'");
+# right bottom: mechanical energy with the exact decay envelope
+plot.cmd("set lmargin at screen 0.70; set rmargin at screen 0.97; set tmargin at screen 0.40; set bmargin at screen 0.12");
+plot.cmd("set title 'energy E = v^2/2 + omega^2 x^2/2' font ',10'; set xlabel 'time [s]'; set ylabel 'E'");
+plot.cmd("set xrange [0:12]; set yrange [0.01:3]; set logscale y; set key bottom left font ',8'");
+plot.cmd("plot 'data/oscillator.csv' using 1:(0.5*$3**2 + 0.5*w**2*$2**2) with lines lw 2.2 lc rgb '#059669' title 'E(t)', 2*exp(-2*z*w*x) with lines dt 2 lw 1.4 lc rgb '#111827' title '2 e^{-2 zeta omega t}'");
+plot.cmd("unset multiplot");
 plot.close();
 end _dsl_
 savedsl(draw, "data/oscillator-draw.dslb");

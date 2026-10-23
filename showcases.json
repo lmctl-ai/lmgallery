@@ -1,8 +1,8 @@
 [
   {
     "file": "examples/01-oscillator-ode-plot.lms",
-    "title": "Damped engineering oscillator",
-    "description": "lmnum integrates a damped second-order oscillator; lmplot renders displacement and velocity from the saved numerical solution.",
+    "title": "Damped oscillator dashboard",
+    "description": "lmnum integrates a damped second-order oscillator with CVODE and checks the endpoint against the closed form; lmplot builds a three-panel dashboard from the saved solution: time series against the analytic response, phase portrait, and energy decaying inside its exp(-2 zeta omega t) envelope.",
     "hosts": [
       "lmnum",
       "lmplot"
@@ -36,12 +36,12 @@
   {
     "file": "examples/04-space-orbit-cad.lms",
     "title": "Hohmann transfer: equal-time markers",
-    "description": "lmspace propagates a low-orbit to geostationary Hohmann transfer; lmcad renders the complete sampled trajectory as tubes, with markers at equal time intervals.",
+    "description": "lmspace propagates a Hohmann transfer from a 7000 km orbit to geostationary radius; lmcad renders the sampled trajectory as a tube between the departure and arrival rings, with markers at equal time intervals that bunch up near apogee where the spacecraft is slowest.",
     "hosts": [
       "lmspace",
       "lmcad"
     ],
-    "output": "images/space-orbit-cad.png",
+    "output": "images/showcase-04-space-orbit-cad.png",
     "image": "docs/images/showcase-04-space-orbit-cad.png"
   },
   {
@@ -52,7 +52,7 @@
       "lmphysics",
       "lmdraw"
     ],
-    "output": "images/physics-free-body.png",
+    "output": "images/showcase-05-physics-free-body.png",
     "image": "docs/images/showcase-05-physics-free-body.png"
   },
   {
@@ -63,13 +63,13 @@
       "lmfluid",
       "lmplot"
     ],
-    "output": "images/fluid-poisson-plot.png",
+    "output": "images/showcase-06-fluid-poisson-plot.png",
     "image": "docs/images/showcase-06-fluid-poisson-plot.png"
   },
   {
     "file": "examples/07-enzyme-response.lms",
-    "title": "Enzyme response",
-    "description": "lmbio integrates a reversible binding and catalytic mechanism at three substrate levels; lmplot compares product formation.",
+    "title": "Michaelis-Menten from mechanism",
+    "description": "lmbio integrates the elementary reactions E + S <-> ES -> E + P at ten substrate levels and measures the quasi-steady rate of each run; lmplot shows those rates falling on the hyperbola Vmax S / (Km + S) with Km = (koff + kcat) / kon and Vmax = kcat E0, constants the mechanism never states.",
     "hosts": [
       "lmbio",
       "lmplot"
@@ -90,13 +90,83 @@
   },
   {
     "file": "examples/09-photon-transport.lms",
-    "title": "Photon transport through water",
-    "description": "lmparticle measures seeded 662 keV uncollided transmission through four water slab thicknesses; lmplot compares Monte Carlo estimates and uncertainty with exponential attenuation.",
+    "title": "Photon attenuation and build-up in water",
+    "description": "lmparticle runs seeded Monte Carlo histories of 662 keV photons through six water slabs and counts uncollided photons and all forward crossings; lmplot compares the uncollided fraction with exp(-mu x) on a log axis and shows the scattered build-up above it.",
     "hosts": [
       "lmparticle",
       "lmplot"
     ],
     "output": "images/showcase-09-photon-transport.png",
     "image": "docs/images/showcase-09-photon-transport.png"
+  },
+  {
+    "file": "examples/10-molecule-dimer-cad.lms",
+    "title": "Water dimer: hydrogen bond in 3D",
+    "description": "lmmolecule minimizes two flexible TIP3P molecules into the hydrogen-bonded dimer (about -6.5 kcal/mol at R(O-O) = 2.74 A) and scans the acceptor along the O-O axis; lmcad renders the minimized coordinates as ball-and-stick with the hydrogen bond as a cyan rod; lmplot places that render beside the energy curve.",
+    "hosts": [
+      "lmmolecule",
+      "lmcad",
+      "lmplot"
+    ],
+    "output": "images/showcase-10-molecule-dimer-cad.png",
+    "image": "docs/images/showcase-10-molecule-dimer-cad.png"
+  },
+  {
+    "file": "examples/11-particle-shield-layout.lms",
+    "title": "Shielding by mass: lead, aluminum, water",
+    "description": "lmparticle transports 662 keV photons through lead, aluminum and water slabs of equal mass per area; lmdraw draws the three layouts to scale; lmplot combines that layout with the measured transmission curves, showing that per gram lead is only modestly better where Compton scattering dominates.",
+    "hosts": [
+      "lmparticle",
+      "lmdraw",
+      "lmplot"
+    ],
+    "output": "images/showcase-11-particle-shield-layout.png",
+    "image": "docs/images/showcase-11-particle-shield-layout.png"
+  },
+  {
+    "file": "examples/12-weather-adjustment-gif.lms",
+    "title": "Geostrophic adjustment, animated",
+    "description": "lmweather releases a 600 km Gaussian height bump at rest on an f-plane: inertia-gravity waves radiate at sqrt(gH) while a weaker balanced bump set by the Rossby radius stays behind, with potential vorticity conserved; lmplot renders a frame every 30 minutes and ffmpeg assembles the 14-hour animation.",
+    "hosts": [
+      "lmweather",
+      "lmplot"
+    ],
+    "output": "images/showcase-12-weather-adjustment.gif",
+    "image": "docs/images/showcase-12-weather-adjustment.gif"
+  },
+  {
+    "file": "examples/13-bio-dosing-regimen.lms",
+    "title": "Dosing regimen inside a therapeutic window",
+    "description": "lmbio integrates a one-compartment oral model for 800 mg a day given as 400 mg every 12 h or 800 mg daily, restarting at each dose; both share the asserted average level 7.2 mg/L but only the twice-daily regimen stays inside 3-12 mg/L. lmdraw draws the compartment model; lmplot overlays window, average and both profiles.",
+    "hosts": [
+      "lmbio",
+      "lmdraw",
+      "lmplot"
+    ],
+    "output": "images/showcase-13-bio-dosing-regimen.png",
+    "image": "docs/images/showcase-13-bio-dosing-regimen.png"
+  },
+  {
+    "file": "examples/14-num-sweep-contact-sheet.lms",
+    "title": "Damping-ratio sweep as a contact sheet",
+    "description": "lmnum integrates the unit-step response of a second-order system for six damping ratios and checks each overshoot against exp(-pi zeta / sqrt(1 - zeta^2)); lmplot draws one panel per case; lmimg assembles the panels into a labelled report sheet with a header band.",
+    "hosts": [
+      "lmnum",
+      "lmplot",
+      "lmimg"
+    ],
+    "output": "images/showcase-14-num-sweep-contact-sheet.png",
+    "image": "docs/images/showcase-14-num-sweep-contact-sheet.png"
+  },
+  {
+    "file": "examples/15-audio-eq-measurement.lms",
+    "title": "Equalizer: designed versus measured",
+    "description": "lmaudio designs a three-band equalizer as biquads (low shelf, presence peak, high shelf), measures the whole chain by passing a unit impulse through it, and sends a plucked string through the same chain; lmplot overlays the designed band responses with the measured chain and the dry and equalized string spectra.",
+    "hosts": [
+      "lmaudio",
+      "lmplot"
+    ],
+    "output": "images/showcase-15-audio-eq-measurement.png",
+    "image": "docs/images/showcase-15-audio-eq-measurement.png"
   }
 ]

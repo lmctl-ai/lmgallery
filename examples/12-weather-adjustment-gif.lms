@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: MIT
+# Geostrophic adjustment, animated: lmweather releases a 1 m Gaussian height
+# bump (600 km wide) at rest on an f-plane (f = 1e-4 /s, depth 1000 m).
+# Inertia-gravity waves radiate away at sqrt(gH) = 99 m/s while a weaker,
+# geostrophically balanced bump is left behind; its size is set by the Rossby
+# radius (990 km) and potential vorticity is conserved throughout (asserted).
+# lmplot renders one frame every 30 minutes of model time and ffmpeg assembles
+# the 14-hour animation (before any wave reaches the channel walls); a two-panel
+# still shows the first and last frames.
+mkdir("images");
+mkdir("build/adjust");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let lx = 12000000.0;
+let m = wx.plane(128, 128, lx, lx).depth(1000.0).coriolis(0.0001, 0.0).linear();
+m.fields("pow(2.718281828459045, -((x - lx / 2) * (x - lx / 2) + (y - ly / 2) * (y - ly / 2)) / 720000000000.0)", "0", "0");
+wx.assert_close(m.wave_speed(), sqrt(9.81 * 1000.0), 0.1);
+wx.assert_close(m.rossby_radius(), sqrt(9.81 * 1000.0) / 0.0001, 2000.0);
+let q0 = m.pv_anomaly_rms();
+let h0 = m.h_at(lx / 2.0, lx / 2.0) - 1000.0;
+for (k in range(0, 29)) {
+  m.save_csv("build/adjust/f" + str(k) + ".csv");
+  m.run(1800.0);
+}
+let h1 = m.h_at(lx / 2.0, lx / 2.0) - 1000.0;
+wx.assert_close(m.pv_anomaly_rms() / q0, 1.0, 0.002);
+wx.assert_true(h1 > 0.05 * h0 && h1 < 0.8 * h0);
+wx.print("Rossby radius " + str(m.rossby_radius() / 1000.0) + " km; central height anomaly after 14 h: " + str(h1) + " m of " + str(h0));
+end _dsl_
+savedsl(sim, "build/adjust/sim.dslb");
+r = system(concat(dsl_cli(sim), ["--dsl", "build/adjust/sim.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println(split(r.stdout, "{\"ok\"")[0]);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set pm3d map; unset key; set size ratio -1");
+plot.cmd("set palette defined (0 '#1d4ed8', 0.25 '#93c5fd', 0.4 '#f8fafc', 0.6 '#fde68a', 0.8 '#f97316', 1 '#7f1d1d')");
+plot.cmd("set xrange [0:12000]; set yrange [0:12000]; set cbrange [-0.3:0.9]; set cbtics 0.3");
+plot.cmd("set xtics 3000; set ytics 3000; set xlabel 'x [km]'; set ylabel 'y [km]'; set cblabel 'height anomaly [m]'");
+plot.cmd("set label 1 'remnant width is set by the Rossby radius, 990 km' at 6000, 11400 center front font ',9' tc rgb '#1e293b'");
+for (k in range(0, 29)) {
+  let hours = 0.5 * float(k);
+  plot.png("build/adjust/f" + str(k) + ".png", 720, 600);
+  plot.cmd("set title sprintf('Geostrophic adjustment on the f-plane (lmweather): t = %.1f h', " + str(hours) + ") font ',12'");
+  plot.cmd("splot 'build/adjust/f" + str(k) + ".csv' using ($1/1000):($2/1000):($3-1000) with pm3d");
+  plot.close();
+}
+# a still of the final balanced state for the gallery (900 px wide)
+plot.png("images/showcase-12-weather-adjustment.png", 900, 520);
+plot.cmd("unset label 1; unset cblabel; set colorbox user origin screen 0.90, 0.17 size screen 0.025, 0.62");
+plot.cmd("set multiplot layout 1,2 title 'Geostrophic adjustment: release at rest (left) and the balanced remnant after 14 h (right)' font ',12'");
+plot.cmd("set lmargin at screen 0.07; set rmargin at screen 0.44; set title 't = 0 h' font ',11'; unset colorbox; splot 'build/adjust/f0.csv' using ($1/1000):($2/1000):($3-1000) with pm3d");
+plot.cmd("set lmargin at screen 0.50; set rmargin at screen 0.87; set title 't = 14 h' font ',11'; unset ylabel; set colorbox; set cblabel 'height anomaly [m]'; splot 'build/adjust/f28.csv' using ($1/1000):($2/1000):($3-1000) with pm3d");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "build/adjust/draw.dslb");
+r = system(concat(dsl_cli(draw), ["--dsl", "build/adjust/draw.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+r = system ffmpeg -y -loglevel error -framerate 8 -i build/adjust/f%d.png -vf "split[a][b];[a]palettegen=max_colors=64[p];[b][p]paletteuse=dither=none" images/showcase-12-weather-adjustment.gif;
+assert(r.code == 0, "ffmpeg is required for the animation: " + r.stderr);
+println("wrote images/showcase-12-weather-adjustment.gif and images/showcase-12-weather-adjustment.png");

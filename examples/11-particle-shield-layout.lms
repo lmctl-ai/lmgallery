@@ -1,0 +1,103 @@
+# SPDX-License-Identifier: MIT
+# Shielding by mass: three shields of lead, aluminum and water with the same
+# mass per unit area. lmparticle runs seeded Monte Carlo histories of 662 keV
+# photons through each slab and counts uncollided photons and all forward
+# crossings; lmdraw draws the three slab layouts to scale (same 10 g/cm2, very
+# different thickness); lmplot places that layout beside the transmission
+# curves. At 662 keV Compton scattering dominates, so per gram lead is only
+# modestly better than water: the mass attenuation coefficients are close.
+mkdir("build/shield");
+mkdir("build/rendered");
+mkdir("images");
+compute = _dsl_ cli="lmparticle" install="github:lmctl-ai/lmparticle@latest";
+let seed = 4100;
+for (k in range(0, 3)) {
+  let name = "lead";
+  if (k == 1) { name = "aluminum"; }
+  if (k == 2) { name = "water"; }
+  let mat = rad.builtin(name);
+  rad.print("material," + name + "," + str(mat.density()) + "," + str(mat.mu_mass(0.662)));
+  for (j in range(0, 5)) {
+    let areal = 2.0;
+    if (j == 1) { areal = 5.0; }
+    if (j == 2) { areal = 10.0; }
+    if (j == 3) { areal = 20.0; }
+    if (j == 4) { areal = 30.0; }
+    let x = areal / mat.density();
+    let geometry = rad.geometry().slab("shield", mat, 0.0, x);
+    let source = rad.source().point(0.0, 0.0, -1.0).beam(0.0, 0.0, 1.0).energy(0.662);
+    let result = rad.simulation(geometry, source).plane("exit", "z", x).seed(seed).run(20000);
+    seed = seed + 1;
+    let measured = result.plane_uncollided("exit");
+    let expected = pow(2.718281828459045, -mat.mu_mass(0.662) * areal);
+    let se = result.plane_uncollided_err("exit");
+    rad.assert_close(measured, expected, 5.0 * se + 0.0001);
+    rad.print("row," + name + "," + str(areal) + "," + str(x) + "," + str(measured) + "," + str(se) + "," + str(result.plane_count("exit")) + "," + str(result.plane_count_err("exit")));
+  }
+}
+end _dsl_
+savedsl(compute, "build/shield/compute.dslb");
+r = system(concat(dsl_cli(compute), ["--dsl", "build/shield/compute.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+csv = "material,areal_density,thickness,uncollided,uncollided_error,all_forward,all_forward_error\n";
+density = {}; mu_mass = {};
+for (line in lines(r.stdout)) {
+  f = split(line, ",");
+  if (f[0] == "row") { csv = csv + substr(line, 4) + "\n"; }
+  if (f[0] == "material") { density[f[1]] = num(f[2]); mu_mass[f[1]] = num(f[3]); }
+}
+write_file("build/shield/transmission.csv", csv);
+assert(density["lead"] > 11.0 && density["water"] > 0.99, "unexpected builtin densities");
+mm_lead = mu_mass["lead"]; mm_alu = mu_mass["aluminum"]; mm_water = mu_mass["water"];
+
+# Layout to scale: three slabs of 10 g/cm2 drawn at 20 px per cm.
+fn row_title(name) { return sprintf("%s: rho = %.2f g/cm3, so 10 g/cm2 = %.2f cm", name, density[name], 10.0 / density[name]); }
+# 20 px per cm; the 0.001 keeps the water width (exactly 200 px) a non-integral float for the DSL
+w_lead = 200.0 / density["lead"] + 0.001; w_alu = 200.0 / density["aluminum"] + 0.001; w_water = 200.0 / density["water"] + 0.001;
+t_lead = row_title("lead"); t_alu = row_title("aluminum"); t_water = row_title("water");
+d = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+scene.canvas(400, 520, "#f8fafc");
+scene.text(20.0, 34.0, 17.0, "Three shields, each 10 g/cm2", "#0f172a").set_attr("font-weight", "700");
+scene.text(20.0, 56.0, 12.0, "drawn to scale, 20 px per cm; 662 keV photons enter from the left", "#475569");
+for (k in range(0, 3)) {
+  let y = 125.0 + 135.0 * float(k);
+  let width = ${w_lead};
+  let title = ${t_lead};
+  let color = "#475569";
+  if (k == 1) { width = ${w_alu}; title = ${t_alu}; color = "#94a3b8"; }
+  if (k == 2) { width = ${w_water}; title = ${t_water}; color = "#7dd3fc"; }
+  scene.text(20.0, y - 48.0, 12.5, title, "#0f172a");
+  scene.circle(45.0, y, 7.0, "#dc2626");
+  scene.text(30.0, y + 26.0, 10.0, "source", "#991b1b");
+  scene.arrow(55.0, y, 106.0, y, "#dc2626", 2.5).set_attr("marker-end", "arrow");
+  scene.rect(110.0, y - 32.0, width, 64.0, color);
+  scene.line(362.0, y - 38.0, 362.0, y + 38.0, "#0f172a", 3.0);
+  scene.text(338.0, y + 54.0, 10.0, "exit plane", "#334155");
+  scene.arrow(114.0 + width, y, 356.0, y, "#f59e0b", 2.0).set_attr("marker-end", "arrow").set_attr("stroke-dasharray", "6 4");
+}
+scene.text(20.0, 500.0, 10.5, "dashed: what reaches the exit plane (uncollided and scattered)", "#475569");
+scene.render_png("build/rendered/shield_layout.png", 400, 520, 1);
+end _dsl_
+savedsl(d, "build/shield/draw.dslb");
+r = system ${dsl_cli(d)} --dsl build/shield/draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-11-particle-shield-layout.png", 900, 560);
+plot.cmd("set datafile separator ','");
+plot.cmd("set label 99 'Equal mass, equal shielding? 662 keV photons through lead, aluminum and water (lmparticle, lmdraw, lmplot)' at screen 0.5, 0.955 center font ',12'");
+plot.cmd("set pixmap 1 'build/rendered/shield_layout.png' at screen 0.01, 0.02 width screen 0.41");
+plot.cmd("set lmargin at screen 0.52; set rmargin at screen 0.97; set tmargin at screen 0.88; set bmargin at screen 0.13");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#e4e9ef'; set key bottom left font ',9' box opaque");
+plot.cmd("set xlabel 'mass per area rho x (g/cm^2)'; set ylabel 'fraction crossing the exit plane'");
+plot.cmd("set xrange [0:32]; set yrange [0.02:1.1]; set logscale y");
+plot.cmd("set label 1 'lines: exp(-(mu/rho) rho x)' at 31.5, 0.92 right font ',8' tc rgb '#475569'");
+plot.cmd("set label 2 'filled: uncollided Monte Carlo' at 31.5, 0.81 right font ',8' tc rgb '#475569'; set label 3 'open: all forward crossings' at 31.5, 0.71 right font ',8' tc rgb '#475569'");
+plot.cmd("mm_lead = " + str(${mm_lead}) + "; mm_alu = " + str(${mm_alu}) + "; mm_water = " + str(${mm_water}));
+plot.cmd("plot exp(-mm_lead*x) with lines lw 2 lc rgb '#1e293b' title sprintf('lead, mu/rho = %.3f cm^2/g', mm_lead), exp(-mm_alu*x) with lines lw 2 lc rgb '#64748b' title sprintf('aluminum, mu/rho = %.3f', mm_alu), exp(-mm_water*x) with lines lw 2 lc rgb '#0284c7' title sprintf('water, mu/rho = %.3f', mm_water), 'build/shield/transmission.csv' every ::1 using (stringcolumn(1) eq 'lead' ? $2 : NaN):4:5 with yerrorbars pt 7 ps 1.2 lc rgb '#1e293b' notitle, '' every ::1 using (stringcolumn(1) eq 'aluminum' ? $2 : NaN):4:5 with yerrorbars pt 7 ps 1.2 lc rgb '#64748b' notitle, '' every ::1 using (stringcolumn(1) eq 'water' ? $2 : NaN):4:5 with yerrorbars pt 7 ps 1.2 lc rgb '#0284c7' notitle, '' every ::1 using (stringcolumn(1) eq 'lead' ? $2 : NaN):6 with points pt 6 ps 1.2 lc rgb '#1e293b' notitle, '' every ::1 using (stringcolumn(1) eq 'aluminum' ? $2 : NaN):6 with points pt 6 ps 1.2 lc rgb '#64748b' notitle, '' every ::1 using (stringcolumn(1) eq 'water' ? $2 : NaN):6 with points pt 6 ps 1.2 lc rgb '#0284c7' notitle");
+plot.close();
+end _dsl_
+savedsl(plot, "build/shield/plot.dslb");
+r = system ${dsl_cli(plot)} --dsl build/shield/plot.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-11-particle-shield-layout.png");

@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - name: Check images, attribution, manifests and links
+      - name: Check images, attribution, manifests, links and caption URLs on main
         run: ./test.sh --network
       - name: Check shell syntax and whitespace
         run: |
@@ -34,7 +34,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        example: ['01', '02', '03', '04', '05', '06', '07', '08', '09']
+        example: ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15']
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -44,6 +44,9 @@ jobs:
           node-version: 24
       - name: Install the verified runner version
         run: npm install --global @lmctl-ai/lmctl@0.2.401
+      - name: Install ffmpeg for the animated composition
+        if: matrix.example == '12'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - name: Execute one showcase from an empty directory
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

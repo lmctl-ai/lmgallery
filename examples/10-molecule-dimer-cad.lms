@@ -1,0 +1,159 @@
+# SPDX-License-Identifier: MIT
+# The water dimer, the hydrogen bond TIP3P was fitted to: lmmolecule minimizes
+# two rigid TIP3P molecules into the bonded dimer (Jorgensen 1983: -6.50 kcal/mol
+# at R(O-O) = 2.74 A) and scans the acceptor along the O-O axis. lmcad renders
+# the minimized geometry as a ball-and-stick model with the hydrogen bond drawn
+# as a thin cyan rod; lmplot places that render beside the interaction-energy
+# curve, so geometry and energy come from the same computed coordinates.
+mkdir("build/dimer");
+mkdir("images");
+sim_prog = _dsl_ cli="lmmolecule" install="github:lmctl-ai/lmmolecule@latest";
+md.platform("reference");
+let kcal = 4.184;
+# TIP3P: r(O-H) = 0.09572 nm, H-O-H = 104.52 deg, q(O) = -0.834, q(H) = 0.417, LJ on oxygen only.
+# The released host has no rigid-water builder, so both molecules are flexible with stiff
+# harmonic bonds and angles; the scan below uses intermolecular terms only.
+let roh = 0.09572;
+let hx = roh * -0.250763;
+let hy = roh * 0.968048;
+let dimer = md.system()
+  .add_particle(15.99943, 0.0, 0.0, 0.0).add_particle(1.007947, roh, 0.0, 0.0).add_particle(1.007947, hx, hy, 0.0)
+  .add_particle(15.99943, 0.1714, 0.2214, 0.0).add_particle(1.007947, 0.1714 + roh, 0.2214, 0.0).add_particle(1.007947, 0.1714 + hx, 0.2214 + hy, 0.0)
+  .charge(0, -0.834).charge(1, 0.417).charge(2, 0.417).charge(3, -0.834).charge(4, 0.417).charge(5, 0.417)
+  .lj_particle(0, 0.636386, 0.315061).lj_particle(3, 0.636386, 0.315061)
+  .lj_particle(1, 0.0, 0.1).lj_particle(2, 0.0, 0.1).lj_particle(4, 0.0, 0.1).lj_particle(5, 0.0, 0.1)
+  .exclude(0, 1).exclude(0, 2).exclude(1, 2).exclude(3, 4).exclude(3, 5).exclude(4, 5)
+  .bond(0, 1, roh, 462750.0).bond(0, 2, roh, 462750.0).bond(3, 4, roh, 462750.0).bond(3, 5, roh, 462750.0)
+  .angle(1, 0, 2, 1.824218, 836.8).angle(4, 3, 5, 1.824218, 836.8)
+  .coulomb("none", 0.0);
+let dsim = dimer.sim("verlet", 0.001, 0.0, 0.0, 1);
+dsim.minimize(0.00001, 5000);
+let r_oo = dsim.distance(0, 3);
+let donor = 1;
+if (dsim.distance(2, 3) < dsim.distance(1, 3)) { donor = 2; }
+let angle_deg = dsim.angle_val(0, donor, 3) * 180.0 / md.eval("pi");
+for (i in range(0, 6)) {
+  md.print("atom," + str(i) + "," + str(dsim.x(i)) + "," + str(dsim.y(i)) + "," + str(dsim.z(i)));
+}
+let ux = (dsim.x(3) - dsim.x(0)) / r_oo;
+let uy = (dsim.y(3) - dsim.y(0)) / r_oo;
+let uz = (dsim.z(3) - dsim.z(0)) / r_oo;
+# Scan: move molecule B rigidly along the O-O axis; k = 37 is the minimized distance itself.
+let e_min = 0.0;
+for (k in range(0, 38)) {
+  let d = 0.24 + 0.01 * float(k);
+  if (k == 37) { d = r_oo; }
+  let s = d - r_oo;
+  let scan = md.system()
+    .add_particle(15.99943, dsim.x(0), dsim.y(0), dsim.z(0))
+    .add_particle(1.007947, dsim.x(1), dsim.y(1), dsim.z(1))
+    .add_particle(1.007947, dsim.x(2), dsim.y(2), dsim.z(2))
+    .add_particle(15.99943, dsim.x(3) + s * ux, dsim.y(3) + s * uy, dsim.z(3) + s * uz)
+    .add_particle(1.007947, dsim.x(4) + s * ux, dsim.y(4) + s * uy, dsim.z(4) + s * uz)
+    .add_particle(1.007947, dsim.x(5) + s * ux, dsim.y(5) + s * uy, dsim.z(5) + s * uz)
+    .charge(0, -0.834).charge(1, 0.417).charge(2, 0.417).charge(3, -0.834).charge(4, 0.417).charge(5, 0.417)
+    .lj_particle(0, 0.636386, 0.315061).lj_particle(3, 0.636386, 0.315061)
+    .lj_particle(1, 0.0, 0.1).lj_particle(2, 0.0, 0.1).lj_particle(4, 0.0, 0.1).lj_particle(5, 0.0, 0.1)
+    .exclude(0, 1).exclude(0, 2).exclude(1, 2).exclude(3, 4).exclude(3, 5).exclude(4, 5)
+    .coulomb("none", 0.0);
+  let e = scan.sim("verlet", 0.001, 0.0, 0.0, 1).pe() / kcal;
+  if (k == 37) { e_min = e; } else { md.print("scan," + str(10.0 * d) + "," + str(e)); }
+}
+md.assert_close(e_min, -6.5, 0.5);
+md.assert_close(r_oo, 0.274, 0.01);
+md.print("summary," + str(r_oo) + "," + str(e_min) + "," + str(angle_deg) + "," + str(donor));
+end _dsl_
+savedsl(sim_prog, "build/dimer/sim.dslb");
+r = system ${dsl_cli(sim_prog)} --dsl build/dimer/sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Parse: six atoms become lmcad keyframes (t,x,y,z,r,g,b); the scan becomes a CSV.
+atoms = [];
+scan_rows = "";
+summary = [];
+for (line in lines(r.stdout)) {
+  f = split(line, ",");
+  if (f[0] == "atom") { push(atoms, [num(f[2]), num(f[3]), num(f[4])]); }
+  if (f[0] == "scan") { scan_rows = scan_rows + f[1] + " " + f[2] + "\n"; }
+  if (f[0] == "summary") { summary = [num(f[1]), num(f[2]), num(f[3]), num(f[4])]; }
+}
+assert(atoms.len() == 6 && summary.len() == 4, r.stdout);
+write_file("build/dimer/scan.csv", scan_rows);
+r_oo = summary[0]; e_min = summary[1]; angle_deg = summary[2]; donor = round(summary[3]);
+keys = "t,x,y,z,r,g,b\n";
+cx = 0.0; cy = 0.0; cz = 0.0;
+for (i in range(0, 6)) {
+  a = atoms[i];
+  cx = cx + a[0] / 6.0; cy = cy + a[1] / 6.0; cz = cz + a[2] / 6.0;
+  keys = keys + sprintf("%d,%.6f,%.6f,%.6f,0.5,0.5,0.5\n", i, a[0], a[1], a[2]);
+}
+write_file("build/dimer/atoms.csv", keys);
+# camera: look at the centroid along the normal of the O_A, O_B, donor-H plane
+# (the tiny offsets keep every interpolated coordinate a non-integral float for the DSL)
+cx = cx + 0.0001; cy = cy + 0.0001; cz = cz + 0.0001;
+fn sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+e1 = sub(atoms[3], atoms[0]);
+e2 = sub(atoms[donor], atoms[0]);
+nx = e1[1] * e2[2] - e1[2] * e2[1];
+ny = e1[2] * e2[0] - e1[0] * e2[2];
+nz = e1[0] * e2[1] - e1[1] * e2[0];
+nl = sqrt(nx * nx + ny * ny + nz * nz);
+nx = nx / nl; ny = ny / nl; nz = nz / nl;
+# tilt the eye 25 degrees off the normal towards +y so the up vector is never degenerate
+ex = cx + 0.95 * (0.906 * nx) + 0.0;
+ey = cy + 0.95 * (0.906 * ny) - 0.40;
+ez = cz + 0.95 * (0.906 * nz) + 0.15;
+println(sprintf("minimized dimer: R(O-O) = %.4f nm, E = %.3f kcal/mol, O-H...O angle = %.1f deg", r_oo, e_min, angle_deg));
+label_text = sprintf("R(O-O) = %.2f A   E = %.2f kcal/mol   O-H...O = %.0f deg", 10.0 * r_oo, e_min, angle_deg);
+min_row = sprintf("%.4f %.4f\n", 10.0 * r_oo, e_min);
+
+cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+let atoms = read_keyframes_csv("build/dimer/atoms.csv");
+let oxygen = material().color(0.88, 0.10, 0.08).roughness(0.38).specular(0.35);
+let hydrogen = material().color(0.90, 0.92, 0.96).roughness(0.42).specular(0.25);
+let bond = material().color(0.48, 0.52, 0.60).roughness(0.60);
+let hbond = material().color(0.20, 0.80, 0.95).roughness(0.30).specular(0.5);
+scene.background(0.035, 0.045, 0.07);
+scene.ambient(0.30);
+scene.directional_light(-0.6, -1.0, -0.5, 0.85);
+scene.fill_light(0.8, -0.2, 0.8, 0.30);
+for (mol in range(0, 2)) {
+  let o = atoms.at(3 * mol);
+  let h1 = atoms.at(3 * mol + 1);
+  let h2 = atoms.at(3 * mol + 2);
+  scene.sphere(0.040, oxygen).position(o.x(), o.y(), o.z());
+  scene.sphere(0.024, hydrogen).position(h1.x(), h1.y(), h1.z());
+  scene.sphere(0.024, hydrogen).position(h2.x(), h2.y(), h2.z());
+  scene.tube_between(o.x(), o.y(), o.z(), h1.x(), h1.y(), h1.z(), 0.010, bond);
+  scene.tube_between(o.x(), o.y(), o.z(), h2.x(), h2.y(), h2.z(), 0.010, bond);
+}
+let d = atoms.at(${donor});
+let acceptor = atoms.at(3);
+scene.tube_between(d.x(), d.y(), d.z(), acceptor.x(), acceptor.y(), acceptor.z(), 0.005, hbond);
+scene.camera(30.0, ${ex}, ${ey}, ${ez}, ${cx}, ${cy}, ${cz});
+scene.render_png("build/dimer/render.png", 520, 520);
+end _dsl_
+savedsl(cad, "build/dimer/cad.dslb");
+r = system ${dsl_cli(cad)} --dsl build/dimer/cad.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-10-molecule-dimer-cad.png", 900, 520);
+plot.cmd("set label 99 'TIP3P water dimer: lmmolecule minimizes it, lmcad renders it, lmplot adds the O-O energy scan' at screen 0.5, 0.95 center font ',12'");
+plot.cmd("set pixmap 1 'build/dimer/render.png' at screen 0.02, 0.04 width screen 0.46");
+plot.cmd("set label 10 '" + ${label_text} + "' at screen 0.25, 0.085 center font ',10' tc rgb '#e2e8f0' front");
+plot.cmd("set label 11 'cyan rod: the hydrogen bond' at screen 0.25, 0.13 center font ',9' tc rgb '#67e8f9' front");
+plot.cmd("set lmargin at screen 0.60; set rmargin at screen 0.97; set tmargin at screen 0.86; set bmargin at screen 0.14");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#e4e9ef'; set key top right font ',9' box opaque");
+plot.cmd("set xlabel 'O-O distance (A)'; set ylabel 'interaction energy (kcal/mol)'");
+plot.cmd("set xrange [2.4:6.0]; set yrange [-7.5:3]");
+plot.cmd("set arrow 1 from 2.74, -6.5 to 2.74, -7.4 nohead dt 2 lc rgb '#64748b'");
+plot.cmd("set label 1 'Jorgensen 1983: -6.50 at 2.74 A' at 2.85, -7.1 font ',9' tc rgb '#475569'");
+plot.data("MIN", ${min_row});
+plot.cmd("plot 'build/dimer/scan.csv' using 1:2 with lines lw 2.6 lc rgb '#2563eb' title 'rigid scan along O-O', $MIN with points pt 7 ps 1.6 lc rgb '#dc2626' title 'minimum found'");
+plot.close();
+end _dsl_
+savedsl(plot, "build/dimer/plot.dslb");
+r = system ${dsl_cli(plot)} --dsl build/dimer/plot.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-10-molecule-dimer-cad.png");
