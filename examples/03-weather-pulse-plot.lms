@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: MIT
+# A shallow-water gravity pulse: lmweather evolves the wave and lmplot renders
+# snapshots from the resulting field, making the propagation speed visible.
+mkdir("images");
+mkdir("data");
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+let lx = 4000000.0;
+let nx = 160;
+let m = wx.plane(nx, 6, lx, 60000.0).depth(100.0).linear();
+m.fields("exp(-(x - lx / 2) * (x - lx / 2) / 14000000000.0)", "0", "0");
+let c = m.wave_speed();
+wx.assert_close(c, sqrt(9.80616 * 100.0), 0.01);
+let rows0 = ""; let rows1 = ""; let rows2 = ""; let rows3 = "";
+for (step in range(0, 31)) {
+  if (step == 0 || step == 10 || step == 20 || step == 30) {
+    for (i in range(0, nx)) {
+      let x = (float(i) + 0.5) * lx / float(nx);
+      let row = str(x / 1000.0) + " " + str(float(step) * 600.0 / 3600.0) + " " + str(m.h_at(x, 30000.0) - 100.0) + "\n";
+      if (step == 0) { rows0 = rows0 + row; }
+      if (step == 10) { rows1 = rows1 + row; }
+      if (step == 20) { rows2 = rows2 + row; }
+      if (step == 30) { rows3 = rows3 + row; }
+    }
+  }
+  m.run(600.0);
+}
+wx.save_text("data/pulse-0.csv", rows0);
+wx.save_text("data/pulse-1.csv", rows1);
+wx.save_text("data/pulse-2.csv", rows2);
+wx.save_text("data/pulse-3.csv", rows3);
+wx.print("gravity-wave speed = " + str(c) + " m/s");
+end _dsl_
+savedsl(sim, "data/pulse-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/pulse-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-03-weather-pulse.png", 900, 540);
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'");
+plot.cmd("set title 'Shallow-water gravity pulse from lmweather' font ',15'");
+plot.cmd("set xlabel 'distance [km]'; set ylabel 'height anomaly [m]'");
+plot.cmd("set xrange [0:4000]; set yrange [-0.12:1.08]; set key top right box opaque");
+plot.cmd("set label 'c = sqrt(gH) = 31.3 m/s' at 150,0.94 tc rgb '#334155'");
+plot.cmd("plot 'data/pulse-0.csv' using 1:3 with lines lw 2.5 lc rgb '#2563eb' title 't = 0 h', 'data/pulse-1.csv' using 1:3 with lines lw 2.5 lc rgb '#059669' title 't = 1.7 h', 'data/pulse-2.csv' using 1:3 with lines lw 2.5 lc rgb '#f59e0b' title 't = 3.3 h', 'data/pulse-3.csv' using 1:3 with lines lw 2.5 lc rgb '#dc2626' title 't = 5.0 h'");
+plot.close();
+end _dsl_
+savedsl(draw, "data/pulse-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/pulse-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-03-weather-pulse.png");

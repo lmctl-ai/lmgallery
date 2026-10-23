@@ -1,0 +1,57 @@
+name: gallery
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gallery-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  images-and-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Check images, attribution, manifests and links
+        run: ./test.sh --network
+      - name: Check shell syntax and whitespace
+        run: |
+          bash -n test.sh examples/render-all.sh
+          git diff --check
+
+  autorun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        example: ['01', '02', '03', '04', '05', '06', '07', '08', '09']
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - name: Install the verified runner version
+        run: npm install --global @lmctl-ai/lmctl@0.2.401
+      - name: Execute one showcase from an empty directory
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/run-examples.py --only '${{ matrix.example }}'
+      - name: Retain rendered outputs and execution logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: showcase-${{ matrix.example }}
+          path: /tmp/lmgallery-verify-*/
+          if-no-files-found: warn

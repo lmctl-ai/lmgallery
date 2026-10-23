@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: MIT
+# A damped engineering oscillator: lmnum integrates the ODE, then lmplot renders
+# the displacement and velocity produced by that same numerical solution.
+mkdir("images");
+mkdir("data");
+sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let sys = num.ode(2);
+sys.param("omega", 2.0).param("zeta", 0.08);
+sys.rhs(0, "y1");
+sys.rhs(1, "-omega*omega*y0 - 2*zeta*omega*y1");
+sys.init(0, 1.0).init(1, 0.0);
+sys.tol(0.00000001, 0.0000000001);
+let sol = sys.solve(0.0, 12.0, 1201);
+sol.save_csv("data/oscillator.csv");
+num.assert_close(sol.get(0, 1), 1.0, 0.000001);
+num.assert_close(sol.get(1200, 1), 0.04079380257785417, 0.000001);
+end _dsl_
+savedsl(sim, "data/oscillator-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl data/oscillator-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-01-oscillator.png", 900, 540);
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'");
+plot.cmd("set title 'Damped oscillator: CVODE solution from lmnum' font ',15'");
+plot.cmd("set xlabel 'time [s]'; set ylabel 'x [m] / v [m/s]'");
+plot.cmd("set xrange [0:12]; set yrange [-2:2]; set key top right box opaque");
+plot.cmd("plot 'data/oscillator.csv' using 1:2 with lines lw 2.6 lc rgb '#2563eb' title 'displacement x(t)', 'data/oscillator.csv' using 1:3 with lines lw 2.2 lc rgb '#dc2626' title 'velocity v(t)'");
+plot.close();
+end _dsl_
+savedsl(draw, "data/oscillator-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl data/oscillator-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-01-oscillator.png");

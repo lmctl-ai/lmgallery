@@ -1,0 +1,7 @@
+.omx/
+build/
+images/
+data/
+__pycache__/
+*.dslb
+

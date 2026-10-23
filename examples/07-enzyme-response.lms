@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+# Enzyme response: lmbio computes three substrate time courses; lmplot compares
+# product formation. The renderer consumes simulation CSVs, not hand-entered data.
+mkdir("build/enzyme");
+compute = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+let m = bio.model("enzyme_response").compartment("cell", 1.0).species("E", "cell", 0.02).species("S", "cell", 1.0).species("ES", "cell", 0.0).species("P", "cell", 0.0);
+m.param("kon", 8.0).param("koff", 2.0).param("kcat", 1.5);
+m.reaction("bind", "E + S -> ES", "kon*E*S").reversible("bind", "koff*ES").reaction("turnover", "ES -> E + P", "kcat*ES");
+for (i in range(0, 3)) { let s0 = 0.25 * pow(4.0, float(i)); m.set("S", s0); let result = m.simulate(0.0, 12.0, 121); bio.assert_true(result.final("P") > 0.0); result.save_csv("build/enzyme/response_" + str(i) + ".csv"); }
+end _dsl_
+savedsl(compute, "build/enzyme/compute.dslb");
+r = system ${dsl_cli(compute)} --dsl build/enzyme/compute.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+mkdir("images");
+plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-07-enzyme-response.png", 900, 560);
+plot.cmd("set datafile separator ','; set title 'Enzyme response: substrate drives product formation'; set xlabel 'Time (minutes)'; set ylabel 'Concentration'; set grid back lc rgb '#e4e9ef'; set key left top");
+plot.cmd("plot 'build/enzyme/response_0.csv' using 1:5 with lines lw 3 lc rgb '#4c78a8' title 'P, S0 = 0.25', 'build/enzyme/response_1.csv' using 1:5 with lines lw 3 lc rgb '#f58518' title 'P, S0 = 1', 'build/enzyme/response_2.csv' using 1:5 with lines lw 3 lc rgb '#54a24b' title 'P, S0 = 4'");
+plot.close();
+end _dsl_
+savedsl(plot, "build/enzyme/draw.dslb");
+r = system ${dsl_cli(plot)} --dsl build/enzyme/draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-07-enzyme-response.png");

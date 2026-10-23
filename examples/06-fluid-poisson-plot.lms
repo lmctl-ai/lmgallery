@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+# lmfluid solves a manufactured Poisson field; lmplot renders the computed CSV
+# as a labelled scientific heat map, with the numerical error asserted first.
+mkdir("build/examples");
+mkdir("images");
+sim = _dsl_ cli="lmfluid" install="github:lmctl-ai/lmfluid@latest";
+let mesh = fluid.rect(24, 24, 1.0, 1.0);
+let field = fluid.poisson(mesh, 2).source("-4.0").dirichlet(0, "x*x + y*y").solve();
+fluid.assert_close(field.l2_error("x*x + y*y"), 0.0, 0.005);
+field.sample(41, 41).save_csv("build/examples/fluid-field.csv");
+end _dsl_
+savedsl(sim, "build/fluid.dslb");
+r = system ${dsl_cli(sim)} --dsl build/fluid.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/fluid-poisson-plot.png", 900, 560);
+plot.cmd("set datafile separator ','");
+plot.cmd("set title 'lmfluid Poisson solution: u = x^2 + y^2'");
+plot.cmd("set xlabel 'x (model units)'"); plot.cmd("set ylabel 'y (model units)'");
+plot.cmd("set xrange [0:1]"); plot.cmd("set yrange [0:1]"); plot.cmd("set size ratio -1");
+plot.cmd("set cbrange [0:2]"); plot.cmd("set cblabel 'computed field u(x,y)'");
+plot.cmd("set palette defined (0 '#17324d', 0.5 '#159895', 1 '#fff2b2')");
+plot.cmd("unset key"); plot.cmd("plot 'build/examples/fluid-field.csv' using 1:2:4 with image"); plot.close();
+end _dsl_
+savedsl(plot, "build/plot.dslb");
+r = system ${dsl_cli(plot)} --dsl build/plot.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/fluid-poisson-plot.png");

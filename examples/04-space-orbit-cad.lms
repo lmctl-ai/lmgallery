@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: MIT
+# lmspace propagates a Hohmann transfer. The complete 61-sample trajectory is
+# converted to lmcad keyframes, which renders every neighbouring state as a
+# short tube around Earth in a deterministic headless scene.
+mkdir("build");
+mkdir("images");
+sim = _dsl_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
+let mu = 398600.4418;
+let h = hohmann(7000.0, 42164.0, mu);
+let v1 = sqrt(mu / 7000.0) + h.get(0, 0);
+let earth = space.body("earth", mu);
+let sat = space.body("sat", 0.000000000001, 7000.0, 0.0, 0.0, 0.0, v1, 0.0);
+let out = space.system().add(earth).add(sat).propagate(h.get(0, 2), 61, 5.0, "rk45", 0.000000000001);
+assert_close(sqrt(out.get(60, 7) * out.get(60, 7) + out.get(60, 8) * out.get(60, 8)), 42164.0, 50.0);
+out.save_csv("build/orbit.csv");
+end _dsl_
+savedsl(sim, "build/space.dslb");
+r = system ${dsl_cli(sim)} --dsl build/space.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+hdr = "t,earth.x,earth.y,earth.z,earth.vx,earth.vy,earth.vz,sat.x,sat.y,sat.z,sat.vx,sat.vy,sat.vz\n";
+rows = csv_parse(hdr + read_file("build/orbit.csv"));
+let key_text = "t,x,y,z,r,g,b\n";
+for (k in range(0, rows.len())) {
+  let m = rows.get(k, null);
+  key_text = key_text + sprintf("%.6f,%.6f,%.6f,%.6f,%.3f,%.3f,%.3f\n", m.get("t", 0.0), m.get("sat.x", 0.0) / 1000.0, m.get("sat.y", 0.0) / 1000.0, m.get("sat.z", 0.0) / 1000.0, 0.95, 0.45, 0.08);
+}
+write_file("build/orbit-keys.csv", key_text);
+
+cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+let keys = read_keyframes_csv("build/orbit-keys.csv");
+let earth_mat = material().color(0.12, 0.32, 0.78).roughness(0.5);
+let orbit_mat = material().color(0.95, 0.45, 0.08).roughness(0.35).specular(0.4);
+let marker_mat = material().color(0.98, 0.84, 0.25).roughness(0.3);
+scene.sphere(6.378, earth_mat).position(0.0, 0.0, 0.0);
+for (segment in range(0, keys.len() - 1)) {
+  let a = keys.at(segment);
+  let b = keys.at(segment + 1);
+  scene.tube_between(a.x(), a.y(), a.z(), b.x(), b.y(), b.z(), 0.25, orbit_mat);
+}
+for (k in range(0, keys.len())) {
+  if (k % 10 == 0) {
+    let p = keys.at(k);
+    scene.sphere(0.45, marker_mat).position(p.x(), p.y(), p.z());
+  }
+}
+scene.camera(38.0, -17.5, 5.5, 60.0, -17.5, 5.5, 0.0);
+scene.directional_light(-0.6, -1.0, -0.4, 0.9);
+scene.fill_light(0.8, -0.2, 0.8, 0.25);
+scene.background(0.95, 0.97, 1.0);
+scene.render_png("images/space-orbit-cad.png", 900, 600);
+end _dsl_
+savedsl(cad, "build/cad.dslb");
+r = system ${dsl_cli(cad)} --dsl build/cad.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/space-orbit-cad.png");
