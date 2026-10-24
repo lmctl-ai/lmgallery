@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: MIT
+# Quarterly business review as a six-slide deck. lmvideo (Skia, Plot layer) draws three charts as
+# PNG images from the same quarterly numbers; lmoffice (Open XML) places them on the slides with
+# bullets and notes. The deck is written to build/qbr-deck.pptx; the program checks that the
+# quarterly revenue add up to the full-year total printed on the summary slide.
+mkdir("images");
+mkdir("build");
+
+# Chart 1: revenue by quarter (bars).
+charts_1 = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+video.size(900, 480); video.frames(1); video.output("images/showcase-26-qbr-deck.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig1 = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let p1 = fig1.add_plot().weight(1.0).fill("both").plot().title("Quarterly revenue ($M)").xlabel("quarter").ylabel("revenue ($M)").x_range(0.5, 5.5).y_range(0.0, 80.0).legend("top_left").background("#ffffff");
+let s1 = p1.series("revenue", "bar", "#1F4E78");
+s1.add(1.0, 46.6); s1.add(2.0, 52.1); s1.add(3.0, 58.4); s1.add(4.0, 63.0); s1.add(5.0, 67.5);
+fig1.draw();
+video.end();
+end _dsl_
+savedsl(charts_1, "build/qbr-chart1.dslb");
+r = system(concat(dsl_cli(charts_1), ["--dsl", "build/qbr-chart1.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Chart 2: net margin trend (line).
+charts_2 = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+video.size(900, 480); video.frames(1); video.output("build/qbr-margin.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig2 = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let p2 = fig2.add_plot().weight(1.0).fill("both").plot().title("Operating margin (%)").xlabel("quarter").ylabel("operating margin (%)").x_range(0.5, 5.5).y_range(15.0, 26.0).legend("top_left").background("#ffffff");
+let s2 = p2.series("operating margin", "line", "#2E75B6").width(3.0).marker("circle");
+s2.add(1.0, 18.0); s2.add(2.0, 19.5); s2.add(3.0, 21.0); s2.add(4.0, 22.5); s2.add(5.0, 24.0);
+fig2.draw();
+video.end();
+end _dsl_
+savedsl(charts_2, "build/qbr-chart2.dslb");
+r = system(concat(dsl_cli(charts_2), ["--dsl", "build/qbr-chart2.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Chart 3: revenue by region (bars) for the latest quarter.
+charts_3 = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+video.size(900, 480); video.frames(1); video.output("build/qbr-regions.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig3 = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let p3 = fig3.add_plot().weight(1.0).fill("both").plot().title("Q3 revenue by region ($M)").xlabel("region").ylabel("revenue ($M)").x_range(0.5, 4.5).y_range(0.0, 35.0).legend("top_right").background("#ffffff");
+let s3 = p3.series("Q3 revenue", "bar", "#548235");
+s3.add(1.0, 29.0); s3.add(2.0, 21.5); s3.add(3.0, 11.0); s3.add(4.0, 6.0);
+fig3.draw();
+video.end();
+end _dsl_
+savedsl(charts_3, "build/qbr-chart3.dslb");
+r = system(concat(dsl_cli(charts_3), ["--dsl", "build/qbr-chart3.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Deck: title, highlights, and one slide per chart with bullets and speaker notes.
+let total = 46.6 + 52.1 + 58.4 + 63.0;
+assert(abs(total - 220.1) < 0.0001);
+deck_program = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
+let deck = office.pptx("build/qbr-deck.pptx");
+deck.theme("#1F4E78", "#2E75B6", "Segoe UI", "Calibri");
+let d1 = deck.slide();
+d1.title_slide("Quarterly Business Review, Q3 2026", "Revenue, margin and regional mix");
+d1.footer("Novaterra Technologies | Q3 2026 review");
+let d2 = deck.slide();
+d2.title("Highlights: revenue up 45% in four quarters");
+d2.rounded_rect(80.0, 150.0, 340.0, 140.0, "#1F4E78", "Q3 revenue: $67.5M");
+d2.rounded_rect(470.0, 150.0, 340.0, 140.0, "#2E75B6", "Operating margin: 24%");
+d2.rounded_rect(860.0, 150.0, 340.0, 140.0, "#548235", "Four-quarter total: $220.1M");
+d2.bullet(100.0, 340.0, 1100.0, 40.0, "Every quarter grew on the one before.");
+d2.bullet(100.0, 390.0, 1100.0, 40.0, "Operating margin rose 6 points over the last four quarters.");
+d2.bullet(100.0, 440.0, 1100.0, 40.0, "North America is 43% of Q3 revenue.");
+d2.notes("Totals are the sum of the four quarterly figures on the next slide.");
+let d3 = deck.slide();
+d3.title("Revenue has grown every quarter");
+d3.image("images/showcase-26-qbr-deck.png", 50.0, 170.0, 820.0, 437.0);
+d3.text(900.0, 220.0, 330.0, 300.0, "Q3 2026 was $67.5M, up from $46.6M in Q3 2025.");
+d3.notes("Bars are quarterly revenue in $M.");
+let d4 = deck.slide();
+d4.title("Operating margin climbed to 24%");
+d4.image("build/qbr-margin.png", 50.0, 170.0, 820.0, 437.0);
+d4.text(900.0, 220.0, 330.0, 300.0, "Margin improved in each of the last four quarters.");
+let d5 = deck.slide();
+d5.title("North America leads the regional mix");
+d5.image("build/qbr-regions.png", 50.0, 170.0, 820.0, 437.0);
+d5.text(900.0, 220.0, 330.0, 300.0, "Regions add to $67.5M, the Q3 total.");
+let d6 = deck.slide();
+d6.title("Next quarter");
+d6.bullet(100.0, 160.0, 1100.0, 48.0, "Expand the enterprise tier in EMEA.");
+d6.bullet(100.0, 220.0, 1100.0, 48.0, "Hold operating margin at or above 24%.");
+deck.save();
+end _dsl_
+savedsl(deck_program, "build/qbr-deck.dslb");
+r = system(concat(dsl_cli(deck_program), ["--dsl", "build/qbr-deck.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/qbr-deck.pptx");

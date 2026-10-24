@@ -16,7 +16,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#finite-element-error-against-a-known-answer"><img src="../docs/images/showcase-19-fem-poisson-error.png" width="400" alt="Finite-element error against a known answer"></a><br>Finite-element error against a known answer | <a href="#heat-conduction-in-x-and-t"><img src="../docs/images/showcase-20-heat-spacetime.png" width="400" alt="Heat conduction in x and t"></a><br>Heat conduction in x and t |
 | <a href="#forecast-with-a-95-%-prediction-band"><img src="../docs/images/showcase-21-forecast-band.png" width="400" alt="Forecast with a 95 % prediction band"></a><br>Forecast with a 95 % prediction band | <a href="#seasonal-decomposition-by-least-squares"><img src="../docs/images/showcase-22-seasonal-decomposition.png" width="400" alt="Seasonal decomposition by least squares"></a><br>Seasonal decomposition by least squares |
 | <a href="#regression-diagnostics-predicted-actual-and-residuals"><img src="../docs/images/showcase-23-regression-residuals.png" width="400" alt="Regression diagnostics: predicted, actual and residuals"></a><br>Regression diagnostics: predicted, actual and residuals | <a href="#daily-sign-ups-on-a-date-axis"><img src="../docs/images/showcase-24-signups-date-axis.png" width="400" alt="Daily sign-ups on a date axis"></a><br>Daily sign-ups on a date axis |
-| <a href="#call-centre-queue-over-one-day"><img src="../docs/images/showcase-25-queue-erlang-c.png" width="400" alt="Call-centre queue over one day"></a><br>Call-centre queue over one day | |
+| <a href="#call-centre-queue-over-one-day"><img src="../docs/images/showcase-25-queue-erlang-c.png" width="400" alt="Call-centre queue over one day"></a><br>Call-centre queue over one day | <a href="#quarterly-business-review-deck-with-lmvideo-charts"><img src="../docs/images/showcase-26-qbr-deck.png" width="400" alt="Quarterly business review deck with lmvideo charts"></a><br>Quarterly business review deck with lmvideo charts |
 
 ## Damped oscillator dashboard
 
@@ -266,4 +266,14 @@ Hosts: lmnum → lmplot. Output: `images/showcase-25-queue-erlang-c.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/25-queue-erlang-c.lms
+```
+
+## Quarterly business review deck with lmvideo charts
+
+lmvideo draws three Skia charts (quarterly revenue, operating margin, regional mix) from one set of figures; lmoffice places them on the slides of a six-slide Open XML deck with highlights, bullets and notes. The picture is a LibreOffice render of the finished deck.
+
+Hosts: lmvideo → lmoffice. Output: `images/showcase-26-qbr-deck.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/26-qbr-deck-charts.lms
 ```

@@ -278,5 +278,16 @@
     ],
     "output": "images/showcase-25-queue-erlang-c.png",
     "image": "docs/images/showcase-25-queue-erlang-c.png"
+  },
+  {
+    "file": "examples/26-qbr-deck-charts.lms",
+    "title": "Quarterly business review deck with lmvideo charts",
+    "description": "lmvideo draws three Skia charts (quarterly revenue, operating margin, regional mix) from one set of figures; lmoffice places them on the slides of a six-slide Open XML deck with highlights, bullets and notes. The picture is a LibreOffice render of the finished deck.",
+    "hosts": [
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-26-qbr-deck.png",
+    "image": "docs/images/showcase-26-qbr-deck.png"
   }
 ]
