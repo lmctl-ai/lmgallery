@@ -67,3 +67,18 @@ Comprehensive audit of demo-page health across all 31 `lmctl-ai` repositories (3
 - `lmssl`: index.md complete; 6 docs indexed; OpenSSL 3.3.2 cryptographic host, example & release workflows documented; SDK pinned to lmcode-cpp.
 - `lmvideo`: index.md complete; 9 docs indexed; Skia 2D/video engine, Tk/Swing explicit layout managers, example & release workflows documented; SDK pinned to lmcode-cpp.
 - `lmweather`: index.md complete; 11 docs indexed; NWP weather modeling, example & release workflows documented; SDK pinned to lmcode-cpp.
+
+## Ecosystem Health Dashboard Findings (2026-10-24)
+
+Automated audit executed via `scripts/health.sh` covering 33 checkouts:
+
+1. **Clean/Green Status**:
+   - 0 CI main failures across all repositories.
+   - 0 broken images or broken autorun links.
+   - 0 stale identifiers across all READMEs and durable-memory files.
+   - 100% of repositories have canonical `durable-memory/index.md` indexing all documentation files.
+
+2. **Open / Non-Actionable External Items**:
+   - `lmnum`: Release `v0.1.4` has 5/5 platform binaries published on GitHub Releases, but lacks a separate `SHA256SUMS` text asset (asset digest hashes are present in GitHub release metadata).
+   - `lmproxy` and `lmdb`: In-development hosts without published release tags yet (`none`).
+   - SDK pins across standalone C++ hosts (`lmaudio`, `lmbio`, `lmblender`, `lmcad`, `lmcell`, `lmdraw`, `lmfinance`, `lmfluid`, `lmimg`, `lmmagnum`, `lmmolecule`, `lmnum`, `lmparticle`, `lmphysics`, `lmweather`, `lmvideo`): vendored single-file `dslvm.hpp` from stable milestone `a876646`; upstream `lmcode-cpp` added std catalog files which require coordinated std integration in those hosts.
