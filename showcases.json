@@ -223,5 +223,16 @@
     ],
     "output": "images/showcase-20-heat-spacetime.png",
     "image": "docs/images/showcase-20-heat-spacetime.png"
+  },
+  {
+    "file": "examples/21-forecast-prediction-band.lms",
+    "title": "Forecast with a 95 % prediction band",
+    "description": "lmnum fits a trend with annual harmonics to 60 months of demand by least squares, computes the residual deviation and the 95 % prediction interval of each of 12 future months from the design matrix, and checks that the true future values fall inside the band; lmplot draws the history, the fit, the forecast and its widening band.",
+    "hosts": [
+      "lmnum",
+      "lmplot"
+    ],
+    "output": "images/showcase-21-forecast-band.png",
+    "image": "docs/images/showcase-21-forecast-band.png"
   }
 ]
