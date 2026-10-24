@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: MIT
+# A resume with a skills bar chart. lmvideo (Skia canvas) draws six horizontal bars, one per
+# skill, with the self-assessed level from 0 to 100 printed at the end of each bar; the PNG is
+# also the gallery output. lmoffice (Open XML) writes the resume: contact line, summary,
+# experience, the skills chart, and education. The bars are drawn in the order of the list.
+mkdir("images");
+mkdir("build");
+
+skills = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+fn skill_bar(canvas_row: int, label: string, level: float) -> void {
+  let y = 56.0 + float(canvas_row - 1) * 50.0;
+  canvas.text(label, 40.0, y + 24.0, font(20.0), paint().color("#0f172a"));
+  canvas.rect(240.0, y + 8.0, 500.0, 24.0, paint().color("#e2e8f0"));
+  canvas.rect(240.0, y + 8.0, 5.0 * level, 24.0, paint().color("#1F4E78"));
+  canvas.text(str(int(level)) + "%", 760.0, y + 24.0, font(18.0), paint().color("#334155"));
+}
+
+video.size(900, 360); video.frames(1); video.output("images/showcase-30-resume-skills.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+canvas.text("Core skills (self-assessed)", 40.0, 30.0, font(22.0).bold(true), paint().color("#0f172a"));
+skill_bar(1, "Python", 88.0);
+skill_bar(2, "SQL", 82.0);
+skill_bar(3, "Data visualisation", 76.0);
+skill_bar(4, "Statistics", 70.0);
+skill_bar(5, "Docker", 58.0);
+skill_bar(6, "Rust", 42.0);
+video.end();
+end _dsl_
+savedsl(skills, "build/skills.dslb");
+r = system(concat(dsl_cli(skills), ["--dsl", "build/skills.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Resume (lmoffice). The levels are the bar lengths printed on the chart.
+resume_program = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
+let doc = office.docx("build/resume-jordan-lee.docx");
+doc.title("Jordan Lee, data engineer").author("Jordan Lee");
+doc.heading("Jordan Lee", 1).bold(true);
+doc.paragraph("Data engineer | jordan.lee@example.com | Leeds, UK");
+doc.heading("Summary", 2);
+doc.paragraph("Data engineer with eight years of experience building reliable pipelines, analysis tooling and dashboards for operations teams.");
+doc.heading("Skills", 2);
+doc.image("images/showcase-30-resume-skills.png", 600, 240);
+doc.heading("Experience", 2);
+doc.paragraph("Senior data engineer, Harbour Analytics (2021 to present)").bold(true);
+doc.bullet("Rebuilt the nightly warehouse loads in Python and SQL; runtime fell from 7 hours to 55 minutes.");
+doc.bullet("Added dashboards for three operations teams with automated data-quality checks.");
+doc.paragraph("Data analyst, Mill Street Retail (2016 to 2021)").bold(true);
+doc.bullet("Built forecasting models for stock planning across 40 stores.");
+doc.heading("Education", 2);
+doc.paragraph("MSc Statistics, University of Leeds (2016)");
+doc.save();
+end _dsl_
+savedsl(resume_program, "build/resume.dslb");
+r = system(concat(dsl_cli(resume_program), ["--dsl", "build/resume.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/resume-jordan-lee.docx and images/showcase-30-resume-skills.png");

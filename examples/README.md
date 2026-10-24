@@ -18,7 +18,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#regression-diagnostics-predicted-actual-and-residuals"><img src="../docs/images/showcase-23-regression-residuals.png" width="400" alt="Regression diagnostics: predicted, actual and residuals"></a><br>Regression diagnostics: predicted, actual and residuals | <a href="#daily-sign-ups-on-a-date-axis"><img src="../docs/images/showcase-24-signups-date-axis.png" width="400" alt="Daily sign-ups on a date axis"></a><br>Daily sign-ups on a date axis |
 | <a href="#call-centre-queue-over-one-day"><img src="../docs/images/showcase-25-queue-erlang-c.png" width="400" alt="Call-centre queue over one day"></a><br>Call-centre queue over one day | <a href="#quarterly-business-review-deck-with-lmvideo-charts"><img src="../docs/images/showcase-26-qbr-deck.png" width="400" alt="Quarterly business review deck with lmvideo charts"></a><br>Quarterly business review deck with lmvideo charts |
 | <a href="#sales-report-with-a-chart-per-section"><img src="../docs/images/showcase-27-sales-report.png" width="400" alt="Sales report with a chart per section"></a><br>Sales report with a chart per section | <a href="#forecast-workbook-with-a-native-chart"><img src="../docs/images/showcase-28-forecast-workbook.png" width="400" alt="Forecast workbook with a native chart"></a><br>Forecast workbook with a native chart |
-| <a href="#invoice-with-a-generated-logo-and-payment-glyph"><img src="../docs/images/showcase-29-invoice-logo.png" width="400" alt="Invoice with a generated logo and payment glyph"></a><br>Invoice with a generated logo and payment glyph | |
+| <a href="#invoice-with-a-generated-logo-and-payment-glyph"><img src="../docs/images/showcase-29-invoice-logo.png" width="400" alt="Invoice with a generated logo and payment glyph"></a><br>Invoice with a generated logo and payment glyph | <a href="#resume-with-a-skills-bar-chart"><img src="../docs/images/showcase-30-resume-skills.png" width="400" alt="Resume with a skills bar chart"></a><br>Resume with a skills bar chart |
 
 ## Damped oscillator dashboard
 
@@ -308,4 +308,14 @@ Hosts: lmvideo → lmoffice. Output: `images/showcase-29-invoice-logo.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/29-invoice-logo-glyph.lms
+```
+
+## Resume with a skills bar chart
+
+lmvideo draws six horizontal skill bars with their levels on a Skia canvas as a PNG; lmoffice places the chart in a Word resume with a summary, experience and education. The picture is a LibreOffice render of the resume.
+
+Hosts: lmvideo → lmoffice. Output: `images/showcase-30-resume-skills.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/30-resume-skills-bars.lms
 ```

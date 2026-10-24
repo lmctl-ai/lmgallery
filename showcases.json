@@ -323,5 +323,16 @@
     ],
     "output": "images/showcase-29-invoice-logo.png",
     "image": "docs/images/showcase-29-invoice-logo.png"
+  },
+  {
+    "file": "examples/30-resume-skills-bars.lms",
+    "title": "Resume with a skills bar chart",
+    "description": "lmvideo draws six horizontal skill bars with their levels on a Skia canvas as a PNG; lmoffice places the chart in a Word resume with a summary, experience and education. The picture is a LibreOffice render of the resume.",
+    "hosts": [
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-30-resume-skills.png",
+    "image": "docs/images/showcase-30-resume-skills.png"
   }
 ]
