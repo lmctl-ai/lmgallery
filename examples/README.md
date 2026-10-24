@@ -15,6 +15,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#driven-oscillator-transient-to-steady-state"><img src="../docs/images/showcase-17-oscillator-driven.png" width="400" alt="Driven oscillator: transient to steady state"></a><br>Driven oscillator: transient to steady state | <a href="#intermediate-axis-tumble-of-a-free-plate"><img src="../docs/images/showcase-18-rigid-body-intermediate-axis.png" width="400" alt="Intermediate-axis tumble of a free plate"></a><br>Intermediate-axis tumble of a free plate |
 | <a href="#finite-element-error-against-a-known-answer"><img src="../docs/images/showcase-19-fem-poisson-error.png" width="400" alt="Finite-element error against a known answer"></a><br>Finite-element error against a known answer | <a href="#heat-conduction-in-x-and-t"><img src="../docs/images/showcase-20-heat-spacetime.png" width="400" alt="Heat conduction in x and t"></a><br>Heat conduction in x and t |
 | <a href="#forecast-with-a-95-%-prediction-band"><img src="../docs/images/showcase-21-forecast-band.png" width="400" alt="Forecast with a 95 % prediction band"></a><br>Forecast with a 95 % prediction band | <a href="#seasonal-decomposition-by-least-squares"><img src="../docs/images/showcase-22-seasonal-decomposition.png" width="400" alt="Seasonal decomposition by least squares"></a><br>Seasonal decomposition by least squares |
+| <a href="#regression-diagnostics-predicted-actual-and-residuals"><img src="../docs/images/showcase-23-regression-residuals.png" width="400" alt="Regression diagnostics: predicted, actual and residuals"></a><br>Regression diagnostics: predicted, actual and residuals | |
 
 ## Damped oscillator dashboard
 
@@ -234,4 +235,14 @@ Hosts: lmnum → lmplot. Output: `images/showcase-22-seasonal-decomposition.png`
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/22-seasonal-decomposition.lms
+```
+
+## Regression diagnostics: predicted, actual and residuals
+
+lmnum fits a linear model to 120 observations that contain a quadratic term it does not include, with R^2 and RMSE from the least-squares solve; the predicted-against-actual and residuals-against-predicted panels show the misfit as a curve in the residuals.
+
+Hosts: lmnum → lmplot. Output: `images/showcase-23-regression-residuals.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/23-regression-residuals.lms
 ```

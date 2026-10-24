@@ -1,0 +1,68 @@
+# SPDX-License-Identifier: MIT
+# A regression diagnostic. 120 observations come from y = 2 + 1.5 x1 - 0.7 x2 + 0.4 x1^2 + noise
+# (sigma 0.6), but the model that is fitted is linear in x1 and x2 only. lmnum solves the least
+# squares problem (lstsq on a 120 x 3 design matrix) and computes the predictions, residuals,
+# R^2 and RMSE. The two panels are the standard ML checks: predicted against actual with the
+# y = x line, and residuals against predicted with the zero line. The misspecified x1^2 term
+# shows up as a curve in the residuals, which is what the residual plot is for. The program
+# checks that residuals sum to zero (a property of least squares with an intercept) and that
+# R^2 lies near 0.93 (within 0.1).
+mkdir("images");
+mkdir("build");
+
+sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let n = 120;
+let z = num.normal(n, 2, 5);
+let x_design = num.matrix(n, 3);
+let y_obs = num.matrix(n, 1);
+for (i in range(0, n)) {
+  let x1 = 4.0 * float(i) / float(n) - 2.0;
+  let x2 = 2.0 * sin(0.37 * float(i));
+  x_design = x_design.set(i, 0, 1.0).set(i, 1, x1).set(i, 2, x2);
+  y_obs = y_obs.set(i, 0, 2.0 + 1.5 * x1 - 0.7 * x2 + 0.4 * x1 * x1 + 0.6 * z.get(i, 0));
+}
+let beta = x_design.lstsq(y_obs);
+let pred = x_design.mul(beta);
+let resid = y_obs.sub(pred);
+let ybar = y_obs.mean();
+let sst = 0.0;
+let sum_resid = 0.0;
+for (i in range(0, n)) {
+  sst = sst + (y_obs.get(i, 0) - ybar) * (y_obs.get(i, 0) - ybar);
+  sum_resid = sum_resid + resid.get(i, 0);
+}
+let r2 = 1.0 - resid.transpose().mul(resid).get(0, 0) / sst;
+let rmse = sqrt(resid.transpose().mul(resid).get(0, 0) / float(n));
+num.assert_close(sum_resid, 0.0, 0.000001);
+num.assert_close(r2, 0.93, 0.1);
+
+let out = num.matrix(n, 3);
+for (i in range(0, n)) {
+  out = out.set(i, 0, pred.get(i, 0)).set(i, 1, y_obs.get(i, 0)).set(i, 2, resid.get(i, 0));
+}
+out.save_csv("build/regression.csv");
+num.print("R^2 = " + str(r2) + ", RMSE = " + str(rmse));
+end _dsl_
+savedsl(sim, "build/regression-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl build/regression-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-23-regression-residuals.png", 900, 460);
+plot.cmd("set multiplot title 'Regression diagnostics: predicted against actual, and residuals (lmnum)' font ',13'");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'; set key font ',9' samplen 2 top left box opaque");
+plot.cmd("set lmargin at screen 0.09; set rmargin at screen 0.47; set tmargin at screen 0.86; set bmargin at screen 0.13");
+plot.cmd("set title 'predicted against actual' font ',11'; set xlabel 'predicted'; set ylabel 'actual'");
+plot.cmd("plot 'build/regression.csv' using 1:2 with points pt 7 ps 0.9 lc rgb '#2563eb' title 'observations', x with lines dt 2 lw 1.8 lc rgb '#111827' title 'y = x'");
+plot.cmd("set lmargin at screen 0.57; set rmargin at screen 0.95");
+plot.cmd("unset size; set tmargin at screen 0.86; set bmargin at screen 0.13");
+plot.cmd("set title 'residuals against predicted' font ',11'; set xlabel 'predicted'; set ylabel 'residual'");
+plot.cmd("set yrange [-2.5:2.5]");
+plot.cmd("plot 'build/regression.csv' using 1:3 with points pt 7 ps 0.9 lc rgb '#dc2626' title 'residual', 0 with lines dt 2 lw 1.8 lc rgb '#111827' title 'zero'");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "build/regression-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/regression-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-23-regression-residuals.png");

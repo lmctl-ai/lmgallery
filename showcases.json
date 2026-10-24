@@ -245,5 +245,16 @@
     ],
     "output": "images/showcase-22-seasonal-decomposition.png",
     "image": "docs/images/showcase-22-seasonal-decomposition.png"
+  },
+  {
+    "file": "examples/23-regression-residuals.lms",
+    "title": "Regression diagnostics: predicted, actual and residuals",
+    "description": "lmnum fits a linear model to 120 observations that contain a quadratic term it does not include, with R^2 and RMSE from the least-squares solve; the predicted-against-actual and residuals-against-predicted panels show the misfit as a curve in the residuals.",
+    "hosts": [
+      "lmnum",
+      "lmplot"
+    ],
+    "output": "images/showcase-23-regression-residuals.png",
+    "image": "docs/images/showcase-23-regression-residuals.png"
   }
 ]
