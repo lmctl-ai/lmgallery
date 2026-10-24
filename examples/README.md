@@ -16,6 +16,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#finite-element-error-against-a-known-answer"><img src="../docs/images/showcase-19-fem-poisson-error.png" width="400" alt="Finite-element error against a known answer"></a><br>Finite-element error against a known answer | <a href="#heat-conduction-in-x-and-t"><img src="../docs/images/showcase-20-heat-spacetime.png" width="400" alt="Heat conduction in x and t"></a><br>Heat conduction in x and t |
 | <a href="#forecast-with-a-95-%-prediction-band"><img src="../docs/images/showcase-21-forecast-band.png" width="400" alt="Forecast with a 95 % prediction band"></a><br>Forecast with a 95 % prediction band | <a href="#seasonal-decomposition-by-least-squares"><img src="../docs/images/showcase-22-seasonal-decomposition.png" width="400" alt="Seasonal decomposition by least squares"></a><br>Seasonal decomposition by least squares |
 | <a href="#regression-diagnostics-predicted-actual-and-residuals"><img src="../docs/images/showcase-23-regression-residuals.png" width="400" alt="Regression diagnostics: predicted, actual and residuals"></a><br>Regression diagnostics: predicted, actual and residuals | <a href="#daily-sign-ups-on-a-date-axis"><img src="../docs/images/showcase-24-signups-date-axis.png" width="400" alt="Daily sign-ups on a date axis"></a><br>Daily sign-ups on a date axis |
+| <a href="#call-centre-queue-over-one-day"><img src="../docs/images/showcase-25-queue-erlang-c.png" width="400" alt="Call-centre queue over one day"></a><br>Call-centre queue over one day | |
 
 ## Damped oscillator dashboard
 
@@ -255,4 +256,14 @@ Hosts: lmnum → lmplot. Output: `images/showcase-24-signups-date-axis.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/24-signups-date-axis.lms
+```
+
+## Call-centre queue over one day
+
+lmnum evaluates the M/M/c Erlang-C formula for eight agents at each hour of a day with a peak arrival rate of 70 calls per hour, after checking the textbook value C(2, 1) = 1/3; lmplot draws the busy agents on the right axis and the mean queue length on the left.
+
+Hosts: lmnum → lmplot. Output: `images/showcase-25-queue-erlang-c.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/25-queue-erlang-c.lms
 ```
