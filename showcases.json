@@ -346,5 +346,16 @@
     ],
     "output": "images/showcase-31-science-report.png",
     "image": "docs/images/showcase-31-science-report.png"
+  },
+  {
+    "file": "examples/32-revenue-bars-currency.lms",
+    "title": "Annual revenue bars with currency ticks",
+    "description": "lmnum builds 11 years of revenue from a seeded 17 % compound growth model with 2 % noise and recovers the growth rate by a least-squares fit of the logarithm, asserting it within 0.01; lmplot draws the bars with native $0B to $300B axis ticks and a value label on each bar.",
+    "hosts": [
+      "lmnum",
+      "lmplot"
+    ],
+    "output": "images/showcase-32-revenue-bars.png",
+    "image": "docs/images/showcase-32-revenue-bars.png"
   }
 ]

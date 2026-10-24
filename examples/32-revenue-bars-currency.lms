@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: MIT
+# Annual revenue, 2015 to 2025, in billions of dollars. lmnum builds the series from a compound
+# growth model (17 % a year from $52B, with 2 % noise from a seeded generator) and recovers the
+# growth rate by a least-squares fit of ln(revenue) against the year, which is checked against
+# the 17 % used to generate it. lmplot draws the bars with native currency ticks ($0B to $300B)
+# and a value label on each bar. The program asserts that the fitted rate is within 0.01 of 0.17.
+mkdir("images");
+mkdir("build");
+
+sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let n = 11;
+let z = num.normal(n, 1, 77);
+let x_design = num.matrix(n, 2);
+let y_log = num.matrix(n, 1);
+let rows = num.matrix(n, 2);
+for (i in range(0, n)) {
+  let revenue = 52.0 * pow(1.17, float(i)) * (1.0 + 0.02 * z.get(i, 0));
+  rows = rows.set(i, 0, float(2015 + i)).set(i, 1, revenue);
+  x_design = x_design.set(i, 0, 1.0).set(i, 1, float(i));
+  y_log = y_log.set(i, 0, num.eval("log(" + str(revenue) + ")"));
+}
+rows.save_csv("build/revenue.dat");
+let beta = x_design.lstsq(y_log);
+let growth = num.eval("exp(" + str(beta.get(1, 0)) + ") - 1");
+num.print("growth=" + str(growth));
+num.assert_close(growth, 0.17, 0.01);
+end _dsl_
+savedsl(sim, "build/revenue-sim.dslb");
+r = system(concat(dsl_cli(sim), ["--dsl", "build/revenue-sim.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-32-revenue-bars.png", 900, 500);
+plot.cmd("set border 3; set tics nomirror; set grid ytics lc rgb '#e2e8f0'; unset key");
+plot.cmd("set title 'Annual revenue, 2015 to 2025, with a 17 % compound growth model (lmnum)' font ',12'");
+plot.cmd("set xlabel 'fiscal year'; set ylabel 'revenue'");
+plot.cmd("set yrange [0:300]; set ytics 50");
+plot.cmd("set format y '$%.0fB'");
+plot.cmd("set xrange [2014.4:2025.6]; set xtics 2015,1,2025 format '%.0f'");
+plot.cmd("set style fill solid 0.85 border -1; set boxwidth 0.62");
+plot.cmd("plot 'build/revenue.dat' using 1:2 with boxes lc rgb '#2563eb' notitle, 'build/revenue.dat' using 1:2:(sprintf('$%.0fB', $2)) with labels offset 0,0.8 font ',9' notitle");
+plot.close();
+end _dsl_
+savedsl(draw, "build/revenue-draw.dslb");
+r = system(concat(dsl_cli(draw), ["--dsl", "build/revenue-draw.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-32-revenue-bars.png");

@@ -19,7 +19,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#call-centre-queue-over-one-day"><img src="../docs/images/showcase-25-queue-erlang-c.png" width="400" alt="Call-centre queue over one day"></a><br>Call-centre queue over one day | <a href="#quarterly-business-review-deck-with-lmvideo-charts"><img src="../docs/images/showcase-26-qbr-deck.png" width="400" alt="Quarterly business review deck with lmvideo charts"></a><br>Quarterly business review deck with lmvideo charts |
 | <a href="#sales-report-with-a-chart-per-section"><img src="../docs/images/showcase-27-sales-report.png" width="400" alt="Sales report with a chart per section"></a><br>Sales report with a chart per section | <a href="#forecast-workbook-with-a-native-chart"><img src="../docs/images/showcase-28-forecast-workbook.png" width="400" alt="Forecast workbook with a native chart"></a><br>Forecast workbook with a native chart |
 | <a href="#invoice-with-a-generated-logo-and-payment-glyph"><img src="../docs/images/showcase-29-invoice-logo.png" width="400" alt="Invoice with a generated logo and payment glyph"></a><br>Invoice with a generated logo and payment glyph | <a href="#resume-with-a-skills-bar-chart"><img src="../docs/images/showcase-30-resume-skills.png" width="400" alt="Resume with a skills bar chart"></a><br>Resume with a skills bar chart |
-| <a href="#science-report-damping-recovered-from-simulated-peaks"><img src="../docs/images/showcase-31-science-report.png" width="400" alt="Science report: damping recovered from simulated peaks"></a><br>Science report: damping recovered from simulated peaks | |
+| <a href="#science-report-damping-recovered-from-simulated-peaks"><img src="../docs/images/showcase-31-science-report.png" width="400" alt="Science report: damping recovered from simulated peaks"></a><br>Science report: damping recovered from simulated peaks | <a href="#annual-revenue-bars-with-currency-ticks"><img src="../docs/images/showcase-32-revenue-bars.png" width="400" alt="Annual revenue bars with currency ticks"></a><br>Annual revenue bars with currency ticks |
 
 ## Damped oscillator dashboard
 
@@ -329,4 +329,14 @@ Hosts: lmnum → lmvideo → lmoffice. Output: `images/showcase-31-science-repor
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/31-science-report-damping.lms
+```
+
+## Annual revenue bars with currency ticks
+
+lmnum builds 11 years of revenue from a seeded 17 % compound growth model with 2 % noise and recovers the growth rate by a least-squares fit of the logarithm, asserting it within 0.01; lmplot draws the bars with native $0B to $300B axis ticks and a value label on each bar.
+
+Hosts: lmnum → lmplot. Output: `images/showcase-32-revenue-bars.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/32-revenue-bars-currency.lms
 ```
