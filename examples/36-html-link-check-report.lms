@@ -11,7 +11,7 @@ mkdir("build/site");
 mkdir("build/site/sub");
 write_file("build/site/index.html", "<!doctype html><html><body><h1>Lattice docs</h1><a href=\"about.html\">About</a><a href=\"missing.html\">Missing page</a></body></html>");
 write_file("build/site/about.html", "<!doctype html><html><body><h1 id=\"team\">Team</h1><a href=\"sub/page.html\">Sub page</a><a href=\"#missing\">Missing anchor</a><a href=\"https://example.com/\">External</a></body></html>");
-write_file("build/site/sub/page.html", "<!doctype html><html><body><a href=\"../index.html\">Home</a></body></html>");
+write_file("build/site/sub/page.html", "<!doctype html><html><body><a href=\"/index.html\">Home</a></body></html>");
 
 check = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@v0.7.3";
 let pages = html.load_dir("build/site");
