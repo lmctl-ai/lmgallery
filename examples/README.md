@@ -22,6 +22,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#science-report-damping-recovered-from-simulated-peaks"><img src="../docs/images/showcase-31-science-report.png" width="400" alt="Science report: damping recovered from simulated peaks"></a><br>Science report: damping recovered from simulated peaks | <a href="#annual-revenue-bars-with-currency-ticks"><img src="../docs/images/showcase-32-revenue-bars.png" width="400" alt="Annual revenue bars with currency ticks"></a><br>Annual revenue bars with currency ticks |
 | <a href="#standing-waves-on-a-membrane-animated"><img src="../docs/images/showcase-33-wave-2d.png" width="400" alt="Standing waves on a membrane, animated"></a><br>Standing waves on a membrane, animated | <a href="#image-pipeline-with-a-before/after-contact-sheet"><img src="../docs/images/showcase-34-image-pipeline.png" width="400" alt="Image pipeline with a before/after contact sheet"></a><br>Image pipeline with a before/after contact sheet |
 | <a href="#rates-and-options-desk-pack-curve-option-table-and-memo"><img src="../docs/images/showcase-35-rates-options.png" width="400" alt="Rates and options desk pack: curve, option table and memo"></a><br>Rates and options desk pack: curve, option table and memo | <a href="#html-link-check-report-with-a-terminal-picture"><img src="../docs/images/showcase-36-link-check.png" width="400" alt="HTML link-check report with a terminal picture"></a><br>HTML link-check report with a terminal picture |
+| <a href="#certificate-inventory-from-lmssl"><img src="../docs/images/showcase-37-cert-inventory.png" width="400" alt="Certificate inventory from lmssl"></a><br>Certificate inventory from lmssl | |
 
 ## Damped oscillator dashboard
 
@@ -381,4 +382,14 @@ Hosts: lmhtml → lmvideo → lmoffice. Output: `images/showcase-36-link-check.p
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/36-html-link-check-report.lms
+```
+
+## Certificate inventory from lmssl
+
+lmssl parses two service certificates (fixed test certificates inlined in the script) and reports subject, key type, expiry, SHA-256 fingerprint and self-signed status, asserted by the program; lmvideo draws a card view as a PNG; lmoffice writes the Word inventory with a table, the cards and the renewal action. The picture is a LibreOffice render of the document.
+
+Hosts: lmssl → lmvideo → lmoffice. Output: `images/showcase-37-cert-inventory.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/37-cert-inventory-docx.lms
 ```

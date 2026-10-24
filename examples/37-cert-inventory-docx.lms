@@ -1,0 +1,104 @@
+# SPDX-License-Identifier: MIT
+# Certificate inventory for two services, written as a Word document. The two certificates are
+# fixed test certificates (self-signed, generated once with openssl) inlined below, so the report
+# is deterministic and the composition runs from any directory. lmssl parses each certificate and
+# reports its subject, expiry, key type, SHA-256 fingerprint and whether it is self-signed; the
+# program reads the values back and asserts them. lmvideo draws the inventory as a card view (the
+# gallery output), and lmoffice writes the Word inventory with a table and that picture.
+mkdir("images");
+mkdir("build");
+write_file("build/shop.pem", "-----BEGIN CERTIFICATE-----\nMIIB8jCCAZigAwIBAgIUL393/SzRXf6iryY1aiJHoLlBo+swCgYIKoZIzj0EAwIw\nMzEaMBgGA1UEAwwRc2hvcC5leGFtcGxlLnRlc3QxFTATBgNVBAoMDExhdHRpY2Ug\nVGVzdDAeFw0yNjEwMjQyMzU4MTNaFw0zNjEwMjEyMzU4MTNaMDMxGjAYBgNVBAMM\nEXNob3AuZXhhbXBsZS50ZXN0MRUwEwYDVQQKDAxMYXR0aWNlIFRlc3QwWTATBgcq\nhkjOPQIBBggqhkjOPQMBBwNCAAQHOWWogylYdo5SXEDr3aVbvZUFtQWWlufUD542\nCreAQeI0pN/BYmVP18Fs83l5cO4vFnuKhPxnfxCE1GoPWzf0o4GJMIGGMB0GA1Ud\nDgQWBBRQ/nohsxXoqZY5KXTllOKlG36InTAfBgNVHSMEGDAWgBRQ/nohsxXoqZY5\nKXTllOKlG36InTAPBgNVHRMBAf8EBTADAQH/MDMGA1UdEQQsMCqCEXNob3AuZXhh\nbXBsZS50ZXN0ghV3d3cuc2hvcC5leGFtcGxlLnRlc3QwCgYIKoZIzj0EAwIDSAAw\nRQIhAM8X5B79DjeFq4wa3RhcVH3LS8CCiGwAXI7OB8lOQEDFAiAE6wRJHV49V3SB\nL/QSrGZzwV/GmZSlTkDAN9JRkrPaVg==\n-----END CERTIFICATE-----\n");
+write_file("build/api.pem", "-----BEGIN CERTIFICATE-----\nMIIDYjCCAkqgAwIBAgIUHy8phHM5GM4NkEHwkauz9CLWIGMwDQYJKoZIhvcNAQEL\nBQAwMjEZMBcGA1UEAwwQYXBpLmV4YW1wbGUudGVzdDEVMBMGA1UECgwMTGF0dGlj\nZSBUZXN0MB4XDTI2MTAyNDIzNTgxM1oXDTI3MTAyNDIzNTgxM1owMjEZMBcGA1UE\nAwwQYXBpLmV4YW1wbGUudGVzdDEVMBMGA1UECgwMTGF0dGljZSBUZXN0MIIBIjAN\nBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1UBfJBxDjHK1G9JxguIBa7SkVsOh\nvFgYZ84okrg7AbQ33wRdw51F3Y3RGWN99Nrdviz+rta7s0y0YXtylf2BBWpZHfNu\nfH2Hm7hbd5lG4jTKjSh3J4iUOYz51IRfG9MN2yqCy1xxiJpRXBjP1NZTtNdfFwRx\nyVruhdeYs2WGeW5jsDVZLybxpnO1xb+gBvODNVE3aK0JI9yIjj5kNtnI2X2j/UmG\nc3oeMhjCnss4tdgUQgEq0iLMRzpaoCds9oPl7AR7NMhUSYCE2561hjP8jyUhwh33\nT5RbrY/gP1BlbRntl0/7n2f0wQqJlO0odRUbKnedqizAvG9OewO4TsoqfwIDAQAB\no3AwbjAdBgNVHQ4EFgQUcdMJXL/DExM5qlMkNgIN90d3SNMwHwYDVR0jBBgwFoAU\ncdMJXL/DExM5qlMkNgIN90d3SNMwDwYDVR0TAQH/BAUwAwEB/zAbBgNVHREEFDAS\nghBhcGkuZXhhbXBsZS50ZXN0MA0GCSqGSIb3DQEBCwUAA4IBAQA46sQl3XgN9mpr\n4ofR4KGz9HleaeGRlb/R8i/7bonKu+lnfA3BkBeOpDOIFWBIqFMWUMNRpxxH2oqD\ntw7qCJbjCl4zXz7lwWdTeFjaTEV0j7oGWpjP/oVt3o0qDm52+XFGojYODmza7wP9\nN5zHREvSUcIwGqRBZBC8w+Be8aNLLSIai0+s8M1YfeEzEreeXJnNL+DAZeMmZHc3\nkjkSDFFy7lga7SPWB4DFRzGSxCmXx8dbJT5ZakUUptnwEAm7lMiLWHTcC7N9t45X\nzT6D5MlxHdqO0y1VLK0Hs25IrqvNeizKs61I+ZqLPzHlqIae8AvCBrXO7z/ODr+r\nv7lfRWao\n-----END CERTIFICATE-----\n");
+
+inventory = _dsl_ cli="lmssl" install="github:lmctl-ai/lmssl@v0.1.0";
+let shop = ssl.load_cert("build/shop.pem");
+let api = ssl.load_cert("build/api.pem");
+out.line("shop.subject=" + shop.subject());
+out.line("shop.not_after=" + shop.not_after());
+out.line("shop.key=" + shop.key_type());
+out.line("shop.fp=" + shop.fingerprint("sha256"));
+out.line("shop.self=" + str(shop.self_signed()));
+out.line("shop.host=" + str(shop.matches_host("www.shop.example.test")));
+out.line("api.subject=" + api.subject());
+out.line("api.not_after=" + api.not_after());
+out.line("api.key=" + api.key_type());
+out.line("api.fp=" + api.fingerprint("sha256"));
+out.line("api.self=" + str(api.self_signed()));
+out.line("api.host=" + str(api.matches_host("api.example.test")));
+end _dsl_
+savedsl(inventory, "build/inventory.dslb");
+r = system(concat(dsl_cli(inventory), ["--dsl", "build/inventory.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Read the parsed values back (each line is key=value; the value keeps any later '=').
+let shop_subject = ""; let shop_not_after = ""; let shop_key = ""; let shop_fp = ""; let shop_self = ""; let shop_host = "";
+let api_subject = ""; let api_not_after = ""; let api_key = ""; let api_fp = ""; let api_self = ""; let api_host = "";
+for (line in split(r.stdout, "\n")) {
+  if (starts_with(line, "shop.subject=")) { shop_subject = substr(line, 13, len(line)); }
+  if (starts_with(line, "shop.not_after=")) { shop_not_after = substr(line, 15, len(line)); }
+  if (starts_with(line, "shop.key=")) { shop_key = substr(line, 9, len(line)); }
+  if (starts_with(line, "shop.fp=")) { shop_fp = substr(line, 8, len(line)); }
+  if (starts_with(line, "shop.self=")) { shop_self = substr(line, 10, len(line)); }
+  if (starts_with(line, "shop.host=")) { shop_host = substr(line, 10, len(line)); }
+  if (starts_with(line, "api.subject=")) { api_subject = substr(line, 12, len(line)); }
+  if (starts_with(line, "api.not_after=")) { api_not_after = substr(line, 14, len(line)); }
+  if (starts_with(line, "api.key=")) { api_key = substr(line, 8, len(line)); }
+  if (starts_with(line, "api.fp=")) { api_fp = substr(line, 7, len(line)); }
+  if (starts_with(line, "api.self=")) { api_self = substr(line, 9, len(line)); }
+  if (starts_with(line, "api.host=")) { api_host = substr(line, 9, len(line)); }
+}
+assert(contains(shop_subject, "CN=shop.example.test"));
+assert(contains(shop_key, "EC"));
+assert(contains(api_subject, "CN=api.example.test"));
+assert(contains(api_key, "RSA 2048"));
+assert(api_self == "true");
+assert(shop_host == "true" && api_host == "true");
+let shop_fp_short = substr(shop_fp, 0, 23);
+let api_fp_short = substr(api_fp, 0, 23);
+assert(shop_not_after == "2036-10-21T23:58:13Z");
+assert(api_not_after == "2027-10-24T23:58:13Z");
+
+# Card view (lmvideo): one card per certificate, the gallery output.
+cards = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 360); video.frames(1); video.output("images/showcase-37-cert-inventory.png"); video.begin();
+video.frame();
+canvas.clear("#f1f5f9");
+canvas.round_rect(30.0, 30.0, 420.0, 300.0, 16.0, 16.0, paint().color("#ffffff"));
+canvas.round_rect(30.0, 30.0, 420.0, 300.0, 16.0, 16.0, paint().stroke().stroke_width(2.0).color("#94a3b8"));
+canvas.text("shop.example.test", 56.0, 80.0, font(24.0).bold(true), paint().color("#0f172a"));
+canvas.text("key: " + ${shop_key}, 56.0, 120.0, font(17.0), paint().color("#334155"));
+canvas.text("expires: " + ${shop_not_after}, 56.0, 150.0, font(17.0), paint().color("#334155"));
+canvas.text("self-signed: " + ${shop_self}, 56.0, 180.0, font(17.0), paint().color("#334155"));
+canvas.text("SHA-256 " + ${shop_fp_short}, 56.0, 230.0, font(14.0), paint().color("#475569"));
+canvas.round_rect(450.0, 30.0, 420.0, 300.0, 16.0, 16.0, paint().color("#ffffff"));
+canvas.round_rect(450.0, 30.0, 420.0, 300.0, 16.0, 16.0, paint().stroke().stroke_width(2.0).color("#94a3b8"));
+canvas.text("api.example.test", 476.0, 80.0, font(24.0).bold(true), paint().color("#0f172a"));
+canvas.text("key: " + ${api_key}, 476.0, 120.0, font(17.0), paint().color("#334155"));
+canvas.text("expires: " + ${api_not_after}, 476.0, 150.0, font(17.0), paint().color("#334155"));
+canvas.text("self-signed: " + ${api_self}, 476.0, 180.0, font(17.0), paint().color("#334155"));
+canvas.text("SHA-256 " + ${api_fp_short}, 476.0, 230.0, font(14.0), paint().color("#475569"));
+video.end();
+end _dsl_
+savedsl(cards, "build/cards.dslb");
+r = system(concat(dsl_cli(cards), ["--dsl", "build/cards.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Word inventory (lmoffice).
+word = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+let doc = office.docx("build/cert-inventory.docx");
+doc.title("Certificate inventory").author("Platform security");
+doc.heading("Certificate inventory", 1).bold(true);
+doc.paragraph("Two service certificates were parsed with lmssl. Both are self-signed test certificates, so they must be replaced before production use.");
+let t = doc.table(3, 4);
+t.cell(1, 1, "Service").cell(1, 2, "Key").cell(1, 3, "Expires (UTC)").cell(1, 4, "SHA-256 (prefix)");
+t.cell(2, 1, "shop.example.test").cell(2, 2, ${shop_key}).cell(2, 3, ${shop_not_after}).cell(2, 4, ${shop_fp_short});
+t.cell(3, 1, "api.example.test").cell(3, 2, ${api_key}).cell(3, 3, ${api_not_after}).cell(3, 4, ${api_fp_short});
+doc.image("images/showcase-37-cert-inventory.png", 600, 240);
+doc.heading("Action", 2);
+doc.paragraph("Renew both certificates from the internal CA before the api certificate expires in October 2027.");
+doc.save();
+end _dsl_
+savedsl(word, "build/cert-inventory.dslb");
+r = system(concat(dsl_cli(word), ["--dsl", "build/cert-inventory.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/cert-inventory.docx and images/showcase-37-cert-inventory.png");

@@ -403,5 +403,17 @@
     ],
     "output": "images/showcase-36-link-check.png",
     "image": "docs/images/showcase-36-link-check.png"
+  },
+  {
+    "file": "examples/37-cert-inventory-docx.lms",
+    "title": "Certificate inventory from lmssl",
+    "description": "lmssl parses two service certificates (fixed test certificates inlined in the script) and reports subject, key type, expiry, SHA-256 fingerprint and self-signed status, asserted by the program; lmvideo draws a card view as a PNG; lmoffice writes the Word inventory with a table, the cards and the renewal action. The picture is a LibreOffice render of the document.",
+    "hosts": [
+      "lmssl",
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-37-cert-inventory.png",
+    "image": "docs/images/showcase-37-cert-inventory.png"
   }
 ]
