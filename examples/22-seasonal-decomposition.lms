@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: MIT
+# Seasonal decomposition of eight years of monthly data: a quadratic trend, an annual cycle of
+# amplitude 10 with a smaller semi-annual term, and noise (sigma 2.5). lmnum fits the whole model
+# in one least-squares solve on a 96 x 7 design matrix (lstsq), and splits the fit into trend,
+# seasonal and residual parts. lmplot draws four stacked panels that share the time axis. The
+# program checks that the recovered annual amplitude is within 0.5 of the generator's 10 and that
+# the residual deviation is within 0.6 of its true value 2.5.
+mkdir("images");
+mkdir("build");
+
+sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let n = 96;
+let p = 7;
+let z = num.normal(n, 1, 23);
+let x_design = num.matrix(n, p);
+let y_obs = num.matrix(n, 1);
+for (i in range(0, n)) {
+  let t = float(i);
+  let w = 6.283185307179586 * t / 12.0;
+  x_design = x_design.set(i, 0, 1.0).set(i, 1, t / 96.0).set(i, 2, (t / 96.0) * (t / 96.0)).set(i, 3, sin(w)).set(i, 4, cos(w)).set(i, 5, sin(2.0 * w)).set(i, 6, cos(2.0 * w));
+  y_obs = y_obs.set(i, 0, 40.0 + 30.0 * (t / 96.0) + 12.0 * (t / 96.0) * (t / 96.0) + 10.0 * sin(w) + 3.0 * cos(2.0 * w) + 2.5 * z.get(i, 0));
+}
+let beta = x_design.lstsq(y_obs);
+let fitted = x_design.mul(beta);
+let resid = y_obs.sub(fitted);
+let res_sd = sqrt(resid.transpose().mul(resid).get(0, 0) / float(n - p));
+let amp = sqrt(beta.get(3, 0) * beta.get(3, 0) + beta.get(4, 0) * beta.get(4, 0));
+num.assert_close(amp, 10.0, 0.5);
+num.assert_close(res_sd, 2.5, 0.6);
+
+let parts = num.matrix(n, 5);
+for (i in range(0, n)) {
+  let t = float(i);
+  let u = t / 96.0;
+  let w = 6.283185307179586 * t / 12.0;
+  let trend = beta.get(0, 0) + beta.get(1, 0) * u + beta.get(2, 0) * u * u;
+  let seasonal = beta.get(3, 0) * sin(w) + beta.get(4, 0) * cos(w) + beta.get(5, 0) * sin(2.0 * w) + beta.get(6, 0) * cos(2.0 * w);
+  parts = parts.set(i, 0, t).set(i, 1, y_obs.get(i, 0)).set(i, 2, trend).set(i, 3, seasonal).set(i, 4, resid.get(i, 0));
+}
+parts.save_csv("build/decomposition.csv");
+end _dsl_
+savedsl(sim, "build/decomposition-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl build/decomposition-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-22-seasonal-decomposition.png", 900, 640);
+plot.cmd("set multiplot title 'Seasonal decomposition of eight years of monthly data (lmnum least squares)' font ',13'");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'; set key font ',9' samplen 2 top right box opaque");
+plot.cmd("set xrange [0:96]");
+plot.cmd("set lmargin at screen 0.10; set rmargin at screen 0.97");
+plot.cmd("set tmargin at screen 0.92; set bmargin at screen 0.75");
+plot.cmd("set ylabel 'observed'; set format x ''; set key top left; set yrange [20:90]; set ytics 20");
+plot.cmd("plot 'build/decomposition.csv' using 1:2 with linespoints pt 7 ps 0.5 lw 1.2 lc rgb '#1e3a8a' title 'observed'");
+plot.cmd("set tmargin at screen 0.72; set bmargin at screen 0.55");
+plot.cmd("set ylabel 'trend'; set key top left; set yrange [35:90]; set ytics 20");
+plot.cmd("plot 'build/decomposition.csv' using 1:3 with lines lw 2.4 lc rgb '#2563eb' title 'quadratic trend'");
+plot.cmd("set tmargin at screen 0.52; set bmargin at screen 0.35");
+plot.cmd("set ylabel 'seasonal'; set key top left; set yrange [-16:16]; set ytics 10");
+plot.cmd("plot 'build/decomposition.csv' using 1:4 with lines lw 2.0 lc rgb '#059669' title 'annual + semi-annual cycle'");
+plot.cmd("set tmargin at screen 0.32; set bmargin at screen 0.12");
+plot.cmd("set ylabel 'residual'; set format x '%g'; set xlabel 'month'; set key top left; set yrange [-8:8]; set ytics 4");
+plot.cmd("plot 'build/decomposition.csv' using 1:5 with points pt 7 ps 0.6 lc rgb '#dc2626' title 'residual (sd 2.5)', 0 with lines lw 1.2 lc rgb '#111827' notitle");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "build/decomposition-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/decomposition-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-22-seasonal-decomposition.png");

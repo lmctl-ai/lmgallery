@@ -234,5 +234,16 @@
     ],
     "output": "images/showcase-21-forecast-band.png",
     "image": "docs/images/showcase-21-forecast-band.png"
+  },
+  {
+    "file": "examples/22-seasonal-decomposition.lms",
+    "title": "Seasonal decomposition by least squares",
+    "description": "lmnum fits a quadratic trend with annual and semi-annual harmonics to eight years of monthly data in one least-squares solve, and recovers the 10-unit annual amplitude and the 2.5 residual deviation within stated tolerances; lmplot draws observed, trend, seasonal and residual panels on a shared time axis.",
+    "hosts": [
+      "lmnum",
+      "lmplot"
+    ],
+    "output": "images/showcase-22-seasonal-decomposition.png",
+    "image": "docs/images/showcase-22-seasonal-decomposition.png"
   }
 ]
