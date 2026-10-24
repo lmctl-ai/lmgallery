@@ -368,5 +368,16 @@
     ],
     "output": "images/showcase-33-wave-2d.png",
     "image": "docs/images/showcase-33-wave-2d.png"
+  },
+  {
+    "file": "examples/34-image-pipeline-contact-sheet.lms",
+    "title": "Image pipeline with a before/after contact sheet",
+    "description": "lmimg builds a procedural landscape, runs levels, unsharp and colour-curve steps, measures SSIM and PSNR against the original, and writes a three-panel contact sheet; lmoffice places the sheet on an Open XML slide with the measured values as bullets. The picture is a LibreOffice render of the slide.",
+    "hosts": [
+      "lmimg",
+      "lmoffice"
+    ],
+    "output": "images/showcase-34-image-pipeline.png",
+    "image": "docs/images/showcase-34-image-pipeline.png"
   }
 ]
