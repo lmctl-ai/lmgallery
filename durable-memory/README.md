@@ -11,4 +11,3 @@
 - Inside `_dsl_` there is no ternary operator, no `assert` (use `num.assert_close`, `fluid.assert_true` or a host check), and no `exp`; use `pow(2.718281828459045, x)`. Top-level lmscript has `split`, `lines`, `join`, `csv_parse`, `write_file` but no `float` or trigonometry.
 - lmplot needs `plot.png(...)` before `set multiplot`; otherwise the terminal change is refused at run time.
 - Scripts are MIT. Host binaries run as separate processes and are not redistributed. Retain the upstream attribution and license notice when refreshing copied artwork.
-- Commit as Mike Ma <281311770+mike-lmctl@users.noreply.github.com>, with a model-specific `Co-Authored-By` trailer and the repository's decision-record trailers. Push to main and confirm CI after publication.
