@@ -1,6 +1,6 @@
 # lmgallery
 
-17 scripting hosts, 19 runnable compositions: compute a result, then turn it into a picture.
+17 scripting hosts, 20 runnable compositions: compute a result, then turn it into a picture.
 
 |  |  |  |
 | :---: | :---: | :---: |
@@ -36,7 +36,7 @@ Click a picture to explore its host. These are copied snapshots, credited in [im
 | **[lmaudio](https://github.com/lmctl-ai/lmaudio)** · preview | Audio synthesis and analysis: Linear and exponential chirp spectrograms | [![latest release](https://img.shields.io/github/v/release/lmctl-ai/lmaudio?label=release&color=2563eb)](https://github.com/lmctl-ai/lmaudio/releases) | [repo](https://github.com/lmctl-ai/lmaudio) · [examples](https://github.com/lmctl-ai/lmaudio/tree/main/examples) · [releases](https://github.com/lmctl-ai/lmaudio/releases) |
 | **[lmshark](https://github.com/lmctl-ai/lmshark)** · preview | Packet and protocol analysis: From ARP to HTTP in a packet sequence | [![latest release](https://img.shields.io/github/v/release/lmctl-ai/lmshark?label=release&color=2563eb)](https://github.com/lmctl-ai/lmshark/releases) | [repo](https://github.com/lmctl-ai/lmshark) · [examples](https://github.com/lmctl-ai/lmshark/tree/main/examples) · [releases](https://github.com/lmctl-ai/lmshark/releases) |
 
-Each host is a separate program with its own `--dsl-schema`; one `.lms` program can bind several of them. The 19 compositions below do exactly that.
+Each host is a separate program with its own `--dsl-schema`; one `.lms` program can bind several of them. The 20 compositions below do exactly that.
 
 ## Run a composition
 
@@ -60,7 +60,7 @@ Each program installs its declared hosts on first use, executes every DSL block,
 | <a href="examples/13-bio-dosing-regimen.lms"><img src="docs/images/showcase-13-bio-dosing-regimen.png" width="420" alt="Dosing regimen inside a therapeutic window"></a><br>**Dosing regimen inside a therapeutic window** · lmbio → lmdraw → lmplot<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/13-bio-dosing-regimen.lms</code></sub> | <a href="examples/14-num-sweep-contact-sheet.lms"><img src="docs/images/showcase-14-num-sweep-contact-sheet.png" width="420" alt="Damping-ratio sweep as a contact sheet"></a><br>**Damping-ratio sweep as a contact sheet** · lmnum → lmplot → lmimg<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/14-num-sweep-contact-sheet.lms</code></sub> |
 | <a href="examples/15-audio-eq-measurement.lms"><img src="docs/images/showcase-15-audio-eq-measurement.png" width="420" alt="Equalizer: designed versus measured"></a><br>**Equalizer: designed versus measured** · lmaudio → lmplot<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/15-audio-eq-measurement.lms</code></sub> | <a href="examples/16-kepler-conservation.lms"><img src="docs/images/showcase-16-kepler-conservation.png" width="420" alt="Kepler orbit energy check"></a><br>**Kepler orbit energy check** · lmspace → lmplot<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/16-kepler-conservation.lms</code></sub> |
 | <a href="examples/17-oscillator-driven-transient.lms"><img src="docs/images/showcase-17-oscillator-driven.png" width="420" alt="Driven oscillator: transient to steady state"></a><br>**Driven oscillator: transient to steady state** · lmnum → lmplot<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/17-oscillator-driven-transient.lms</code></sub> | <a href="examples/18-rigid-body-intermediate-axis.lms"><img src="docs/images/showcase-18-rigid-body-intermediate-axis.png" width="420" alt="Intermediate-axis tumble of a free plate"></a><br>**Intermediate-axis tumble of a free plate** · lmphysics → lmplot<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/18-rigid-body-intermediate-axis.lms</code></sub> |
-| <a href="examples/19-fem-poisson-error.lms"><img src="docs/images/showcase-19-fem-poisson-error.png" width="420" alt="Finite-element error against a known answer"></a><br>**Finite-element error against a known answer** · lmfluid → lmplot<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/19-fem-poisson-error.lms</code></sub> |  |
+| <a href="examples/19-fem-poisson-error.lms"><img src="docs/images/showcase-19-fem-poisson-error.png" width="420" alt="Finite-element error against a known answer"></a><br>**Finite-element error against a known answer** · lmfluid → lmplot<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/19-fem-poisson-error.lms</code></sub> | <a href="examples/20-heat-spacetime.lms"><img src="docs/images/showcase-20-heat-spacetime.png" width="420" alt="Heat conduction in x and t"></a><br>**Heat conduction in x and t** · lmnum → lmplot<br><sub><code>lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/20-heat-spacetime.lms</code></sub> |
 
 The [example index](examples/README.md) describes the data passed between hosts. These are illustrative scientific and engineering models, with assumptions stated in the scripts.
 
@@ -69,12 +69,12 @@ The [example index](examples/README.md) describes the data passed between hosts.
 ```sh
 ./test.sh                 # offline image integrity, attribution, manifests and local links
 ./test.sh --network       # also check published HTTP links; planned hosts are reported explicitly
-./test.sh --run           # execute all 19 local scripts, each in a fresh directory
-./test.sh --urls          # execute the 19 public autorun URLs in fresh directories
-./examples/render-all.sh  # regenerate the 19 composition previews
+./test.sh --run           # execute all 20 local scripts, each in a fresh directory
+./test.sh --urls          # execute the 20 public autorun URLs in fresh directories
+./examples/render-all.sh  # regenerate the 20 composition previews
 ```
 
-The offline checks need only Python 3.10+. Executable checks additionally need lmctl/lmscript, released hosts (downloaded automatically), `ffmpeg` for the animated composition, and network access on a cold install. CI runs offline/link checks, verifies that every caption's raw URL exists on `main`, and executes all 19 scripts on Linux. Work directories and logs from executable checks are retained outside the checkout for inspection.
+The offline checks need only Python 3.10+. Executable checks additionally need lmctl/lmscript, released hosts (downloaded automatically), `ffmpeg` for the animated composition, and network access on a cold install. CI runs offline/link checks, verifies that every caption's raw URL exists on `main`, and executes all 20 scripts on Linux. Work directories and logs from executable checks are retained outside the checkout for inspection.
 
 Host previews are exact copies recorded in `catalog.json`; composition previews are generated by the programs listed in `showcases.json`. To update documentation after changing either manifest, run `python3 scripts/build-readme.py`. See [maintenance notes](durable-memory/README.md).
 

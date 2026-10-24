@@ -212,5 +212,16 @@
     ],
     "output": "images/showcase-19-fem-poisson-error.png",
     "image": "docs/images/showcase-19-fem-poisson-error.png"
+  },
+  {
+    "file": "examples/20-heat-spacetime.lms",
+    "title": "Heat conduction in x and t",
+    "description": "lmnum integrates one-dimensional heat conduction by the method of lines with its stiff solver and checks the result against the exact exponential decay; lmplot draws the x-t spacetime heat map and the profiles at three times against the exact curves.",
+    "hosts": [
+      "lmnum",
+      "lmplot"
+    ],
+    "output": "images/showcase-20-heat-spacetime.png",
+    "image": "docs/images/showcase-20-heat-spacetime.png"
   }
 ]

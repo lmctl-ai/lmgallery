@@ -1,0 +1,95 @@
+# SPDX-License-Identifier: MIT
+# One-dimensional heat conduction, u_t = alpha u_xx on 0 <= x <= 1 with u = 0 at both ends and
+# u(x, 0) = sin(pi x), alpha = 0.1. lmnum integrates the method of lines (19 interior nodes,
+# second-order central differences) with its stiff CVODE solver, and the program checks the
+# result at t = 0.5 s against the exact decay exp(-pi^2 alpha t) sin(pi x) to 0.005. lmplot draws
+# the x-t spacetime heat map (the lmnum solution, reshaped by lmscript) and the profiles at three
+# times, as lmnum points on the exact curves.
+mkdir("images");
+mkdir("build");
+
+sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let n = 19;
+let sys = num.ode(n);
+sys.param("alpha", 0.1);
+for (i in range(0, n)) {
+  sys.init(i, sin(3.141592653589793 * float(i + 1) / 20.0));
+  if (i == 0) {
+    sys.rhs(i, "400.0*alpha*(y1 - 2.0*y0)");
+  } else {
+    if (i == n - 1) {
+      sys.rhs(i, "400.0*alpha*(y" + str(i - 1) + " - 2.0*y" + str(i) + ")");
+    } else {
+      sys.rhs(i, "400.0*alpha*(y" + str(i + 1) + " - 2.0*y" + str(i) + " + y" + str(i - 1) + ")");
+    }
+  }
+}
+sys.stiff();
+sys.tol(0.000001, 0.0000001);
+let sol = sys.solve(0.0, 0.5, 101);
+sol.save_csv("build/heat.csv");
+let worst = 0.0;
+for (i in range(0, n)) {
+  let exact = pow(2.718281828459045, -9.869604401089358 * 0.1 * 0.5) * sin(3.141592653589793 * float(i + 1) / 20.0);
+  let err = abs(sol.get(100, i + 1) - exact);
+  if (err > worst) { worst = err; }
+}
+num.assert_close(worst, 0.0, 0.005);
+end _dsl_
+savedsl(sim, "build/heat-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl build/heat-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+# lmnum writes space-separated rows, one per output time (first column t). Rows become the
+# matrix for the spacetime map; rows 20, 40 and 100 (t = 0.1, 0.2, 0.5 s) become profiles.
+let all = lines(read_file("build/heat.csv"));
+let mat = "";
+for (r_index in range(0, all.len())) {
+  let f = split(all[r_index], " ");
+  let row_text = "";
+  for (c in range(1, f.len())) {
+    row_text = row_text + (c > 1 ? " " : "") + f[c];
+  }
+  mat = mat + row_text + "\n";
+}
+write_file("build/heat-matrix.txt", mat);
+let f20 = split(all[20], " ");
+let f40 = split(all[40], " ");
+let f100 = split(all[100], " ");
+let prof = "";
+for (c in range(0, 19)) {
+  prof = prof + str(num(c + 1) / 20.0) + " " + f20[c + 1] + " " + f40[c + 1] + " " + f100[c + 1] + "\n";
+}
+write_file("build/heat-profiles.txt", prof);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-20-heat-spacetime.png", 900, 460);
+plot.cmd("set multiplot title 'Heat conduction in one dimension: lmnum method of lines against the exact decay' font ',13'");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'; set key font ',9' samplen 2");
+plot.cmd("alpha = 0.1");
+
+# Left: spacetime. Column c is node x = (c + 1)/20 (the boundaries sit at c = -1 and c = 19),
+# row r is time t = r/200 s.
+plot.cmd("set lmargin at screen 0.08; set rmargin at screen 0.50; set tmargin at screen 0.84; set bmargin at screen 0.13");
+plot.cmd("set title 'u(x, t): x-t spacetime' font ',11'; set xlabel 'x'; set ylabel 't [s]'");
+plot.cmd("set xrange [-1.5:19.5]; set yrange [100.5:-0.5]; unset key");
+plot.cmd("set xtics ('0' -1, '0.25' 4, '0.5' 9, '0.75' 14, '1' 19) nomirror");
+plot.cmd("set ytics ('0' 0, '0.1' 20, '0.2' 40, '0.3' 60, '0.4' 80, '0.5' 100) nomirror");
+plot.cmd("set palette defined (0 '#0f172a', 0.3 '#1d4ed8', 0.6 '#38bdf8', 0.85 '#fde68a', 1 '#fff7ed')");
+plot.cmd("set cbrange [0:1]; set cblabel 'u'");
+plot.cmd("plot 'build/heat-matrix.txt' matrix with image");
+
+# Right: profiles at three times, lmnum points on the exact curves.
+plot.cmd("unset colorbox");
+plot.cmd("set lmargin at screen 0.62; set rmargin at screen 0.95; set tmargin at screen 0.84; set bmargin at screen 0.13");
+plot.cmd("set title 'profiles u(x, t) and exp(-pi^2 alpha t) sin(pi x)' font ',10'; set xlabel 'x'; set ylabel 'u'");
+plot.cmd("set xrange [0:1]; set yrange [0:1.05]; set xtics autofreq; set ytics autofreq");
+plot.cmd("set key bottom center box opaque font ',8'");
+plot.cmd("plot exp(-pi*pi*alpha*0.0)*sin(pi*x) with lines lw 1.4 lc rgb '#111827' title 'exact, t = 0', exp(-pi*pi*alpha*0.1)*sin(pi*x) with lines lw 1.4 lc rgb '#2563eb' title 'exact, t = 0.1 s', exp(-pi*pi*alpha*0.5)*sin(pi*x) with lines lw 1.4 lc rgb '#dc2626' title 'exact, t = 0.5 s', 'build/heat-profiles.txt' using 1:2 with points pt 7 ps 0.8 lc rgb '#2563eb' title 'lmnum', 'build/heat-profiles.txt' using 1:4 with points pt 7 ps 0.8 lc rgb '#dc2626' notitle");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "build/heat-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/heat-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-20-heat-spacetime.png");
