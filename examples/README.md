@@ -12,7 +12,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#shielding-by-mass-lead-aluminum-water"><img src="../docs/images/showcase-11-particle-shield-layout.png" width="400" alt="Shielding by mass: lead, aluminum, water"></a><br>Shielding by mass: lead, aluminum, water | <a href="#geostrophic-adjustment-animated"><img src="../docs/images/showcase-12-weather-adjustment.gif" width="400" alt="Geostrophic adjustment, animated"></a><br>Geostrophic adjustment, animated |
 | <a href="#dosing-regimen-inside-a-therapeutic-window"><img src="../docs/images/showcase-13-bio-dosing-regimen.png" width="400" alt="Dosing regimen inside a therapeutic window"></a><br>Dosing regimen inside a therapeutic window | <a href="#damping-ratio-sweep-as-a-contact-sheet"><img src="../docs/images/showcase-14-num-sweep-contact-sheet.png" width="400" alt="Damping-ratio sweep as a contact sheet"></a><br>Damping-ratio sweep as a contact sheet |
 | <a href="#equalizer-designed-versus-measured"><img src="../docs/images/showcase-15-audio-eq-measurement.png" width="400" alt="Equalizer: designed versus measured"></a><br>Equalizer: designed versus measured | <a href="#kepler-orbit-energy-check"><img src="../docs/images/showcase-16-kepler-conservation.png" width="400" alt="Kepler orbit energy check"></a><br>Kepler orbit energy check |
-| <a href="#driven-oscillator-transient-to-steady-state"><img src="../docs/images/showcase-17-oscillator-driven.png" width="400" alt="Driven oscillator: transient to steady state"></a><br>Driven oscillator: transient to steady state | |
+| <a href="#driven-oscillator-transient-to-steady-state"><img src="../docs/images/showcase-17-oscillator-driven.png" width="400" alt="Driven oscillator: transient to steady state"></a><br>Driven oscillator: transient to steady state | <a href="#intermediate-axis-tumble-of-a-free-plate"><img src="../docs/images/showcase-18-rigid-body-intermediate-axis.png" width="400" alt="Intermediate-axis tumble of a free plate"></a><br>Intermediate-axis tumble of a free plate |
 
 ## Damped oscillator dashboard
 
@@ -182,4 +182,14 @@ Hosts: lmnum → lmplot. Output: `images/showcase-17-oscillator-driven.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/17-oscillator-driven-transient.lms
+```
+
+## Intermediate-axis tumble of a free plate
+
+lmphysics spins a free plate at 10 rad/s about its intermediate principal axis, nudged by 0.01 rad/s; the recorded body angular velocity shows the tennis-racket instability growing into tumbles every 3 s, while kinetic energy and angular momentum drift below 1e-5. The composition is drawn in lmplot, and the same flip appears in the lmphysics tennis_racket example.
+
+Hosts: lmphysics → lmplot. Output: `images/showcase-18-rigid-body-intermediate-axis.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/18-rigid-body-intermediate-axis.lms
 ```

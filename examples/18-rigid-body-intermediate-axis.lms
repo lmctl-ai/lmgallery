@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: MIT
+# The tennis-racket theorem as a time series. lmphysics spins a 30 x 20 x 5 cm plate, free in
+# zero gravity, at 10 rad/s about its intermediate principal axis, nudged by 0.01 rad/s about
+# the others. The body-frame angular velocity is recorded every 5 ms for 10 s. The spin about
+# the intermediate axis is unstable: omega_x and omega_z grow from 0.01 rad/s into spikes of a
+# few rad/s, and the plate tumbles end over end (period about 3 s), while kinetic energy and the
+# angular-momentum magnitude stay constant. lmplot draws the three components stacked (left) and
+# the relative drift of energy and |L| (right). The program asserts that the drifts stay below
+# 1e-5 and that the instability grows past 2 rad/s.
+mkdir("images");
+mkdir("build");
+
+sim = _dsl_ cli="lmphysics" install="github:lmctl-ai/lmphysics@latest";
+let s = phys.system("nsc");
+s.gravity(0.0, 0.0, 0.0).integrator("hht").timestep(0.0005).record_every(10);
+# Inertia about x (0.30 m across) is the smallest, about z the largest, about y in between.
+let b = s.box("plate", 0.3, 0.2, 0.05, 500.0);
+b.omega(0.01, 10.0, 0.01);
+s.record("plate", "wx,wy,wz,ke,lx,ly,lz");
+let ke0 = b.ke();
+let l0 = sqrt(b.lx() * b.lx() + b.ly() * b.ly() + b.lz() * b.lz());
+s.run(10.0);
+phys.assert_close(b.ke() / ke0, 1.0, 0.00001);
+phys.assert_close(sqrt(b.lx() * b.lx() + b.ly() * b.ly() + b.lz() * b.lz()) / l0, 1.0, 0.00001);
+s.save_csv("build/plate.csv");
+end _dsl_
+savedsl(sim, "build/rigid-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl build/rigid-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Growth of the instability: the largest |omega_x| or |omega_z| over the run, from the samples.
+rows = csv_parse(read_file("build/plate.csv"));
+let spike = 0.0;
+for (k in range(0, rows.len())) {
+  let m = rows.get(k, null);
+  let wx = abs(m.get("plate.wx", 0.0));
+  let wz = abs(m.get("plate.wz", 0.0));
+  if (wx > spike) { spike = wx; }
+  if (wz > spike) { spike = wz; }
+}
+assert(spike > 2.0);
+let first = rows.get(0, null);
+let ke_init = first.get("plate.ke", 1.0);
+let l_init = sqrt(first.get("plate.lx", 0.0) * first.get("plate.lx", 0.0) + first.get("plate.ly", 0.0) * first.get("plate.ly", 0.0) + first.get("plate.lz", 0.0) * first.get("plate.lz", 0.0));
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set datafile separator ','");
+plot.png("images/showcase-18-rigid-body-intermediate-axis.png", 900, 600);
+plot.cmd("set multiplot title 'Intermediate-axis spin of a free plate: growing tumble (lmphysics)' font ',13'");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'; set key font ',9' samplen 2");
+plot.cmd("set xrange [0:10]");
+
+# Left column: the body-frame angular velocity components, stacked.
+plot.cmd("set lmargin at screen 0.10; set rmargin at screen 0.55");
+plot.cmd("set tmargin at screen 0.90; set bmargin at screen 0.72");
+plot.cmd("set ylabel 'omega_x [rad/s]'; set format x ''");
+plot.cmd("set yrange [-5:5]; unset key");
+plot.cmd("plot 'build/plate.csv' using 1:2 with lines lw 1.4 lc rgb '#dc2626'");
+plot.cmd("set tmargin at screen 0.66; set bmargin at screen 0.48");
+plot.cmd("set ylabel 'omega_y [rad/s]'");
+plot.cmd("set yrange [0:11]");
+plot.cmd("plot 'build/plate.csv' using 1:3 with lines lw 1.4 lc rgb '#2563eb'");
+plot.cmd("set tmargin at screen 0.42; set bmargin at screen 0.12");
+plot.cmd("set ylabel 'omega_z [rad/s]'; set format x '%g'; set xlabel 'time [s]'");
+plot.cmd("set yrange [-6:6]");
+plot.cmd("plot 'build/plate.csv' using 1:4 with lines lw 1.4 lc rgb '#059669'");
+
+# Right column: the conserved quantities as relative drift from their initial values.
+plot.cmd("set lmargin at screen 0.66; set rmargin at screen 0.97");
+plot.cmd("set tmargin at screen 0.88; set bmargin at screen 0.12");
+plot.cmd("set title 'relative drift of kinetic energy and |L|' font ',10'; set xlabel 'time [s]'; set ylabel 'relative drift'");
+plot.cmd("set yrange [-0.000012:0.000012]; set format y '%.0e'; set key top left box opaque font ',8'");
+plot.cmd("plot 'build/plate.csv' using 1:(($5 / " + ${str(ke_init)} + ") - 1.0) with lines lw 1.4 lc rgb '#7c3aed' title 'kinetic energy', 'build/plate.csv' using 1:(sqrt($6*$6 + $7*$7 + $8*$8) / " + ${str(l_init)} + " - 1.0) with lines lw 1.4 lc rgb '#f59e0b' title '|L|'");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "build/rigid-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/rigid-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-18-rigid-body-intermediate-axis.png");

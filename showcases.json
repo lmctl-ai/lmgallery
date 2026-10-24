@@ -190,5 +190,16 @@
     ],
     "output": "images/showcase-17-oscillator-driven.png",
     "image": "docs/images/showcase-17-oscillator-driven.png"
+  },
+  {
+    "file": "examples/18-rigid-body-intermediate-axis.lms",
+    "title": "Intermediate-axis tumble of a free plate",
+    "description": "lmphysics spins a free plate at 10 rad/s about its intermediate principal axis, nudged by 0.01 rad/s; the recorded body angular velocity shows the tennis-racket instability growing into tumbles every 3 s, while kinetic energy and angular momentum drift below 1e-5. The composition is drawn in lmplot, and the same flip appears in the lmphysics tennis_racket example.",
+    "hosts": [
+      "lmphysics",
+      "lmplot"
+    ],
+    "output": "images/showcase-18-rigid-body-intermediate-axis.png",
+    "image": "docs/images/showcase-18-rigid-body-intermediate-axis.png"
   }
 ]
