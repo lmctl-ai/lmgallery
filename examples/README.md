@@ -15,7 +15,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#driven-oscillator-transient-to-steady-state"><img src="../docs/images/showcase-17-oscillator-driven.png" width="400" alt="Driven oscillator: transient to steady state"></a><br>Driven oscillator: transient to steady state | <a href="#intermediate-axis-tumble-of-a-free-plate"><img src="../docs/images/showcase-18-rigid-body-intermediate-axis.png" width="400" alt="Intermediate-axis tumble of a free plate"></a><br>Intermediate-axis tumble of a free plate |
 | <a href="#finite-element-error-against-a-known-answer"><img src="../docs/images/showcase-19-fem-poisson-error.png" width="400" alt="Finite-element error against a known answer"></a><br>Finite-element error against a known answer | <a href="#heat-conduction-in-x-and-t"><img src="../docs/images/showcase-20-heat-spacetime.png" width="400" alt="Heat conduction in x and t"></a><br>Heat conduction in x and t |
 | <a href="#forecast-with-a-95-%-prediction-band"><img src="../docs/images/showcase-21-forecast-band.png" width="400" alt="Forecast with a 95 % prediction band"></a><br>Forecast with a 95 % prediction band | <a href="#seasonal-decomposition-by-least-squares"><img src="../docs/images/showcase-22-seasonal-decomposition.png" width="400" alt="Seasonal decomposition by least squares"></a><br>Seasonal decomposition by least squares |
-| <a href="#regression-diagnostics-predicted-actual-and-residuals"><img src="../docs/images/showcase-23-regression-residuals.png" width="400" alt="Regression diagnostics: predicted, actual and residuals"></a><br>Regression diagnostics: predicted, actual and residuals | |
+| <a href="#regression-diagnostics-predicted-actual-and-residuals"><img src="../docs/images/showcase-23-regression-residuals.png" width="400" alt="Regression diagnostics: predicted, actual and residuals"></a><br>Regression diagnostics: predicted, actual and residuals | <a href="#daily-sign-ups-on-a-date-axis"><img src="../docs/images/showcase-24-signups-date-axis.png" width="400" alt="Daily sign-ups on a date axis"></a><br>Daily sign-ups on a date axis |
 
 ## Damped oscillator dashboard
 
@@ -245,4 +245,14 @@ Hosts: lmnum → lmplot. Output: `images/showcase-23-regression-residuals.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/23-regression-residuals.lms
+```
+
+## Daily sign-ups on a date axis
+
+lmnum generates a seeded year of daily sign-ups with a trend and a weekend effect, builds the trailing 7-day mean and checks that weekends fall about 12 below weekdays; lmplot draws the daily counts and the mean on a real date axis, with the start date converted by gnuplot strptime.
+
+Hosts: lmnum → lmplot. Output: `images/showcase-24-signups-date-axis.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/24-signups-date-axis.lms
 ```

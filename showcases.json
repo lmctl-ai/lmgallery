@@ -256,5 +256,16 @@
     ],
     "output": "images/showcase-23-regression-residuals.png",
     "image": "docs/images/showcase-23-regression-residuals.png"
+  },
+  {
+    "file": "examples/24-signups-date-axis.lms",
+    "title": "Daily sign-ups on a date axis",
+    "description": "lmnum generates a seeded year of daily sign-ups with a trend and a weekend effect, builds the trailing 7-day mean and checks that weekends fall about 12 below weekdays; lmplot draws the daily counts and the mean on a real date axis, with the start date converted by gnuplot strptime.",
+    "hosts": [
+      "lmnum",
+      "lmplot"
+    ],
+    "output": "images/showcase-24-signups-date-axis.png",
+    "image": "docs/images/showcase-24-signups-date-axis.png"
   }
 ]

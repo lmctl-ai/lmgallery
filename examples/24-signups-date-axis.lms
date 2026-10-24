@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: MIT
+# Daily sign-ups for 2024 (366 days): a slow upward trend, a weekday pattern (weekends about
+# 15 % lower) and Gaussian noise. lmnum generates the noise (seeded, so every run is the same),
+# builds the daily series and its trailing 7-day mean, and checks the weekday effect: the mean
+# of the Saturdays and Sundays must sit below the mean of the weekdays. lmplot draws the daily
+# counts as bars and the 7-day mean as a line on a real date axis (xdata time, months as tick
+# labels), with the start date converted by gnuplot's strptime.
+mkdir("images");
+mkdir("build");
+
+sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let days = 366;
+let z = num.normal(days, 1, 2024);
+let counts = num.matrix(days, 3);
+let signups = num.matrix(days, 1);
+for (d in range(0, days)) {
+  let level = 80.0 + 0.12 * float(d);
+  if (d % 7 >= 5) { level = level - 12.0; }
+  signups = signups.set(d, 0, level + 6.0 * z.get(d, 0));
+}
+let weekday_sum = 0.0;
+let weekday_n = 0.0;
+let weekend_sum = 0.0;
+let weekend_n = 0.0;
+for (d in range(0, days)) {
+  let v = signups.get(d, 0);
+  let wsum = 0.0;
+  let k = 0.0;
+  for (j in range(0, 7)) {
+    if (d - j >= 0) {
+      wsum = wsum + signups.get(d - j, 0);
+      k = k + 1.0;
+    }
+  }
+  counts = counts.set(d, 0, float(d)).set(d, 1, v).set(d, 2, wsum / k);
+  if (d % 7 >= 5) { weekend_sum = weekend_sum + v; weekend_n = weekend_n + 1.0; }
+  else { weekday_sum = weekday_sum + v; weekday_n = weekday_n + 1.0; }
+}
+num.assert_close(weekend_sum / weekend_n - weekday_sum / weekday_n, -12.0, 2.0);
+counts.save_csv("build/signups.csv");
+num.print("weekday mean " + str(weekday_sum / weekday_n) + ", weekend mean " + str(weekend_sum / weekend_n));
+end _dsl_
+savedsl(sim, "build/signups-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl build/signups-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.png("images/showcase-24-signups-date-axis.png", 900, 460);
+plot.cmd("set border 3; set tics nomirror; set grid ytics lc rgb '#dbe4ee'; set key top left font ',9' samplen 2 box opaque");
+plot.cmd("set title 'Daily sign-ups in 2024 on a date axis, with the trailing 7-day mean (lmnum)' font ',12'");
+plot.cmd("set xdata time; set timefmt '%s'; set format x '%b'");
+plot.cmd("set xtics 2629800 nomirror");
+plot.cmd("set xlabel 'date (2024)'; set ylabel 'sign-ups per day'");
+plot.cmd("t0 = strptime('%Y-%m-%d', '2024-01-01')");
+plot.cmd("set xrange [t0:t0 + 366*86400]; set yrange [60:160]");
+plot.cmd("set style fill solid 1.0 noborder; set boxwidth 0.8 relative");
+plot.cmd("plot 'build/signups.csv' using (t0 + $1*86400):2 with boxes fc rgb '#93c5fd' title 'daily count', 'build/signups.csv' using (t0 + $1*86400):3 with lines lw 2.6 lc rgb '#1d4ed8' title 'trailing 7-day mean'");
+plot.close();
+end _dsl_
+savedsl(draw, "build/signups-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/signups-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-24-signups-date-axis.png");
