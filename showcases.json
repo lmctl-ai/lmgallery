@@ -312,5 +312,16 @@
     ],
     "output": "images/showcase-28-forecast-workbook.png",
     "image": "docs/images/showcase-28-forecast-workbook.png"
+  },
+  {
+    "file": "examples/29-invoice-logo-glyph.lms",
+    "title": "Invoice with a generated logo and payment glyph",
+    "description": "lmvideo draws a logo and a deterministic 21 x 21 QR-like glyph as PNG images; lmoffice places them in a Word invoice with a line-item table, tax and totals. The glyph is decorative and not a scannable code. The script checks the subtotal, tax and total. The picture is a LibreOffice render of the invoice.",
+    "hosts": [
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-29-invoice-logo.png",
+    "image": "docs/images/showcase-29-invoice-logo.png"
   }
 ]

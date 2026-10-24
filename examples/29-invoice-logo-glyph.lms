@@ -1,0 +1,101 @@
+# SPDX-License-Identifier: MIT
+# Invoice with a brand mark and a payment glyph. lmvideo (Skia) draws two PNG images: a logo
+# (a gradient disc with the company initials) and a 21 x 21 module glyph. The glyph is a
+# decorative QR-like pattern: finder squares at three corners and deterministic filler from a
+# Park-Miller generator. It is NOT a scannable QR code. lmoffice writes the invoice (Word): the
+# logo in the header, the billing details, a line-item table, totals with tax, and the glyph
+# next to the payment reference. The script checks that line amounts, subtotal, tax and total
+# agree. The gallery output is a 900 px brand sheet drawn by lmvideo.
+mkdir("images");
+mkdir("build");
+let subtotal = 8.0 * 200.0 + 1.0 * 240.0 + 3.0 * 60.0;
+let tax = subtotal * 0.08;
+let total = subtotal + tax;
+assert(abs(subtotal - 2020.0) < 0.0001);
+assert(abs(total - 2181.6) < 0.0001);
+
+# Logo and glyph images for the invoice (lmvideo).
+art = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+video.size(400, 400); video.frames(1); video.output("build/logo.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+canvas.oval(20.0, 20.0, 360.0, 360.0, paint().gradient(20.0, 20.0, 380.0, 380.0, "#1F4E78", "#2E75B6"));
+canvas.text("LS", 96.0, 258.0, font(150.0).bold(true), paint().color("#ffffff"));
+video.end();
+end _dsl_
+savedsl(art, "build/logo-art.dslb");
+r = system(concat(dsl_cli(art), ["--dsl", "build/logo-art.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+glyph = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+video.size(330, 330); video.frames(1); video.output("build/glyph.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let cell = 14.0;
+let seed = 4096;
+for (row in range(0, 21)) {
+  for (col in range(0, 21)) {
+    seed = (seed * 16807) % 2147483647;
+    let in_tl = row < 7 && col < 7;
+    let in_tr = row < 7 && col > 13;
+    let in_bl = row > 13 && col < 7;
+    let finder = in_tl || in_tr || in_bl;
+    let fr = row;
+    let fc = col;
+    if (in_tr) { fc = col - 14; }
+    if (in_bl) { fr = row - 14; }
+    let ring = fr == 0 || fr == 6 || fc == 0 || fc == 6 || (fr >= 2 && fr <= 4 && fc >= 2 && fc <= 4);
+    let on = seed % 2 == 0;
+    if (finder) { on = ring; }
+    if (on) { canvas.rect(15.0 + float(col) * cell, 15.0 + float(row) * cell, cell, cell, paint().color("#0f172a")); }
+  }
+}
+video.end();
+end _dsl_
+savedsl(glyph, "build/glyph-art.dslb");
+r = system(concat(dsl_cli(glyph), ["--dsl", "build/glyph-art.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Gallery output: the brand sheet, 900 px wide, with the logo and glyph.
+sheet = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+video.size(900, 480); video.frames(1); video.output("images/showcase-29-invoice-logo.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+canvas.rect(0.0, 0.0, 900.0, 480.0, paint().gradient(0.0, 0.0, 900.0, 480.0, "#f8fafc", "#e2e8f0"));
+let logo_art = image_file("build/logo.png");
+let glyph_art = image_file("build/glyph.png");
+canvas.image_rect(logo_art, 70.0, 60.0, 300.0, 300.0);
+canvas.text("Lattice Systems", 430.0, 150.0, font(42.0).bold(true), paint().color("#0f172a"));
+canvas.text("Brand mark and payment glyph", 430.0, 200.0, font(24.0), paint().color("#475569"));
+canvas.image_rect(glyph_art, 430.0, 240.0, 220.0, 220.0);
+video.end();
+end _dsl_
+savedsl(sheet, "build/brand-art.dslb");
+r = system(concat(dsl_cli(sheet), ["--dsl", "build/brand-art.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Invoice (lmoffice).
+book = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
+let doc = office.docx("build/invoice-INV-1042.docx");
+doc.title("Invoice INV-1042").author("Lattice Systems");
+doc.image("build/logo.png", 110, 110);
+doc.heading("Invoice INV-1042", 1).bold(true);
+doc.paragraph("From: Lattice Systems, 14 Harbour Way, Leeds");
+doc.paragraph("To: Northwind Workshop, 88 Mill Street, Bristol");
+doc.paragraph("Due: 30 days from invoice date");
+let t = doc.table(5, 4);
+t.cell(1, 1, "Item").cell(1, 2, "Qty").cell(1, 3, "Rate ($)").cell(1, 4, "Amount ($)");
+t.cell(2, 1, "Consulting").cell(2, 2, "8").cell(2, 3, "200").cell(2, 4, "1,600");
+t.cell(3, 1, "Support").cell(3, 2, "1").cell(3, 3, "240").cell(3, 4, "240");
+t.cell(4, 1, "Hosting").cell(4, 2, "3").cell(4, 3, "60").cell(4, 4, "180");
+t.cell(5, 1, "Subtotal").cell(5, 2, "").cell(5, 3, "").cell(5, 4, "2,020");
+doc.paragraph("Tax at 8%: $161.60. Total due: $2,181.60.").bold(true);
+doc.paragraph("Payment reference (decorative glyph, not a scannable code):");
+doc.image("build/glyph.png", 150, 150);
+doc.paragraph("Thank you for your business.").italic(true).align("right");
+doc.save();
+end _dsl_
+savedsl(book, "build/invoice.dslb");
+r = system(concat(dsl_cli(book), ["--dsl", "build/invoice.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/invoice-INV-1042.docx and images/showcase-29-invoice-logo.png");
