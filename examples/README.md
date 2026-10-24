@@ -19,6 +19,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#call-centre-queue-over-one-day"><img src="../docs/images/showcase-25-queue-erlang-c.png" width="400" alt="Call-centre queue over one day"></a><br>Call-centre queue over one day | <a href="#quarterly-business-review-deck-with-lmvideo-charts"><img src="../docs/images/showcase-26-qbr-deck.png" width="400" alt="Quarterly business review deck with lmvideo charts"></a><br>Quarterly business review deck with lmvideo charts |
 | <a href="#sales-report-with-a-chart-per-section"><img src="../docs/images/showcase-27-sales-report.png" width="400" alt="Sales report with a chart per section"></a><br>Sales report with a chart per section | <a href="#forecast-workbook-with-a-native-chart"><img src="../docs/images/showcase-28-forecast-workbook.png" width="400" alt="Forecast workbook with a native chart"></a><br>Forecast workbook with a native chart |
 | <a href="#invoice-with-a-generated-logo-and-payment-glyph"><img src="../docs/images/showcase-29-invoice-logo.png" width="400" alt="Invoice with a generated logo and payment glyph"></a><br>Invoice with a generated logo and payment glyph | <a href="#resume-with-a-skills-bar-chart"><img src="../docs/images/showcase-30-resume-skills.png" width="400" alt="Resume with a skills bar chart"></a><br>Resume with a skills bar chart |
+| <a href="#science-report-damping-recovered-from-simulated-peaks"><img src="../docs/images/showcase-31-science-report.png" width="400" alt="Science report: damping recovered from simulated peaks"></a><br>Science report: damping recovered from simulated peaks | |
 
 ## Damped oscillator dashboard
 
@@ -318,4 +319,14 @@ Hosts: lmvideo → lmoffice. Output: `images/showcase-30-resume-skills.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/30-resume-skills-bars.lms
+```
+
+## Science report: damping recovered from simulated peaks
+
+lmnum integrates a damped oscillator at three damping ratios with CVODE, refines the peaks, and estimates each damping ratio from the logarithmic decrement, asserting 1 % agreement; lmvideo plots measured against set damping with the identity line; lmoffice writes the report with a method section, a results table, the figure and a conclusion. The picture is a LibreOffice render of the report.
+
+Hosts: lmnum → lmvideo → lmoffice. Output: `images/showcase-31-science-report.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/31-science-report-damping.lms
 ```

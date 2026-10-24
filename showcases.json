@@ -334,5 +334,17 @@
     ],
     "output": "images/showcase-30-resume-skills.png",
     "image": "docs/images/showcase-30-resume-skills.png"
+  },
+  {
+    "file": "examples/31-science-report-damping.lms",
+    "title": "Science report: damping recovered from simulated peaks",
+    "description": "lmnum integrates a damped oscillator at three damping ratios with CVODE, refines the peaks, and estimates each damping ratio from the logarithmic decrement, asserting 1 % agreement; lmvideo plots measured against set damping with the identity line; lmoffice writes the report with a method section, a results table, the figure and a conclusion. The picture is a LibreOffice render of the report.",
+    "hosts": [
+      "lmnum",
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-31-science-report.png",
+    "image": "docs/images/showcase-31-science-report.png"
   }
 ]
