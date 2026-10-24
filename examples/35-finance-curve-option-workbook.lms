@@ -1,0 +1,123 @@
+# SPDX-License-Identifier: MIT
+# Rates and options desk pack. lmfinance builds a zero-rate curve from six pillars and prices a
+# one-year at-the-money European call with Black-Scholes at five spot levels. The values come
+# back to lmscript, which checks the at-the-money call against its textbook price (10.4506 at
+# S = K = 100, r = 5 %, sigma = 20 %, T = 1). lmoffice (Open XML) writes two things: an Excel
+# workbook with the yield curve, the discount factors (stored formulas) and a native line chart,
+# and the option payoff table (stored formulas) with the Black-Scholes prices and a native chart;
+# then a Word memo that quotes the same numbers.
+mkdir("images");
+mkdir("build");
+
+desk = _dsl_ cli="lmfinance" install="github:lmctl-ai/lmfinance@v0.1.3";
+let curve = market.zero_curve().zero(1.0, 0.040).zero(2.0, 0.042).zero(5.0, 0.046).zero(10.0, 0.050).zero(20.0, 0.052).zero(30.0, 0.053).build();
+lmf.print("z1=" + str(curve.zero(1.0)));
+lmf.print("z2=" + str(curve.zero(2.0)));
+lmf.print("z5=" + str(curve.zero(5.0)));
+lmf.print("z10=" + str(curve.zero(10.0)));
+lmf.print("z20=" + str(curve.zero(20.0)));
+lmf.print("z30=" + str(curve.zero(30.0)));
+let base = model.black_scholes(100.0, 0.05, 0.0, 0.2);
+let call = instrument.european_call(100.0, 1.0);
+let at_the_money = pricing.price(call, base, pricing.analytic());
+lmf.assert_close(at_the_money.price(), 10.4506, 0.001);
+lmf.print("p80=" + str(pricing.price(call, base.with_spot(80.0), pricing.analytic()).price()));
+lmf.print("p90=" + str(pricing.price(call, base.with_spot(90.0), pricing.analytic()).price()));
+lmf.print("p100=" + str(at_the_money.price()));
+lmf.print("p110=" + str(pricing.price(call, base.with_spot(110.0), pricing.analytic()).price()));
+lmf.print("p120=" + str(pricing.price(call, base.with_spot(120.0), pricing.analytic()).price()));
+end _dsl_
+savedsl(desk, "build/desk.dslb");
+r = system(concat(dsl_cli(desk), ["--dsl", "build/desk.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Read the lmfinance results back.
+let z1 = 0.0; let z2 = 0.0; let z5 = 0.0; let z10 = 0.0; let z20 = 0.0; let z30 = 0.0;
+let p80 = 0.0; let p90 = 0.0; let p100 = 0.0; let p110 = 0.0; let p120 = 0.0;
+for (line in split(r.stdout, "\n")) {
+  let parts = split(line, "=");
+  if (starts_with(line, "z1=")) { z1 = num(parts[1]); }
+  if (starts_with(line, "z2=")) { z2 = num(parts[1]); }
+  if (starts_with(line, "z5=")) { z5 = num(parts[1]); }
+  if (starts_with(line, "z10=")) { z10 = num(parts[1]); }
+  if (starts_with(line, "z20=")) { z20 = num(parts[1]); }
+  if (starts_with(line, "z30=")) { z30 = num(parts[1]); }
+  if (starts_with(line, "p80=")) { p80 = num(parts[1]); }
+  if (starts_with(line, "p90=")) { p90 = num(parts[1]); }
+  if (starts_with(line, "p100=")) { p100 = num(parts[1]); }
+  if (starts_with(line, "p110=")) { p110 = num(parts[1]); }
+  if (starts_with(line, "p120=")) { p120 = num(parts[1]); }
+}
+assert(z1 < z2 && z2 < z5 && z5 < z10 && z10 < z20 && z20 < z30);
+assert(p80 < p90 && p90 < p100 && p100 < p110 && p110 < p120);
+
+# Chart (lmvideo): the zero-rate curve, also the gallery output (900 px wide).
+chart = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 480); video.frames(1); video.output("images/showcase-35-rates-options.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("Zero-rate curve from the lmfinance bootstrap").xlabel("tenor (years)").ylabel("zero rate").x_range(0.0, 31.0).y_range(0.03, 0.06).legend("top_left").background("#ffffff");
+let curve = plot.series("zero rate", "line", "#1F4E78").width(3.0).marker("circle");
+curve.add(1.0, ${z1}); curve.add(2.0, ${z2}); curve.add(5.0, ${z5}); curve.add(10.0, ${z10}); curve.add(20.0, ${z20}); curve.add(30.0, ${z30});
+fig.draw();
+video.end();
+end _dsl_
+savedsl(chart, "build/rates-chart.dslb");
+r = system(concat(dsl_cli(chart), ["--dsl", "build/rates-chart.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Workbook: yield curve and option tables, formulas stored, native charts beside each table.
+book = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+let xl = office.xlsx("build/rates-and-options.xlsx");
+let curve_sheet = xl.sheet("Yield curve");
+curve_sheet.set(1, 1, "Tenor (years)").set(1, 2, "Zero rate").set(1, 3, "Discount factor");
+curve_sheet.bold(1, 1).bold(1, 2).bold(1, 3);
+curve_sheet.set(2, 1, 1.0).set(2, 2, ${z1});
+curve_sheet.set(3, 1, 2.0).set(3, 2, ${z2});
+curve_sheet.set(4, 1, 5.0).set(4, 2, ${z5});
+curve_sheet.set(5, 1, 10.0).set(5, 2, ${z10});
+curve_sheet.set(6, 1, 20.0).set(6, 2, ${z20});
+curve_sheet.set(7, 1, 30.0).set(7, 2, ${z30});
+for (k in range(2, 8)) {
+  curve_sheet.formula(k, 3, "=EXP(-B" + str(k) + "*A" + str(k) + ")");
+  curve_sheet.number_format(k, 2, "0.00%").number_format(k, 3, "0.0000");
+}
+curve_sheet.col_width(1, 16.0).col_width(2, 14.0).col_width(3, 18.0);
+curve_sheet.fit_to_page(1, 1).page_orientation("landscape");
+curve_sheet.line_chart(1, 5, 18, 12, "Zero-rate curve", "A2:A7", "B2:B7");
+
+let option_sheet = xl.sheet("Call option");
+option_sheet.set(1, 1, "Spot").set(1, 2, "Payoff at expiry").set(1, 3, "Black-Scholes price");
+option_sheet.bold(1, 1).bold(1, 2).bold(1, 3);
+option_sheet.set(2, 1, 80.0).set(2, 3, ${p80});
+option_sheet.set(3, 1, 90.0).set(3, 3, ${p90});
+option_sheet.set(4, 1, 100.0).set(4, 3, ${p100});
+option_sheet.set(5, 1, 110.0).set(5, 3, ${p110});
+option_sheet.set(6, 1, 120.0).set(6, 3, ${p120});
+for (k in range(2, 7)) {
+  option_sheet.formula(k, 2, "=MAX(A" + str(k) + "-100,0)");
+  option_sheet.number_format(k, 2, "0.00").number_format(k, 3, "0.00");
+}
+option_sheet.col_width(1, 12.0).col_width(2, 18.0).col_width(3, 22.0);
+option_sheet.fit_to_page(1, 1).page_orientation("landscape");
+option_sheet.bar_chart(1, 5, 18, 12, "Call price against payoff", "A2:A6", "C2:C6");
+xl.save();
+
+let memo = office.docx("build/desk-memo.docx");
+memo.title("Rates and options desk memo").author("Rates and derivatives desk");
+memo.heading("Rates and options desk memo", 1).bold(true);
+memo.heading("Yield curve", 2);
+memo.paragraph("The zero-rate curve rises from " + ${str(round(z1 * 10000.0) / 100.0)} + "% at one year to " + ${str(round(z30 * 10000.0) / 100.0)} + "% at thirty years. The workbook holds the pillars, the discount factors and a chart.");
+memo.image("images/showcase-35-rates-options.png", 600, 320);
+memo.heading("Option", 2);
+memo.paragraph("A one-year at-the-money call on a 100 spot, 5% rate and 20% volatility is worth " + ${str(round(p100 * 10000.0) / 10000.0)} + " (Black-Scholes; the textbook value is 10.4506).");
+memo.paragraph("At 120 the call is worth " + ${str(round(p120 * 10000.0) / 10000.0)} + " and at 80 it is worth " + ${str(round(p80 * 10000.0) / 10000.0)} + ".");
+memo.heading("Limits", 2);
+memo.paragraph("Prices are model values from a flat-volatility Black-Scholes model; the workbook formulas are not evaluated by lmoffice.");
+memo.save();
+end _dsl_
+savedsl(book, "build/desk-book.dslb");
+r = system(concat(dsl_cli(book), ["--dsl", "build/desk-book.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/rates-and-options.xlsx and build/desk-memo.docx");

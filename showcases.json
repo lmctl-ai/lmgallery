@@ -379,5 +379,17 @@
     ],
     "output": "images/showcase-34-image-pipeline.png",
     "image": "docs/images/showcase-34-image-pipeline.png"
+  },
+  {
+    "file": "examples/35-finance-curve-option-workbook.lms",
+    "title": "Rates and options desk pack: curve, option table and memo",
+    "description": "lmfinance bootstraps a six-pillar zero-rate curve and prices a one-year at-the-money call at five spot levels, checking the textbook value 10.4506; lmvideo draws the curve as a PNG; lmoffice writes an Excel workbook with stored discount-factor and payoff formulas and native line and bar charts, and a Word memo that quotes the same numbers. The picture is a LibreOffice render of the workbook.",
+    "hosts": [
+      "lmfinance",
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-35-rates-options.png",
+    "image": "docs/images/showcase-35-rates-options.png"
   }
 ]

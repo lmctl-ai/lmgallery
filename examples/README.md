@@ -21,6 +21,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#invoice-with-a-generated-logo-and-payment-glyph"><img src="../docs/images/showcase-29-invoice-logo.png" width="400" alt="Invoice with a generated logo and payment glyph"></a><br>Invoice with a generated logo and payment glyph | <a href="#resume-with-a-skills-bar-chart"><img src="../docs/images/showcase-30-resume-skills.png" width="400" alt="Resume with a skills bar chart"></a><br>Resume with a skills bar chart |
 | <a href="#science-report-damping-recovered-from-simulated-peaks"><img src="../docs/images/showcase-31-science-report.png" width="400" alt="Science report: damping recovered from simulated peaks"></a><br>Science report: damping recovered from simulated peaks | <a href="#annual-revenue-bars-with-currency-ticks"><img src="../docs/images/showcase-32-revenue-bars.png" width="400" alt="Annual revenue bars with currency ticks"></a><br>Annual revenue bars with currency ticks |
 | <a href="#standing-waves-on-a-membrane-animated"><img src="../docs/images/showcase-33-wave-2d.png" width="400" alt="Standing waves on a membrane, animated"></a><br>Standing waves on a membrane, animated | <a href="#image-pipeline-with-a-before/after-contact-sheet"><img src="../docs/images/showcase-34-image-pipeline.png" width="400" alt="Image pipeline with a before/after contact sheet"></a><br>Image pipeline with a before/after contact sheet |
+| <a href="#rates-and-options-desk-pack-curve-option-table-and-memo"><img src="../docs/images/showcase-35-rates-options.png" width="400" alt="Rates and options desk pack: curve, option table and memo"></a><br>Rates and options desk pack: curve, option table and memo | |
 
 ## Damped oscillator dashboard
 
@@ -360,4 +361,14 @@ Hosts: lmimg → lmoffice. Output: `images/showcase-34-image-pipeline.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/34-image-pipeline-contact-sheet.lms
+```
+
+## Rates and options desk pack: curve, option table and memo
+
+lmfinance bootstraps a six-pillar zero-rate curve and prices a one-year at-the-money call at five spot levels, checking the textbook value 10.4506; lmvideo draws the curve as a PNG; lmoffice writes an Excel workbook with stored discount-factor and payoff formulas and native line and bar charts, and a Word memo that quotes the same numbers. The picture is a LibreOffice render of the workbook.
+
+Hosts: lmfinance → lmvideo → lmoffice. Output: `images/showcase-35-rates-options.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/35-finance-curve-option-workbook.lms
 ```
