@@ -357,5 +357,16 @@
     ],
     "output": "images/showcase-32-revenue-bars.png",
     "image": "docs/images/showcase-32-revenue-bars.png"
+  },
+  {
+    "file": "examples/33-wave-2d-animation.lms",
+    "title": "Standing waves on a membrane, animated",
+    "description": "lmnum discretizes the Laplacian of a square membrane, takes its eigenvalues and checks the lowest and the twice-degenerate second against the closed form; the mode frequencies drive an lmvideo animation of two superposed standing-wave modes over one period, encoded to MP4 with ffmpeg. The picture is the in-phase first frame.",
+    "hosts": [
+      "lmnum",
+      "lmvideo"
+    ],
+    "output": "images/showcase-33-wave-2d.png",
+    "image": "docs/images/showcase-33-wave-2d.png"
   }
 ]

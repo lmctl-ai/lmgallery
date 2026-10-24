@@ -20,6 +20,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#sales-report-with-a-chart-per-section"><img src="../docs/images/showcase-27-sales-report.png" width="400" alt="Sales report with a chart per section"></a><br>Sales report with a chart per section | <a href="#forecast-workbook-with-a-native-chart"><img src="../docs/images/showcase-28-forecast-workbook.png" width="400" alt="Forecast workbook with a native chart"></a><br>Forecast workbook with a native chart |
 | <a href="#invoice-with-a-generated-logo-and-payment-glyph"><img src="../docs/images/showcase-29-invoice-logo.png" width="400" alt="Invoice with a generated logo and payment glyph"></a><br>Invoice with a generated logo and payment glyph | <a href="#resume-with-a-skills-bar-chart"><img src="../docs/images/showcase-30-resume-skills.png" width="400" alt="Resume with a skills bar chart"></a><br>Resume with a skills bar chart |
 | <a href="#science-report-damping-recovered-from-simulated-peaks"><img src="../docs/images/showcase-31-science-report.png" width="400" alt="Science report: damping recovered from simulated peaks"></a><br>Science report: damping recovered from simulated peaks | <a href="#annual-revenue-bars-with-currency-ticks"><img src="../docs/images/showcase-32-revenue-bars.png" width="400" alt="Annual revenue bars with currency ticks"></a><br>Annual revenue bars with currency ticks |
+| <a href="#standing-waves-on-a-membrane-animated"><img src="../docs/images/showcase-33-wave-2d.png" width="400" alt="Standing waves on a membrane, animated"></a><br>Standing waves on a membrane, animated | |
 
 ## Damped oscillator dashboard
 
@@ -339,4 +340,14 @@ Hosts: lmnum → lmplot. Output: `images/showcase-32-revenue-bars.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/32-revenue-bars-currency.lms
+```
+
+## Standing waves on a membrane, animated
+
+lmnum discretizes the Laplacian of a square membrane, takes its eigenvalues and checks the lowest and the twice-degenerate second against the closed form; the mode frequencies drive an lmvideo animation of two superposed standing-wave modes over one period, encoded to MP4 with ffmpeg. The picture is the in-phase first frame.
+
+Hosts: lmnum → lmvideo. Output: `images/showcase-33-wave-2d.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/33-wave-2d-animation.lms
 ```
