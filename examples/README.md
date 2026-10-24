@@ -13,6 +13,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#dosing-regimen-inside-a-therapeutic-window"><img src="../docs/images/showcase-13-bio-dosing-regimen.png" width="400" alt="Dosing regimen inside a therapeutic window"></a><br>Dosing regimen inside a therapeutic window | <a href="#damping-ratio-sweep-as-a-contact-sheet"><img src="../docs/images/showcase-14-num-sweep-contact-sheet.png" width="400" alt="Damping-ratio sweep as a contact sheet"></a><br>Damping-ratio sweep as a contact sheet |
 | <a href="#equalizer-designed-versus-measured"><img src="../docs/images/showcase-15-audio-eq-measurement.png" width="400" alt="Equalizer: designed versus measured"></a><br>Equalizer: designed versus measured | <a href="#kepler-orbit-energy-check"><img src="../docs/images/showcase-16-kepler-conservation.png" width="400" alt="Kepler orbit energy check"></a><br>Kepler orbit energy check |
 | <a href="#driven-oscillator-transient-to-steady-state"><img src="../docs/images/showcase-17-oscillator-driven.png" width="400" alt="Driven oscillator: transient to steady state"></a><br>Driven oscillator: transient to steady state | <a href="#intermediate-axis-tumble-of-a-free-plate"><img src="../docs/images/showcase-18-rigid-body-intermediate-axis.png" width="400" alt="Intermediate-axis tumble of a free plate"></a><br>Intermediate-axis tumble of a free plate |
+| <a href="#finite-element-error-against-a-known-answer"><img src="../docs/images/showcase-19-fem-poisson-error.png" width="400" alt="Finite-element error against a known answer"></a><br>Finite-element error against a known answer | |
 
 ## Damped oscillator dashboard
 
@@ -192,4 +193,14 @@ Hosts: lmphysics → lmplot. Output: `images/showcase-18-rigid-body-intermediate
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/18-rigid-body-intermediate-axis.lms
+```
+
+## Finite-element error against a known answer
+
+lmfluid solves a Poisson problem on an 8 x 8 mesh with linear and quadratic elements for a quadratic exact solution; the quadratic elements reproduce it to solver tolerance while the linear error map shows the element pattern. lmplot draws both |error| maps on one colour scale.
+
+Hosts: lmfluid → lmplot. Output: `images/showcase-19-fem-poisson-error.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/19-fem-poisson-error.lms
 ```

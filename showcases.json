@@ -201,5 +201,16 @@
     ],
     "output": "images/showcase-18-rigid-body-intermediate-axis.png",
     "image": "docs/images/showcase-18-rigid-body-intermediate-axis.png"
+  },
+  {
+    "file": "examples/19-fem-poisson-error.lms",
+    "title": "Finite-element error against a known answer",
+    "description": "lmfluid solves a Poisson problem on an 8 x 8 mesh with linear and quadratic elements for a quadratic exact solution; the quadratic elements reproduce it to solver tolerance while the linear error map shows the element pattern. lmplot draws both |error| maps on one colour scale.",
+    "hosts": [
+      "lmfluid",
+      "lmplot"
+    ],
+    "output": "images/showcase-19-fem-poisson-error.png",
+    "image": "docs/images/showcase-19-fem-poisson-error.png"
   }
 ]

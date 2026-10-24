@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: MIT
+# Finite-element error on a problem with a known answer. lmfluid solves -Laplace(u) = -4 on the
+# unit square with u = x^2 + y^2 on the boundary; the exact solution is u = x^2 + y^2 itself.
+# The same 8 x 8 mesh is solved with linear (P1) and quadratic (P2) elements. lmfluid samples
+# each solution on a 41 x 41 grid and reports its L2 error; lmplot draws the two maps of
+# |u_h - u| on one colour scale. P2 reproduces this quadratic exactly, and P1 does not.
+mkdir("images");
+mkdir("build");
+
+sim = _dsl_ cli="lmfluid" install="github:lmctl-ai/lmfluid@latest";
+let mesh = fluid.rect(8, 8, 1.0, 1.0);
+let p1 = fluid.poisson(mesh, 1).source("-4.0").dirichlet(0, "x*x + y*y").solve();
+p1.sample(41, 41).save_csv("build/fem-p1.csv");
+let p2 = fluid.poisson(mesh, 2).source("-4.0").dirichlet(0, "x*x + y*y").solve();
+p2.sample(41, 41).save_csv("build/fem-p2.csv");
+let e1 = p1.l2_error("x*x + y*y");
+let e2 = p2.l2_error("x*x + y*y");
+fluid.assert_close(e2, 0.0, 0.000001);
+fluid.assert_true(e1 > e2);
+fluid.print("P1 L2 error = " + str(e1) + ", P2 L2 error = " + str(e2));
+end _dsl_
+savedsl(sim, "build/fem-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl build/fem-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("set datafile separator ','");
+plot.png("images/showcase-19-fem-poisson-error.png", 900, 500);
+plot.cmd("set multiplot title 'Finite-element error on an 8 x 8 mesh: |u_h - u| for u = x^2 + y^2 (lmfluid)' font ',13'");
+plot.cmd("set border 3; set tics nomirror; set size ratio -1");
+plot.cmd("set xrange [0:1]; set yrange [0:1]; set cbrange [0:0.03]");
+plot.cmd("set palette defined (0 '#fdf6e3', 0.4 '#fb923c', 0.75 '#b91c1c', 1 '#3b0764')");
+plot.cmd("set xlabel 'x'; set ylabel 'y'");
+plot.cmd("unset colorbox");
+plot.cmd("set lmargin at screen 0.08; set rmargin at screen 0.44; set tmargin at screen 0.84; set bmargin at screen 0.14");
+plot.cmd("set title 'linear elements, P1' font ',11'");
+plot.cmd("unset key");
+plot.cmd("plot 'build/fem-p1.csv' using 1:2:(abs($4 - ($1*$1 + $2*$2))) with image");
+plot.cmd("set colorbox user origin screen 0.90, screen 0.14 size screen 0.02, screen 0.70");
+plot.cmd("set cblabel '|u_h - u|'");
+plot.cmd("set lmargin at screen 0.56; set rmargin at screen 0.86; set tmargin at screen 0.84; set bmargin at screen 0.14");
+plot.cmd("set title 'quadratic elements, P2' font ',11'");
+plot.cmd("plot 'build/fem-p2.csv' using 1:2:(abs($4 - ($1*$1 + $2*$2))) with image");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "build/fem-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/fem-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-19-fem-poisson-error.png");
