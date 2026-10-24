@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: MIT
+# A damped oscillator driven near resonance, started from rest: x'' + 2 zeta w x' + w^2 x = F cos(W t)
+# with w = 2 rad/s, zeta = 0.05, F = 1 (per unit mass), W = 1.6 rad/s. lmnum integrates it
+# with CVODE as a three-state system, the third state being time, so the forcing stays inside
+# the ODE. The transient decays as exp(-zeta w t) and the motion settles onto the steady state,
+# whose amplitude is A = F / sqrt((w^2 - W^2)^2 + (2 zeta w W)^2). lmplot draws the transient
+# against the envelope and the phase portrait, and the program checks the late-time amplitude
+# against the closed form to 1 %. The bracket in the amplitude is (w^2 - W^2)^2 + (2 zeta w W)^2 = 2.176.
+mkdir("images");
+mkdir("build");
+sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let sys = num.ode(3);
+sys.param("w", 2.0).param("zeta", 0.05).param("F", 1.0).param("W", 1.6);
+sys.rhs(0, "y1");
+sys.rhs(1, "-w*w*y0 - 2*zeta*w*y1 + F*cos(W*y2)");
+sys.rhs(2, "1");
+sys.init(0, 0.0).init(1, 0.0).init(2, 0.0);
+sys.tol(0.00000001, 0.0000000001);
+let sol = sys.solve(0.0, 80.0, 3201);
+sol.save_csv("build/driven.csv");
+
+# Steady-state amplitude from the closed form, and the largest |x| over the last 10 s.
+let amp = 1.0 / sqrt((4.0 - 2.56) * (4.0 - 2.56) + (0.32) * (0.32));
+let late = 0.0;
+for (k in range(2401, 3201)) {
+  let xk = sol.get(k, 1);
+  if (abs(xk) > late) { late = abs(xk); }
+}
+num.assert_close(late, amp, 0.01 * amp);
+end _dsl_
+savedsl(sim, "build/driven-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl build/driven-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot.cmd("w = 2.0; z = 0.05; F = 1.0; W = 1.6");
+plot.cmd("amp = F / sqrt((w*w - W*W)**2 + (2*z*w*W)**2)");
+plot.png("images/showcase-17-oscillator-driven.png", 900, 560);
+plot.cmd("set multiplot title 'Driven damped oscillator from lmnum: transient decay onto the steady state' font ',13'");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'; set key font ',9' samplen 2");
+
+# Left: displacement against time, with the steady amplitude and the transient envelope.
+plot.cmd("set lmargin at screen 0.08; set rmargin at screen 0.62; set tmargin at screen 0.86; set bmargin at screen 0.13");
+plot.cmd("set title 'displacement x(t): transient, then steady forced motion' font ',11'");
+plot.cmd("set xlabel 'time [s]'; set ylabel 'x [m]'");
+plot.cmd("set xrange [0:80]; set yrange [-1.2:1.2]; set key top right box opaque");
+plot.cmd("plot 'build/driven.csv' using 1:2 with lines lw 1.4 lc rgb '#2563eb' title 'x(t) from lmnum', amp with lines dt 2 lw 1.6 lc rgb '#111827' title 'steady amplitude A', -amp with lines dt 2 lw 1.6 lc rgb '#111827' notitle");
+
+# Right: phase portrait (x, v); the early spiral shrinks onto the steady closed curve.
+plot.cmd("set lmargin at screen 0.70; set rmargin at screen 0.97; set tmargin at screen 0.86; set bmargin at screen 0.13");
+plot.cmd("set title 'phase portrait (x, v)' font ',11'; set xlabel 'x [m]'; set ylabel 'v [m/s]'");
+plot.cmd("set xrange [-1.2:1.2]; set yrange [-2.4:2.4]; unset key");
+plot.cmd("plot 'build/driven.csv' using 2:3 with lines lw 1.2 lc rgb '#7c3aed'");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "build/driven-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/driven-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-17-oscillator-driven.png");

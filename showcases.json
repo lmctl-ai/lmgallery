@@ -179,5 +179,16 @@
     ],
     "output": "images/showcase-16-kepler-conservation.png",
     "image": "docs/images/showcase-16-kepler-conservation.png"
+  },
+  {
+    "file": "examples/17-oscillator-driven-transient.lms",
+    "title": "Driven oscillator: transient to steady state",
+    "description": "lmnum integrates a damped oscillator driven near resonance from rest, with the forcing carried as a third ODE state, and checks the late-time amplitude against the closed form; lmplot draws the beating transient settling onto the steady amplitude and the (x, v) phase portrait.",
+    "hosts": [
+      "lmnum",
+      "lmplot"
+    ],
+    "output": "images/showcase-17-oscillator-driven.png",
+    "image": "docs/images/showcase-17-oscillator-driven.png"
   }
 ]
