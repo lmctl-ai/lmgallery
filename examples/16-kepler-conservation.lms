@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: MIT
+# An eccentric Earth orbit (perigee 7000 km, apogee 15000 km, two periods) propagated by
+# lmspace with Dormand-Prince RK45 at 1e-12 tolerance. lmspace writes every state; lmplot
+# draws the orbit, the radius against time, and the relative energy error
+# (E(t) - E0)/|E0| with E = v^2/2 - mu/r. Energy is conserved by the physics, so its raw value
+# is integrator noise: the bottom panel shows that noise floor directly, and the program
+# asserts that the largest excursion stays below 1e-6.
+mkdir("images");
+mkdir("build");
+let mu = 398600.4418;
+let a = (7000.0 + 15000.0) / 2.0;
+let vp = sqrt(mu * (2.0 / 7000.0 - 1.0 / a));
+let tper = 2.0 * 3.141592653589793 * sqrt(a * a * a / mu);
+let e0 = 0.5 * vp * vp - mu / 7000.0;
+
+sim = _dsl_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
+let earth = space.body("earth", 398600.4418);
+let sat = space.body("sat", 0.000000000001, 7000.0, 0.0, 0.0, 0.0, ${vp}, 0.0);
+let out = space.system().add(earth).add(sat).propagate(${2.0 * tper}, 801, 5.0, "rk45", 0.000000000001);
+out.save_csv("build/kepler.csv");
+end _dsl_
+savedsl(sim, "build/kepler-sim.dslb");
+r = system ${dsl_cli(sim)} --dsl build/kepler-sim.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+
+draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+# build/kepler.csv has no header. Columns: 1 t [s]; 8-10 satellite x y z [km]; 11-13 vx vy vz [km/s].
+plot.data("PERI", "7000,0\n");
+plot.data("APO", "-15000,0\n");
+plot.cmd("set datafile separator ','");
+plot.cmd("mu = 398600.4418; rp = 7000.0; ra = 15000.0; E0 = " + ${str(e0)});
+plot.cmd("stats 'build/kepler.csv' using ((0.5*($11**2+$12**2+$13**2) - mu/sqrt($8**2+$9**2+$10**2) - E0)/abs(E0)) nooutput");
+plot.assert_close(plot.num("(STATS_max > -STATS_min ? STATS_max : -STATS_min)"), 0.0, 0.000001);
+let max_dev = plot.num("(STATS_max > -STATS_min ? STATS_max : -STATS_min)");
+plot.echo("largest relative energy error = " + plot.str("sprintf('%.3e', (STATS_max > -STATS_min ? STATS_max : -STATS_min))"));
+
+plot.png("images/showcase-16-kepler-conservation.png", 900, 600);
+plot.cmd("set multiplot title 'Kepler orbit from lmspace: path, radius and energy error (two periods, RK45)' font ',13'");
+plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'; set key font ',9' samplen 2");
+
+# Left panel: the orbit in its plane, the Earth at one focus.
+plot.cmd("set lmargin at screen 0.08; set rmargin at screen 0.44; set tmargin at screen 0.88; set bmargin at screen 0.12");
+plot.cmd("set title 'orbit in the plane' font ',11'; set xlabel 'x [km]'; set ylabel 'y [km]'");
+plot.cmd("set xrange [-16000:9000]; set yrange [-9000:9000]; unset key");
+plot.cmd("set object 1 circle at 0,0 size 6378 fc rgb '#60a5fa' fs solid 0.9 border rgb '#1e3a8a'");
+plot.cmd("plot 'build/kepler.csv' using 8:9 with lines lw 2.2 lc rgb '#7c3aed', $PERI with points pt 7 ps 1.2 lc rgb '#b45309', $APO with points pt 5 ps 1.2 lc rgb '#b45309'");
+plot.cmd("unset object 1");
+
+# Upper right: radius against time, with the perigee and apogee radii.
+plot.cmd("set lmargin at screen 0.58; set rmargin at screen 0.97; set tmargin at screen 0.88; set bmargin at screen 0.60");
+plot.cmd("set title 'radius r(t)' font ',11'; set xlabel 'time [h]'; set ylabel 'r [km]'");
+plot.cmd("set xrange [0:" + ${str(2.0 * tper / 3600.0)} + "]; set yrange [6500:15500]; unset key");
+plot.cmd("plot 'build/kepler.csv' using ($1/3600):(sqrt($8**2+$9**2+$10**2)) with lines lw 2.2 lc rgb '#2563eb', rp with lines dt 2 lc rgb '#64748b', ra with lines dt 2 lc rgb '#64748b'");
+
+# Lower right: the relative energy error, the integrator noise floor.
+plot.cmd("set lmargin at screen 0.58; set rmargin at screen 0.97; set tmargin at screen 0.42; set bmargin at screen 0.12");
+plot.cmd("set title sprintf('relative energy error (E - E_0)/|E_0|, largest %.1e', " + str(max_dev) + ")");
+plot.cmd("set xlabel 'time [h]'; set ylabel 'error'");
+plot.cmd("set xrange [0:" + ${str(2.0 * tper / 3600.0)} + "]; set yrange [-0.000000000004:0.000000000004]; set format y '%.0e'");
+plot.cmd("plot 'build/kepler.csv' using ($1/3600):((0.5*($11**2+$12**2+$13**2) - mu/sqrt($8**2+$9**2+$10**2) - E0)/abs(E0)) with lines lw 1.6 lc rgb '#059669' notitle");
+plot.cmd("unset multiplot");
+plot.close();
+end _dsl_
+savedsl(draw, "build/kepler-draw.dslb");
+r = system ${dsl_cli(draw)} --dsl build/kepler-draw.dslb;
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote images/showcase-16-kepler-conservation.png");

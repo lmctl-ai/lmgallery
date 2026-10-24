@@ -168,5 +168,16 @@
     ],
     "output": "images/showcase-15-audio-eq-measurement.png",
     "image": "docs/images/showcase-15-audio-eq-measurement.png"
+  },
+  {
+    "file": "examples/16-kepler-conservation.lms",
+    "title": "Kepler orbit energy check",
+    "description": "lmspace propagates an eccentric orbit (perigee 7000 km, apogee 15000 km) for two periods with RK45 at 1e-12 tolerance; lmplot draws the path, the radius against time and the relative energy error, whose largest excursion is about 2e-12, a measured integrator noise floor.",
+    "hosts": [
+      "lmspace",
+      "lmplot"
+    ],
+    "output": "images/showcase-16-kepler-conservation.png",
+    "image": "docs/images/showcase-16-kepler-conservation.png"
   }
 ]

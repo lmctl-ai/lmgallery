@@ -11,7 +11,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#photon-attenuation-and-build-up-in-water"><img src="../docs/images/showcase-09-photon-transport.png" width="400" alt="Photon attenuation and build-up in water"></a><br>Photon attenuation and build-up in water | <a href="#water-dimer-hydrogen-bond-in-3d"><img src="../docs/images/showcase-10-molecule-dimer-cad.png" width="400" alt="Water dimer: hydrogen bond in 3D"></a><br>Water dimer: hydrogen bond in 3D |
 | <a href="#shielding-by-mass-lead-aluminum-water"><img src="../docs/images/showcase-11-particle-shield-layout.png" width="400" alt="Shielding by mass: lead, aluminum, water"></a><br>Shielding by mass: lead, aluminum, water | <a href="#geostrophic-adjustment-animated"><img src="../docs/images/showcase-12-weather-adjustment.gif" width="400" alt="Geostrophic adjustment, animated"></a><br>Geostrophic adjustment, animated |
 | <a href="#dosing-regimen-inside-a-therapeutic-window"><img src="../docs/images/showcase-13-bio-dosing-regimen.png" width="400" alt="Dosing regimen inside a therapeutic window"></a><br>Dosing regimen inside a therapeutic window | <a href="#damping-ratio-sweep-as-a-contact-sheet"><img src="../docs/images/showcase-14-num-sweep-contact-sheet.png" width="400" alt="Damping-ratio sweep as a contact sheet"></a><br>Damping-ratio sweep as a contact sheet |
-| <a href="#equalizer-designed-versus-measured"><img src="../docs/images/showcase-15-audio-eq-measurement.png" width="400" alt="Equalizer: designed versus measured"></a><br>Equalizer: designed versus measured | |
+| <a href="#equalizer-designed-versus-measured"><img src="../docs/images/showcase-15-audio-eq-measurement.png" width="400" alt="Equalizer: designed versus measured"></a><br>Equalizer: designed versus measured | <a href="#kepler-orbit-energy-check"><img src="../docs/images/showcase-16-kepler-conservation.png" width="400" alt="Kepler orbit energy check"></a><br>Kepler orbit energy check |
 
 ## Damped oscillator dashboard
 
@@ -161,4 +161,14 @@ Hosts: lmaudio → lmplot. Output: `images/showcase-15-audio-eq-measurement.png`
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/15-audio-eq-measurement.lms
+```
+
+## Kepler orbit energy check
+
+lmspace propagates an eccentric orbit (perigee 7000 km, apogee 15000 km) for two periods with RK45 at 1e-12 tolerance; lmplot draws the path, the radius against time and the relative energy error, whose largest excursion is about 2e-12, a measured integrator noise floor.
+
+Hosts: lmspace → lmplot. Output: `images/showcase-16-kepler-conservation.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/16-kepler-conservation.lms
 ```
