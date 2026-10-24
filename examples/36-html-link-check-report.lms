@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: MIT
+# Link-check report for a three-page site. The pages are written into build/site (so the program
+# runs from an empty directory), two of them carry links that do not resolve, and one carries an
+# external link that the policy leaves unchecked. lmhtml loads the pages, checks every internal
+# link (fragments and relative paths) and writes a report. The program reads the report back and
+# asserts the two expected broken links. lmvideo draws the run as a terminal-style PNG (the gallery
+# output). lmoffice writes the Word report with the summary, the broken-link list and the picture.
+mkdir("images");
+mkdir("build");
+mkdir("build/site");
+mkdir("build/site/sub");
+write_file("build/site/index.html", "<!doctype html><html><body><h1>Lattice docs</h1><a href=\"about.html\">About</a><a href=\"missing.html\">Missing page</a></body></html>");
+write_file("build/site/about.html", "<!doctype html><html><body><h1 id=\"team\">Team</h1><a href=\"sub/page.html\">Sub page</a><a href=\"#missing\">Missing anchor</a><a href=\"https://example.com/\">External</a></body></html>");
+write_file("build/site/sub/page.html", "<!doctype html><html><body><a href=\"../index.html\">Home</a></body></html>");
+
+check = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@v0.7.3";
+let pages = html.load_dir("build/site");
+for (i in range(0, pages.len())) {
+  let page = pages.at(i);
+  let links = page.links();
+  for (j in range(0, links.len())) {
+    let url = links.at(j);
+    let kind = html.link_kind(page, url);
+    if (kind == "external" || kind == "special" || kind == "outside-root") { continue; }
+    if (!html.link_exists(page, url)) { report.add("broken-link", page.path(), 0, url + " not found"); }
+  }
+}
+report.write_text("build/links.txt");
+end _dsl_
+savedsl(check, "build/links.dslb");
+r = system(concat(dsl_cli(check), ["--dsl", "build/links.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Read the report back: each broken link is one line.
+let report_text = read_file("build/links.txt");
+let broken = 0;
+let first = "";
+let second = "";
+for (line in split(report_text, "\n")) {
+  if (starts_with(line, "broken-link")) {
+    broken = broken + 1;
+    if (broken == 1) { first = line; }
+    if (broken == 2) { second = line; }
+  }
+}
+assert(broken == 2);
+assert(contains(report_text, "missing.html not found"));
+assert(contains(report_text, "#missing not found"));
+
+# Terminal-style picture of the run (lmvideo), the gallery output.
+term = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 360); video.frames(1); video.output("images/showcase-36-link-check.png"); video.begin();
+video.frame();
+canvas.clear("#0f172a");
+canvas.rect(0.0, 0.0, 900.0, 34.0, paint().color("#1e293b"));
+canvas.text("link-check: build/site", 16.0, 23.0, font(16.0), paint().color("#cbd5e1"));
+canvas.text("$ lmhtml check build/site", 24.0, 74.0, font(18.0), paint().color("#86efac"));
+canvas.text("3 pages checked; external links are not checked by policy", 24.0, 110.0, font(18.0), paint().color("#e2e8f0"));
+canvas.text("2 broken links", 24.0, 146.0, font(18.0).bold(true), paint().color("#fca5a5"));
+canvas.text("  " + ${first}, 24.0, 184.0, font(18.0), paint().color("#fecaca"));
+canvas.text("  " + ${second}, 24.0, 218.0, font(18.0), paint().color("#fecaca"));
+canvas.text("exit 1", 24.0, 268.0, font(18.0), paint().color("#fca5a5"));
+video.end();
+end _dsl_
+savedsl(term, "build/link-term.dslb");
+r = system(concat(dsl_cli(term), ["--dsl", "build/link-term.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Word report (lmoffice).
+report_doc = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+let doc = office.docx("build/link-check-report.docx");
+doc.title("Link-check report").author("Documentation tooling");
+doc.heading("Link-check report: Lattice docs", 1).bold(true);
+doc.paragraph("Three pages were checked with lmhtml. Two internal links do not resolve; one external link is outside the check by policy.");
+doc.heading("Broken links", 2);
+let t = doc.table(3, 2);
+t.cell(1, 1, "Page").cell(1, 2, "Problem");
+t.cell(2, 1, "index.html").cell(2, 2, "link to missing.html (no such page)");
+t.cell(3, 1, "about.html").cell(3, 2, "link to #missing (no such anchor)");
+doc.heading("Terminal output", 2);
+doc.image("images/showcase-36-link-check.png", 600, 240);
+doc.heading("Next steps", 2);
+doc.paragraph("Fix the two links, then rerun the check; the pages are in the site folder the report names.");
+doc.save();
+end _dsl_
+savedsl(report_doc, "build/link-check.dslb");
+r = system(concat(dsl_cli(report_doc), ["--dsl", "build/link-check.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/link-check-report.docx and images/showcase-36-link-check.png");

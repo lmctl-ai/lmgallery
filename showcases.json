@@ -391,5 +391,17 @@
     ],
     "output": "images/showcase-35-rates-options.png",
     "image": "docs/images/showcase-35-rates-options.png"
+  },
+  {
+    "file": "examples/36-html-link-check-report.lms",
+    "title": "HTML link-check report with a terminal picture",
+    "description": "lmhtml loads a three-page site, checks every internal link and writes a report that the program reads back and asserts; lmvideo draws the run as a terminal-style PNG using the report lines; lmoffice writes the Word report with the broken-link table and the picture. The external link is left unchecked by policy.",
+    "hosts": [
+      "lmhtml",
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-36-link-check.png",
+    "image": "docs/images/showcase-36-link-check.png"
   }
 ]
