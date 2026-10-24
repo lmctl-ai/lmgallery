@@ -12,9 +12,14 @@ video.size(900, 480); video.frames(1); video.output("images/showcase-26-qbr-deck
 video.frame();
 canvas.clear("#ffffff");
 let fig1 = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
-let p1 = fig1.add_plot().weight(1.0).fill("both").plot().title("Quarterly revenue ($M)").xlabel("quarter").ylabel("revenue ($M)").x_range(0.5, 5.5).y_range(0.0, 80.0).legend("top_left").background("#ffffff");
+let p1 = fig1.add_plot().weight(1.0).fill("both").plot().title("Quarterly revenue ($M)").xlabel("quarter").ylabel("revenue ($M)").x_range(0.5, 5.5).y_range(-4.0, 80.0).legend("top_left").background("#ffffff");
 let s1 = p1.series("revenue", "bar", "#1F4E78");
 s1.add(1.0, 46.6); s1.add(2.0, 52.1); s1.add(3.0, 58.4); s1.add(4.0, 63.0); s1.add(5.0, 67.5);
+p1.annotate(1.0, -2.2, "Q3-25", "#1e293b");
+p1.annotate(2.0, -2.2, "Q4-25", "#1e293b");
+p1.annotate(3.0, -2.2, "Q1-26", "#1e293b");
+p1.annotate(4.0, -2.2, "Q2-26", "#1e293b");
+p1.annotate(5.0, -2.2, "Q3-26", "#1e293b");
 fig1.draw();
 video.end();
 end _dsl_
@@ -28,9 +33,14 @@ video.size(900, 480); video.frames(1); video.output("build/qbr-margin.png"); vid
 video.frame();
 canvas.clear("#ffffff");
 let fig2 = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
-let p2 = fig2.add_plot().weight(1.0).fill("both").plot().title("Operating margin (%)").xlabel("quarter").ylabel("operating margin (%)").x_range(0.5, 5.5).y_range(15.0, 26.0).legend("top_left").background("#ffffff");
+let p2 = fig2.add_plot().weight(1.0).fill("both").plot().title("Operating margin (%)").xlabel("quarter").ylabel("operating margin (%)").x_range(0.5, 5.5).y_range(12.0, 26.0).legend("top_left").background("#ffffff");
 let s2 = p2.series("operating margin", "line", "#2E75B6").width(3.0).marker("circle");
 s2.add(1.0, 18.0); s2.add(2.0, 19.5); s2.add(3.0, 21.0); s2.add(4.0, 22.5); s2.add(5.0, 24.0);
+p2.annotate(1.0, 13.2, "Q3-25", "#1e293b");
+p2.annotate(2.0, 13.2, "Q4-25", "#1e293b");
+p2.annotate(3.0, 13.2, "Q1-26", "#1e293b");
+p2.annotate(4.0, 13.2, "Q2-26", "#1e293b");
+p2.annotate(5.0, 13.2, "Q3-26", "#1e293b");
 fig2.draw();
 video.end();
 end _dsl_
@@ -44,9 +54,13 @@ video.size(900, 480); video.frames(1); video.output("build/qbr-regions.png"); vi
 video.frame();
 canvas.clear("#ffffff");
 let fig3 = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
-let p3 = fig3.add_plot().weight(1.0).fill("both").plot().title("Q3 revenue by region ($M)").xlabel("region").ylabel("revenue ($M)").x_range(0.5, 4.5).y_range(0.0, 35.0).legend("top_right").background("#ffffff");
+let p3 = fig3.add_plot().weight(1.0).fill("both").plot().title("Q3 revenue by region ($M)").xlabel("region").ylabel("revenue ($M)").x_range(0.5, 4.5).y_range(-3.0, 35.0).legend("top_right").background("#ffffff");
 let s3 = p3.series("Q3 revenue", "bar", "#548235");
 s3.add(1.0, 29.0); s3.add(2.0, 21.5); s3.add(3.0, 11.0); s3.add(4.0, 6.0);
+p3.annotate(1.0, -1.8, "North America", "#1e293b");
+p3.annotate(2.0, -1.8, "EMEA", "#1e293b");
+p3.annotate(3.0, -1.8, "APAC", "#1e293b");
+p3.annotate(4.0, -1.8, "LATAM", "#1e293b");
 fig3.draw();
 video.end();
 end _dsl_
