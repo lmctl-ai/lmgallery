@@ -20,10 +20,10 @@ currently growing a high-level Plot layer) and is a different codebase.
 | `.confusion` confusion matrix | examples/field/ml-confusion.confusion | Not covered (a labeled matrix heatmap in lmplot is possible by hand, but there is no cell-text/contrast/normalize primitive) |
 | `.mlplot` ROC / PR / pred-actual / residual | examples/field/*.mlplot | Not covered anywhere |
 | mermaid flowchart | examples/mermaid/{pipeline-lr,decision-flow}.mmd | Covered: lmdraw `flow-pipeline.lms`, `decision-flowchart.lms` |
-| mermaid sequence diagrams | examples/mermaid/{api-call-chain,login,retry-timeout}.mmd | Not covered (no lifelines/activations/message layout) |
-| mermaid state diagrams | examples/mermaid/{order-state,traffic-light-state,compare-state-*}.mmd | Not covered |
-| graphviz dot import / lm-pos / bare autolayout | examples/dot/*.gv | Not covered (lmdraw diagrams are hand-placed; no gv import, clusters, or bezier edge splines) |
-| diagram models: flow / graph / tree / number-line / panels | examples/*.model.json | Partially covered: lmdraw node-edge diagrams, org trees (manual). Missing: tidy/radial tree auto-layout, number-line, diagram small-multiples |
+| mermaid sequence diagrams — SYNTAX IDEAS ONLY, no layout engine | examples/mermaid/{api-call-chain,login,retry-timeout}.mmd | Not covered. Borrow vocabulary only (participants, lifelines, activations, sync/async messages); author places explicit coordinates via lmscript helpers that TAKE coordinates (lifeline(x,y0,y1), message(p1,p2,label)) |
+| mermaid state diagrams — SYNTAX IDEAS ONLY, no layout engine | examples/mermaid/{order-state,traffic-light-state,compare-state-*}.mmd | Not covered. Borrow notation only (states, transition labels, initial/final, composite states); explicit positions |
+| graphviz dot — SYNTAX/VOCABULARY IDEAS ONLY, no dot import, no autolayout | examples/dot/*.gv | Not covered. Borrow vocabulary only: node shapes (box/diamond/cylinder/note), clusters (grouped box with label), edge styles (solid/dashed/arrow/bidirectional), bezier edge curves. All placement explicit in the script |
+| diagram models: flow / graph / tree / number-line / panels | examples/*.model.json | Partially covered: lmdraw node-edge diagrams, org trees (manual). Missing: shape vocabulary, connector routing hints, lifeline/message helpers, grid/row/column placement helpers, number-line, diagram small-multiples. NO auto-layout: trees/radials are drawn from author-computed coordinates via helpers |
 | pseudo-3D `.scene3d` shapes/pages/animation | examples/scene3d/** | Covered — do NOT port: lmmagnum/lmfilament are real 3D (better quality, honest geometry) |
 | storyboard -> narrated MP4 (scenes, transitions, keyframes) | examples/*.storyboard.json | Partially covered: lmvideo renders frames/MP4, lmmagnum/lmfilament storyboards level-*.lms. Missing: narration-driven scene timing, captions, crossfade/morph transitions |
 | slides (SVG or HTML per slide -> MP4) | examples/slides.*.json | Partially covered: lmvideo video.lms; lmoffice writes PPTX but does not render video |
@@ -39,6 +39,15 @@ currently growing a high-level Plot layer) and is a different codebase.
 | `.lmv` shorthand compile | docs/compile* | Not applicable (input sugar; each host already has lmscript) |
 
 ## 2. Ranked backlog: 40 example candidates
+
+Owner constraint (applies to every diagram candidate below): mermaid and Graphviz are NOT
+to be ported — borrow only their syntax/vocabulary. There is NO automatic layout: the
+script author places every element with explicit coordinates and anchors. The features to
+build are therefore explicit-position primitives: a shape library (box/diamond/cylinder/note),
+connectors between two anchors with routing hints (straight/elbow/curve) and edge styles
+(solid/dashed/arrow/bidirectional), label placement relative to a connector, lifeline/message
+helpers that take coordinates, and grid/row/column helper functions the author calls with
+computed positions.
 
 Effort S = one example file with today's API, M = example needs one moderate feature,
 L = example needs a major feature. "Source" paths are under /home/mma/repos/lmctlhq/lmcreator.
@@ -63,15 +72,15 @@ L = example needs a major feature. "Source" paths are under /home/mma/repos/lmct
 | 16 | examples/charts/daily-signups-date-axis.mplchart | lmplot | 2024 monthly date-axis line chart | Example-level: timefmt date axis | S |
 | 17 | examples/charts/queue-reveal-small.mplchartanim, queue-utilization-2series.mplchartanim | lmvideo (Plot layer) | Animated queue-length "reveal" and 2-series demand-vs-staffing tween | Fixed-structure keyframe tweening of plotted series (points must match across keyframes) | M |
 | 18 | examples/charts/physim-kepler-energy-conservation-check.mplchart | lmspace | 2-panel sharex energy conservation check, relative deviation | Example-level: deviation panel with symlog-ish or % y-axis | S |
-| 19 | examples/mermaid/api-call-chain.mmd (+ login.mmd, retry-timeout.mmd) | lmdraw | Sequence diagram: participants, lifelines, activation bars, sync/async messages | Sequence-diagram layout engine (lifelines, activations, message arrows, self-messages) | L |
-| 20 | examples/mermaid/order-state.mmd, traffic-light-state.mmd, compare-state-*.mmd | lmdraw | State diagrams: order lifecycle, TCP connection, thermostat, door lock | State-diagram layout engine (states, transition labels, composite states, initial/final) | L |
-| 21 | examples/dot/pipeline-{src,generated}.gv, shapes-and-cluster.gv | lmdraw | ETL digraph with cluster subgraphs and bezier edge splines, in authored and dot -Tdot import forms | Graphviz import (honor bb=/pos=), cluster rendering, cubic-bezier edge parsing | L |
-| 22 | examples/dot/authored-lmpos.gv | lmdraw | 3-node flow laid out purely by lm-pos placement comments | Same import path, explicit-placement mode | M |
-| 23 | examples/dot/bare-flowchart.gv | lmdraw | Bare flowchart with deterministic fallback placement + named autolayout diagnostic | Deterministic graph autolayout + loud DOT_AUTOLAYOUT_APPLIED-style diagnostic | M |
-| 24 | examples/tree-diagram.model.json, examples/conversion-tree-layered.storyboard.json | lmdraw | Tidy tree and layered/radial tree with weighted node sizes | Tidy-tree and radial-tree auto-layout (the one autolayout worth having) | L |
-| 25 | examples/conversion-tree.storyboard.json (+ assets) | lmvideo | Narrated radial conversion tree (Joda-Time -> java.time), weighted node reveals, keep-out regions | Radial layout + per-element reveal keyframes + narration-driven timing | L |
-| 26 | examples/diagrams/lmmol-frontiers/*.mmd (5 DAGs) | lmbio (or lmgallery) | Frontier-review workflow DAGs (causal inference, PINNs, RAG, ...) | Pinned-geometry graph layout at ~1600x900 (follows #21/#24) | M |
-| 27 | examples/diagrams/grepcent/sic-tree.dot | lmfinance | Real SIC finance-sector hierarchy tree | Tree layout (from #24) or manual org tree | S |
+| 19 | examples/mermaid/api-call-chain.mmd (+ login.mmd, retry-timeout.mmd) | lmdraw | Sequence diagram: participants, lifelines, activation bars, sync/async messages, all at explicit coordinates | lifeline(x, y0, y1) and message(p1, p2, label, style) HELPERS THAT TAKE COORDINATES; activation bars as author-placed rects; no layout engine | M |
+| 20 | examples/mermaid/order-state.mmd, traffic-light-state.mmd, compare-state-*.mmd | lmdraw | State diagrams: order lifecycle, TCP connection, thermostat, door lock, explicitly placed | Shape vocabulary (state rounded-box, initial/final dots) + transition connectors with labels; positions explicit in script | M |
+| 21 | examples/dot/pipeline-src.gv, shapes-and-cluster.gv | lmdraw | ETL digraph with cluster subgraph boxes, cylinder/database node, dashed edges — dot's visual vocabulary, hand-placed | Cylinder shape primitive, cluster = labeled group box, dashed/bidirectional edge styles (vocabulary only; NO dot import) | M |
+| 22 | examples/dot/shapes-and-cluster.gv, cluster-selfloop-src.gv | lmdraw | Shape vocabulary showcase: box/diamond/cylinder/note, cluster box, self-loop connector | Self-loop connector + the shape library exercised in one tour example | S |
+| 23 | examples/video-scene.storyboard.json, crossfade.storyboard.json | lmvideo | Pre-rendered clip spliced into a narrated timeline; SVG->clip->SVG crossfades | ffmpeg clip input as a scene source + crossfade (xfade) transition between scenes | M |
+| 24 | examples/tree-diagram.model.json (dark tidy tree, weighted node sizes) | lmdraw | Tidy tree drawn from author-computed coordinates | grid/row/column placement helpers + named anchors so hand-placed trees/radials are tractable — NO auto-layout; the script computes positions | M |
+| 25 | examples/conversion-tree.storyboard.json (+ assets) | lmvideo | Narrated radial conversion tree (Joda-Time -> java.time), weighted node reveals, keep-out regions | Polar coordinates computed IN the lmscript (author-written layout math) + per-element reveal keyframes + narration-driven timing | L |
+| 26 | examples/diagrams/lmmol-frontiers/*.mmd (5 DAGs) | lmbio (or lmgallery) | Frontier-review workflow DAGs (causal inference, PINNs, RAG, ...), every node pinned by the author | Explicit-position graph at ~1600x900: shapes + routing-hint connectors + labels (follows #19–#22 vocabulary) | M |
+| 27 | examples/diagrams/grepcent/sic-tree.dot | lmfinance | Real SIC finance-sector hierarchy tree, hand-laid rows | grid/row helpers + elbow connectors (from #24); the lmdraw org-tree pattern applied to real data | S |
 | 28 | examples/diagrams/grepcent/thread-map.mmd | lmfinance | FRED indicators -> theme -> SIC sectors -> companies flowchart, 1740x860 pinned | Large pinned flowchart with labeled edges (lmdraw has pieces; no big real-data demo) | M |
 | 29 | examples/graph-proof.model.json | lmdraw | 4-node DB precedence cycle proving edge labels clear their lines | Edge-label placement that offsets from its line (small connector/label gap fix) | S |
 | 30 | diagram model number-line + panels layouts | lmdraw | Number-line figure and diagram small-multiples (main + margin panels) | Number-line primitive; diagram-panels grouping (main/margin roles) | M |
@@ -90,7 +99,7 @@ L = example needs a major feature. "Source" paths are under /home/mma/repos/lmct
 
 1. **Lint-as-output on every host.** Machine-readable diagnostics per render, each carrying a
    concrete `remedy` AND a different-lever `alternative`; never silently drop declared input
-   (named `*_APPLIED`/`*_IGNORED` diagnostics instead). Unlocks candidates 22, 23, 34, 39 and
+   (named `*_APPLIED`/`*_IGNORED` diagnostics instead). Unlocks candidates 34, 39 and
    improves every host's agent-friendliness. This is lmcreator's flagship idea ("lint is the
    LLM's vision").
 2. **Labeled-matrix heatmap primitive in lmplot** (cell text with contrast-aware color,
@@ -99,13 +108,19 @@ L = example needs a major feature. "Source" paths are under /home/mma/repos/lmct
 3. **Field overlays in lmplot: contour lines and quiver arrows composited on a 2D heatmap
    image.** Unlocks #6, #7 (and makes #8's frames much more useful). lmplot already has all
    three ingredients; the missing piece is compositing them in one 2D plot.
-4. **Sequence- and state-diagram layout engines in lmdraw.** Unlocks #19, #20 — the largest
-   uncovered diagram family; every AI-agent architecture doc wants these.
-5. **Graph layout: graphviz-dot import + tidy/radial tree autolayout in lmdraw.** Unlocks
-   #21–#28 (8 candidates). Import honoring bb=/pos= is deterministic and needs no Graphviz at
-   runtime; tidy/radial trees are the one autolayout worth owning.
+4. **Explicit-position diagram vocabulary in lmdraw — mermaid/dot syntax ideas ONLY, no
+   layout engine, no format import.** Shape library (box/diamond/cylinder/note/ellipse,
+   initial/final dots); connector(anchorA, anchorB, routing: straight/elbow/curve, style:
+   solid/dashed/arrow/bidirectional) with label offset placement; cluster = labeled group
+   box; lifeline(x, y0, y1) and message(p1, p2, label, style) helpers that TAKE coordinates;
+   grid/row/column helper functions the author calls with computed positions. Unlocks
+   #19–#22, #26, #27, #29, #31, #32 and makes #24/#25 tractable. The LLM author does the
+   layout math in-script — that is a feature, not a gap.
+5. **Frame/scene timeline primitives in lmvideo: clip splice + crossfade + per-element
+   reveal keyframes at author-given coordinates.** Unlocks #17, #23, #25 (and feeds #35's
+   narration timing and #39's lint report).
 6. **Narration/timing model for lmvideo** (scene duration from narration audio, offline
-   synthetic audio for tests, caption + onset/duration report.json). Unlocks #17, #25, #35.
+   synthetic audio for tests, caption + onset/duration report.json). Unlocks #25, #35.
    Deliberately WITHOUT the lmsound network dependency — synthetic/silent only.
 7. **Compose surface: lmdoc Markdown -> self-contained HTML (and DOCX via lmoffice)** with
    figure directives, captions, auto-numbering, [Figure @id] cross-refs, TOC, footnotes.
@@ -146,3 +161,8 @@ L = example needs a major feature. "Source" paths are under /home/mma/repos/lmct
 10. **Committed multi-MB `.bin` blobs + `file:`-linked sibling repos.** Six private sibling
     repos wired into one binary with committed native blobs made builds fragile. Our hosts
     vendor source with lockfiles (sdk.lock pattern) instead.
+11. **Automatic layout engines (Graphviz, mermaid auto-placement).** Our tools are LLM
+    driven: the script author places every element with explicit coordinates and anchors.
+    Layout algorithms add a heavy dependency, nondeterminism risk, and remove author
+    control — and a well-prompted LLM does the layout math itself. Borrow mermaid/dot
+    NOTATION and vocabulary only; never their layout.
