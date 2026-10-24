@@ -17,6 +17,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#forecast-with-a-95-%-prediction-band"><img src="../docs/images/showcase-21-forecast-band.png" width="400" alt="Forecast with a 95 % prediction band"></a><br>Forecast with a 95 % prediction band | <a href="#seasonal-decomposition-by-least-squares"><img src="../docs/images/showcase-22-seasonal-decomposition.png" width="400" alt="Seasonal decomposition by least squares"></a><br>Seasonal decomposition by least squares |
 | <a href="#regression-diagnostics-predicted-actual-and-residuals"><img src="../docs/images/showcase-23-regression-residuals.png" width="400" alt="Regression diagnostics: predicted, actual and residuals"></a><br>Regression diagnostics: predicted, actual and residuals | <a href="#daily-sign-ups-on-a-date-axis"><img src="../docs/images/showcase-24-signups-date-axis.png" width="400" alt="Daily sign-ups on a date axis"></a><br>Daily sign-ups on a date axis |
 | <a href="#call-centre-queue-over-one-day"><img src="../docs/images/showcase-25-queue-erlang-c.png" width="400" alt="Call-centre queue over one day"></a><br>Call-centre queue over one day | <a href="#quarterly-business-review-deck-with-lmvideo-charts"><img src="../docs/images/showcase-26-qbr-deck.png" width="400" alt="Quarterly business review deck with lmvideo charts"></a><br>Quarterly business review deck with lmvideo charts |
+| <a href="#sales-report-with-a-chart-per-section"><img src="../docs/images/showcase-27-sales-report.png" width="400" alt="Sales report with a chart per section"></a><br>Sales report with a chart per section | |
 
 ## Damped oscillator dashboard
 
@@ -276,4 +277,14 @@ Hosts: lmvideo → lmoffice. Output: `images/showcase-26-qbr-deck.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/26-qbr-deck-charts.lms
+```
+
+## Sales report with a chart per section
+
+lmvideo draws three Skia charts (revenue by region, by product line, and the monthly trend); lmoffice builds a Word report with a heading, text, chart and figure table for each section. The script checks that regions and products each add up to the Q3 total. The picture is a LibreOffice render of the document.
+
+Hosts: lmvideo → lmoffice. Output: `images/showcase-27-sales-report.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/27-sales-report-docx.lms
 ```

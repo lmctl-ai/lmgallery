@@ -289,5 +289,16 @@
     ],
     "output": "images/showcase-26-qbr-deck.png",
     "image": "docs/images/showcase-26-qbr-deck.png"
+  },
+  {
+    "file": "examples/27-sales-report-docx.lms",
+    "title": "Sales report with a chart per section",
+    "description": "lmvideo draws three Skia charts (revenue by region, by product line, and the monthly trend); lmoffice builds a Word report with a heading, text, chart and figure table for each section. The script checks that regions and products each add up to the Q3 total. The picture is a LibreOffice render of the document.",
+    "hosts": [
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-27-sales-report.png",
+    "image": "docs/images/showcase-27-sales-report.png"
   }
 ]

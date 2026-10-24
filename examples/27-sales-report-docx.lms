@@ -1,0 +1,121 @@
+# SPDX-License-Identifier: MIT
+# Sales report for Q3 2026 as a Word document with one chart per section. lmvideo (Skia, Plot
+# layer) draws three PNG charts from the same figures: revenue by region, revenue by product,
+# and the monthly revenue trend. lmoffice (Open XML) writes the report: headings, a short text
+# for each section, the chart, and a table of the numbers behind it. The program checks that
+# regions and products each add up to the Q3 total, and that the twelve months add up to the
+# year-to-date total printed in the summary.
+mkdir("images");
+mkdir("build");
+
+# Chart 1: revenue by region, Q3 2026 ($M).
+charts_1 = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+video.size(900, 480); video.frames(1); video.output("images/showcase-27-sales-report.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig1 = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let p1 = fig1.add_plot().weight(1.0).fill("both").plot().title("Q3 2026 revenue by region ($M)").xlabel("region").ylabel("revenue ($M)").x_range(0.5, 4.5).y_range(-3.0, 35.0).legend("top_right").background("#ffffff");
+let s1 = p1.series("Q3 revenue", "bar", "#1F4E78");
+s1.add(1.0, 29.0); s1.add(2.0, 21.5); s1.add(3.0, 11.0); s1.add(4.0, 6.0);
+p1.annotate(1.0, -1.8, "North America", "#1e293b");
+p1.annotate(2.0, -1.8, "EMEA", "#1e293b");
+p1.annotate(3.0, -1.8, "APAC", "#1e293b");
+p1.annotate(4.0, -1.8, "LATAM", "#1e293b");
+fig1.draw();
+video.end();
+end _dsl_
+savedsl(charts_1, "build/sales-chart1.dslb");
+r = system(concat(dsl_cli(charts_1), ["--dsl", "build/sales-chart1.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Chart 2: revenue by product line, Q3 2026 ($M).
+charts_2 = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+video.size(900, 480); video.frames(1); video.output("build/sales-products.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig2 = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let p2 = fig2.add_plot().weight(1.0).fill("both").plot().title("Q3 2026 revenue by product line ($M)").xlabel("product line").ylabel("revenue ($M)").x_range(0.5, 3.5).y_range(-3.0, 40.0).legend("top_right").background("#ffffff");
+let s2 = p2.series("Q3 revenue", "bar", "#2E75B6");
+s2.add(1.0, 34.0); s2.add(2.0, 14.5); s2.add(3.0, 19.0);
+p2.annotate(1.0, -1.8, "Platform", "#1e293b");
+p2.annotate(2.0, -1.8, "Support", "#1e293b");
+p2.annotate(3.0, -1.8, "Services", "#1e293b");
+fig2.draw();
+video.end();
+end _dsl_
+savedsl(charts_2, "build/sales-chart2.dslb");
+r = system(concat(dsl_cli(charts_2), ["--dsl", "build/sales-chart2.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Chart 3: monthly revenue trend, July to June ($M).
+charts_3 = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+video.size(900, 480); video.frames(1); video.output("build/sales-trend.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig3 = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let p3 = fig3.add_plot().weight(1.0).fill("both").plot().title("Monthly revenue, October 2025 to September 2026 ($M)").xlabel("month").ylabel("revenue ($M)").x_range(0.5, 12.5).y_range(12.0, 30.0).legend("top_left").background("#ffffff");
+let s3 = p3.series("monthly revenue", "line", "#548235").width(3.0).marker("circle");
+s3.add(1.0, 19.8); s3.add(2.0, 20.5); s3.add(3.0, 21.2); s3.add(4.0, 22.0); s3.add(5.0, 22.4); s3.add(6.0, 23.1);
+s3.add(7.0, 23.9); s3.add(8.0, 24.5); s3.add(9.0, 25.2); s3.add(10.0, 25.8); s3.add(11.0, 26.4); s3.add(12.0, 27.1);
+p3.annotate(1.0, 13.2, "Oct", "#1e293b");
+p3.annotate(2.0, 13.2, "Nov", "#1e293b");
+p3.annotate(3.0, 13.2, "Dec", "#1e293b");
+p3.annotate(4.0, 13.2, "Jan", "#1e293b");
+p3.annotate(5.0, 13.2, "Feb", "#1e293b");
+p3.annotate(6.0, 13.2, "Mar", "#1e293b");
+p3.annotate(7.0, 13.2, "Apr", "#1e293b");
+p3.annotate(8.0, 13.2, "May", "#1e293b");
+p3.annotate(9.0, 13.2, "Jun", "#1e293b");
+p3.annotate(10.0, 13.2, "Jul", "#1e293b");
+p3.annotate(11.0, 13.2, "Aug", "#1e293b");
+p3.annotate(12.0, 13.2, "Sep", "#1e293b");
+fig3.draw();
+video.end();
+end _dsl_
+savedsl(charts_3, "build/sales-chart3.dslb");
+r = system(concat(dsl_cli(charts_3), ["--dsl", "build/sales-chart3.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# The figures behind the charts and their totals.
+let regions = 29.0 + 21.5 + 11.0 + 6.0;
+let products = 34.0 + 14.5 + 19.0;
+let year = 19.8 + 20.5 + 21.2 + 22.0 + 22.4 + 23.1 + 23.9 + 24.5 + 25.2 + 25.8 + 26.4 + 27.1;
+assert(abs(regions - 67.5) < 0.0001);
+assert(abs(products - 67.5) < 0.0001);
+assert(abs(year - 281.9) < 0.0001);
+
+report_program = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
+let doc = office.docx("build/sales-report.docx");
+doc.title("Sales report, Q3 2026").author("Novaterra Technologies");
+doc.heading("Sales report, Q3 2026", 1).bold(true);
+doc.paragraph("Q3 2026 revenue was $67.5M, up 45% on Q3 2025. Revenue over the last twelve months totals $281.9M.");
+
+doc.heading("1. Revenue by region", 2);
+doc.paragraph("North America delivered 43% of Q3 revenue. EMEA and APAC together added 48%.");
+doc.image("images/showcase-27-sales-report.png", 600, 320);
+let t1 = doc.table(5, 3);
+t1.cell(1, 1, "Region").cell(1, 2, "Revenue ($M)").cell(1, 3, "Share");
+t1.cell(2, 1, "North America").cell(2, 2, "29.0").cell(2, 3, "43%");
+t1.cell(3, 1, "EMEA").cell(3, 2, "21.5").cell(3, 3, "32%");
+t1.cell(4, 1, "APAC").cell(4, 2, "11.0").cell(4, 3, "16%");
+t1.cell(5, 1, "LATAM").cell(5, 2, "6.0").cell(5, 3, "9%");
+
+doc.heading("2. Revenue by product line", 2);
+doc.paragraph("Platform subscriptions are half of the quarter's revenue.");
+doc.image("build/sales-products.png", 600, 320);
+let t2 = doc.table(4, 3);
+t2.cell(1, 1, "Product line").cell(1, 2, "Revenue ($M)").cell(1, 3, "Share");
+t2.cell(2, 1, "Platform").cell(2, 2, "34.0").cell(2, 3, "50%");
+t2.cell(3, 1, "Support").cell(3, 2, "19.0").cell(3, 3, "28%");
+t2.cell(4, 1, "Services").cell(4, 2, "14.5").cell(4, 3, "22%");
+
+doc.heading("3. Monthly trend", 2);
+doc.paragraph("Revenue rose in every one of the last twelve months, from $19.8M to $27.1M.");
+doc.image("build/sales-trend.png", 600, 320);
+doc.paragraph("Total revenue for the twelve months is $281.9M.").italic(true);
+doc.save();
+end _dsl_
+savedsl(report_program, "build/sales-report.dslb");
+r = system(concat(dsl_cli(report_program), ["--dsl", "build/sales-report.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/sales-report.docx");
