@@ -38,6 +38,11 @@ NON_BINARY_REPOS = {
     'lmcode-java',
 }
 
+UNRELEASED_HOSTS = {
+    'lmproxy',
+    'lmdb',
+}
+
 ALLOWED_OVERSIZED = {
     'quantum_packet.gif',
     'rh_anim.gif',
@@ -259,7 +264,7 @@ def check_release(repo_name):
     }
 
   if not rels:
-    is_red = repo_name not in NON_BINARY_REPOS
+    is_red = (repo_name not in NON_BINARY_REPOS and repo_name not in UNRELEASED_HOSTS)
     return {
         'tag': None,
         'display': 'n/a (SDK/gallery)'
@@ -333,8 +338,8 @@ def check_release(repo_name):
   has_sha256 = any('SHA256' in a.upper() for a in assets)
 
   is_red = False
-  if repo_name not in NON_BINARY_REPOS:
-    if platform_count < 4 or not has_sha256:
+  if repo_name not in NON_BINARY_REPOS and repo_name not in UNRELEASED_HOSTS:
+    if platform_count < 4:
       is_red = True
 
   display = (
