@@ -300,5 +300,17 @@
     ],
     "output": "images/showcase-27-sales-report.png",
     "image": "docs/images/showcase-27-sales-report.png"
+  },
+  {
+    "file": "examples/28-forecast-workbook-chart.lms",
+    "title": "Forecast workbook with a native chart",
+    "description": "lmnum fits a linear trend to 24 months of sales by least squares and checks the slope and residual deviation; lmvideo draws the forecast with its 95 % band as a PNG; lmoffice writes an Excel workbook with the forecast table, variance formulas and a native bar chart beside it. The picture is a LibreOffice render of the workbook.",
+    "hosts": [
+      "lmnum",
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-28-forecast-workbook.png",
+    "image": "docs/images/showcase-28-forecast-workbook.png"
   }
 ]

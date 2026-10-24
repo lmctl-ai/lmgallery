@@ -1,0 +1,100 @@
+# SPDX-License-Identifier: MIT
+# Sales forecast workbook. lmnum fits a linear trend to 24 months of sales by least squares and
+# reports the slope, intercept and residual deviation. lmoffice writes an Excel workbook with the
+# 12-month forecast, a 95 % band, a target column and variance formulas (=B-F, stored as formulas),
+# and a native Excel bar chart beside the table. lmvideo draws the same forecast as a PNG, which
+# is the gallery picture. The script checks that the fitted slope is within 0.5 of the generator's
+# 3.0 per month and that the residual deviation is within 1.0 of its true value 4.0.
+mkdir("images");
+mkdir("build");
+
+fit_program = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+let n = 24;
+let z = num.normal(n, 1, 31);
+let x_design = num.matrix(n, 2);
+let y_obs = num.matrix(n, 1);
+for (i in range(0, n)) {
+  x_design = x_design.set(i, 0, 1.0).set(i, 1, float(i));
+  y_obs = y_obs.set(i, 0, 120.0 + 3.0 * float(i) + 4.0 * z.get(i, 0));
+}
+let beta = x_design.lstsq(y_obs);
+let resid = y_obs.sub(x_design.mul(beta));
+let sd = sqrt(resid.transpose().mul(resid).get(0, 0) / float(n - 2));
+num.print("intercept=" + str(beta.get(0, 0)));
+num.print("slope=" + str(beta.get(1, 0)));
+num.print("sd=" + str(sd));
+num.assert_close(beta.get(1, 0), 3.0, 0.5);
+num.assert_close(sd, 4.0, 1.0);
+end _dsl_
+savedsl(fit_program, "build/forecast-fit.dslb");
+r = system(concat(dsl_cli(fit_program), ["--dsl", "build/forecast-fit.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Read the three fitted values back from the lmnum output lines.
+let intercept = 0.0;
+let slope = 0.0;
+let sd = 0.0;
+for (line in split(r.stdout, "\n")) {
+  let parts = split(line, "=");
+  if (starts_with(line, "intercept=")) { intercept = num(parts[1]); }
+  if (starts_with(line, "slope=")) { slope = num(parts[1]); }
+  if (starts_with(line, "sd=")) { sd = num(parts[1]); }
+}
+
+# Forecast chart (lmvideo): history, fit and 12-month forecast with the 95 % band.
+chart_program = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+video.size(900, 480); video.frames(1); video.output("images/showcase-28-forecast-workbook.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("Monthly sales: 12-month forecast with 95 % band ($k)").xlabel("month").ylabel("sales ($k)").x_range(0.5, 36.5).y_range(100.0, 240.0).legend("top_left").background("#ffffff");
+let fitted = plot.series("linear trend", "line", "#94a3b8").width(2.0);
+let low = plot.series("95% lower", "line", "#93c5fd").width(1.5);
+let high = plot.series("95% upper", "line", "#93c5fd").width(1.5);
+let forecast = plot.series("forecast", "line", "#1F4E78").width(3.0).marker("circle");
+for (k in range(1, 37)) {
+  let t = float(k - 1);
+  fitted.add(float(k), ${intercept} + ${slope} * t);
+}
+for (k in range(0, 12)) {
+  let t = float(24 + k);
+  let half = 1.96 * ${sd} * sqrt(1.0 + 1.0 / 24.0 + (t - 11.5) * (t - 11.5) / 1150.0);
+  forecast.add(float(25 + k), ${intercept} + ${slope} * t);
+  low.add(float(25 + k), ${intercept} + ${slope} * t - half);
+  high.add(float(25 + k), ${intercept} + ${slope} * t + half);
+}
+fig.draw();
+video.end();
+end _dsl_
+savedsl(chart_program, "build/forecast-chart.dslb");
+r = system(concat(dsl_cli(chart_program), ["--dsl", "build/forecast-chart.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Workbook (lmoffice): forecast table, formulas, and a native bar chart beside it.
+book_program = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
+let book = office.xlsx("build/sales-forecast.xlsx");
+let sheet = book.sheet("Forecast");
+sheet.set(1, 1, "Month").set(1, 2, "Forecast ($k)").set(1, 3, "Low 95% ($k)").set(1, 4, "High 95% ($k)").set(1, 5, "Target ($k)").set(1, 6, "Variance ($k)");
+sheet.bold(1, 1).bold(1, 2).bold(1, 3).bold(1, 4).bold(1, 5).bold(1, 6);
+let intercept = ${intercept};
+let slope = ${slope};
+let sd = ${sd};
+for (k in range(0, 12)) {
+  let t = float(24 + k);
+  let f = intercept + slope * t;
+  let half = 1.96 * sd * sqrt(1.0 + 1.0 / 24.0 + (t - 11.5) * (t - 11.5) / 1150.0);
+  let row = k + 2;
+  sheet.set(row, 1, "Month " + str(k + 25));
+  sheet.set(row, 2, f).set(row, 3, f - half).set(row, 4, f + half).set(row, 5, 150.0);
+  sheet.formula(row, 6, "=B" + str(row) + "-E" + str(row));
+  sheet.number_format(row, 2, "0.0").number_format(row, 3, "0.0").number_format(row, 4, "0.0").number_format(row, 6, "0.0");
+}
+sheet.col_width(1, 14.0).col_width(2, 16.0).col_width(3, 16.0).col_width(4, 16.0).col_width(5, 14.0).col_width(6, 16.0);
+sheet.fit_to_page(1, 1).page_orientation("landscape");
+sheet.bar_chart(1, 8, 22, 19, "Forecast against target ($k)", "A2:A13", "B2:B13");
+book.save();
+end _dsl_
+savedsl(book_program, "build/forecast-book.dslb");
+r = system(concat(dsl_cli(book_program), ["--dsl", "build/forecast-book.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/sales-forecast.xlsx and images/showcase-28-forecast-workbook.png");
