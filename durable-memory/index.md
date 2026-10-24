@@ -7,6 +7,8 @@ Technical documentation, design notes, and operational procedures for `lmgallery
 | [README.md](README.md) | Gallery maintenance procedures, composition authoring guide, and catalog format |
 | [01-lmcreator-idea-backlog.md](01-lmcreator-idea-backlog.md) | Multi-host composition ideas and backlog |
 | [02-readme-health.md](02-readme-health.md) | Cross-repo demo-page health audit, image optimizations, and durable-memory status |
+| [03-office-and-video-compositions.md](03-office-and-video-compositions.md) | Compositions 26–33 driving lmvideo and lmoffice, LibreOffice rasterization |
+| [04-health-dashboard.md](04-health-dashboard.md) | Ecosystem-wide health dashboard script (`scripts/health.sh`), checks, and `--fix-pins` |
 
 ## Adding a new composition / example
 1. Create `examples/showcase-NN-<name>.lms` using multi-host `_dsl_` blocks (`cli="..." install="github:lmctl-ai/<host>@latest"`).
