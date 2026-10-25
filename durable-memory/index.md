@@ -11,6 +11,7 @@ Technical documentation, design notes, and operational procedures for `lmgallery
 | [04-health-dashboard.md](04-health-dashboard.md) | Ecosystem-wide health dashboard script (`scripts/health.sh`), checks, and `--fix-pins` |
 | [04-part2-host-compositions.md](04-part2-host-compositions.md) | Compositions 34–42 (part 2): hosts, pins, and host limits |
 | [05-document-as-code.md](05-document-as-code.md) | Compositions 43–50: Markdown reports from computed results through lmoffice, heredocs, and office gotchas |
+| [05-closed-source-peer-model.md](05-closed-source-peer-model.md) | Planning-only public/private peer model, licensing obligations, migration runbook, and split planner |
 
 ## Adding a new composition / example
 1. Create `examples/showcase-NN-<name>.lms` using multi-host `_dsl_` blocks (`cli="..." install="github:lmctl-ai/<host>@latest"`).
