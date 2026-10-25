@@ -1,0 +1,140 @@
+# SPDX-License-Identifier: MIT
+# Network audit of two services and one website, one Word report. lmssl parses the two service
+# certificates (test certificates generated once with openssl and inlined here, so the audit is
+# deterministic and offline) and reports the subject, key type, expiry, self-signed status and whether
+# each certificate matches the host it serves. lmhtml checks every internal link of a three-page site
+# (two links are broken on purpose) and writes the broken-link report. The script asserts the findings
+# it expects, formats them as Markdown, and lmoffice writes the audit with the findings table and a
+# heredoc section of audit scope. lmvideo draws the finding counts (the gallery output).
+mkdir("images");
+mkdir("build");
+mkdir("build/site");
+mkdir("build/site/sub");
+write_file("build/shop.pem", "-----BEGIN CERTIFICATE-----\nMIIB8jCCAZigAwIBAgIUL393/SzRXf6iryY1aiJHoLlBo+swCgYIKoZIzj0EAwIw\nMzEaMBgGA1UEAwwRc2hvcC5leGFtcGxlLnRlc3QxFTATBgNVBAoMDExhdHRpY2Ug\nVGVzdDAeFw0yNjEwMjQyMzU4MTNaFw0zNjEwMjEyMzU4MTNaMDMxGjAYBgNVBAMM\nEXNob3AuZXhhbXBsZS50ZXN0MRUwEwYDVQQKDAxMYXR0aWNlIFRlc3QwWTATBgcq\nhkjOPQIBBggqhkjOPQMBBwNCAAQHOWWogylYdo5SXEDr3aVbvZUFtQWWlufUD542\nCreAQeI0pN/BYmVP18Fs83l5cO4vFnuKhPxnfxCE1GoPWzf0o4GJMIGGMB0GA1Ud\nDgQWBBRQ/nohsxXoqZY5KXTllOKlG36InTAfBgNVHSMEGDAWgBRQ/nohsxXoqZY5\nKXTllOKlG36InTAPBgNVHRMBAf8EBTADAQH/MDMGA1UdEQQsMCqCEXNob3AuZXhh\nbXBsZS50ZXN0ghV3d3cuc2hvcC5leGFtcGxlLnRlc3QwCgYIKoZIzj0EAwIDSAAw\nRQIhAM8X5B79DjeFq4wa3RhcVH3LS8CCiGwAXI7OB8lOQEDFAiAE6wRJHV49V3SB\nL/QSrGZzwV/GmZSlTkDAN9JRkrPaVg==\n-----END CERTIFICATE-----\n");
+write_file("build/api.pem", "-----BEGIN CERTIFICATE-----\nMIIDYjCCAkqgAwIBAgIUHy8phHM5GM4NkEHwkauz9CLWIGMwDQYJKoZIhvcNAQEL\nBQAwMjEZMBcGA1UEAwwQYXBpLmV4YW1wbGUudGVzdDEVMBMGA1UECgwMTGF0dGlj\nZSBUZXN0MB4XDTI2MTAyNDIzNTgxM1oXDTI3MTAyNDIzNTgxM1owMjEZMBcGA1UE\nAwwQYXBpLmV4YW1wbGUudGVzdDEVMBMGA1UECgwMTGF0dGljZSBUZXN0MIIBIjAN\nBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1UBfJBxDjHK1G9JxguIBa7SkVsOh\nvFgYZ84okrg7AbQ33wRdw51F3Y3RGWN99Nrdviz+rta7s0y0YXtylf2BBWpZHfNu\nfH2Hm7hbd5lG4jTKjSh3J4iUOYz51IRfG9MN2yqCy1xxiJpRXBjP1NZTtNdfFwRx\nyVruhdeYs2WGeW5jsDVZLybxpnO1xb+gBvODNVE3aK0JI9yIjj5kNtnI2X2j/UmG\nc3oeMhjCnss4tdgUQgEq0iLMRzpaoCds9oPl7AR7NMhUSYCE2561hjP8jyUhwh33\nT5RbrY/gP1BlbRntl0/7n2f0wQqJlO0odRUbKnedqizAvG9OewO4TsoqfwIDAQAB\no3AwbjAdBgNVHQ4EFgQUcdMJXL/DExM5qlMkNgIN90d3SNMwHwYDVR0jBBgwFoAU\ncdMJXL/DExM5qlMkNgIN90d3SNMwDwYDVR0TAQH/BAUwAwEB/zAbBgNVHREEFDAS\nghBhcGkuZXhhbXBsZS50ZXN0MA0GCSqGSIb3DQEBCwUAA4IBAQA46sQl3XgN9mpr\n4ofR4KGz9HleaeGRlb/R8i/7bonKu+lnfA3BkBeOpDOIFWBIqFMWUMNRpxxH2oqD\ntw7qCJbjCl4zXz7lwWdTeFjaTEV0j7oGWpjP/oVt3o0qDm52+XFGojYODmza7wP9\nN5zHREvSUcIwGqRBZBC8w+Be8aNLLSIai0+s8M1YfeEzEreeXJnNL+DAZeMmZHc3\nkjkSDFFy7lga7SPWB4DFRzGSxCmXx8dbJT5ZakUUptnwEAm7lMiLWHTcC7N9t45X\nzT6D5MlxHdqO0y1VLK0Hs25IrqvNeizKs61I+ZqLPzHlqIae8AvCBrXO7z/ODr+r\nv7lfRWao\n-----END CERTIFICATE-----\n");
+write_file("build/site/index.html", "<!doctype html><html><body><h1>Lattice docs</h1><a href=\"about.html\">About</a><a href=\"missing.html\">Missing page</a></body></html>");
+write_file("build/site/about.html", "<!doctype html><html><body><h1 id=\"team\">Team</h1><a href=\"sub/page.html\">Sub page</a><a href=\"#missing\">Missing anchor</a><a href=\"https://example.com/\">External</a></body></html>");
+write_file("build/site/sub/page.html", "<!doctype html><html><body><a href=\"/index.html\">Home</a></body></html>");
+
+# Certificates (lmssl).
+certs = _lmcode_ cli="lmssl" install="github:lmctl-ai/lmssl@v0.1.0";
+let shop = ssl.load_cert("build/shop.pem");
+let api = ssl.load_cert("build/api.pem");
+out.line("shop.subject=" + shop.subject());
+out.line("shop.not_after=" + shop.not_after());
+out.line("shop.key=" + shop.key_type());
+out.line("shop.self=" + str(shop.self_signed()));
+out.line("shop.host=" + str(shop.matches_host("www.shop.example.test")));
+out.line("api.subject=" + api.subject());
+out.line("api.not_after=" + api.not_after());
+out.line("api.key=" + api.key_type());
+out.line("api.self=" + str(api.self_signed()));
+out.line("api.host=" + str(api.matches_host("api.example.test")));
+end _lmcode_
+savedsl(certs, "build/certs.dslb");
+r = system(concat(dsl_cli(certs), ["--dsl", "build/certs.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+let shop_subject = ""; let shop_not_after = ""; let shop_key = ""; let shop_self = ""; let shop_host = "";
+let api_subject = ""; let api_not_after = ""; let api_key = ""; let api_self = ""; let api_host = "";
+for (line in split(r.stdout, "\n")) {
+  if (starts_with(line, "shop.subject=")) { shop_subject = substr(line, 13, len(line)); }
+  if (starts_with(line, "shop.not_after=")) { shop_not_after = substr(line, 15, len(line)); }
+  if (starts_with(line, "shop.key=")) { shop_key = substr(line, 9, len(line)); }
+  if (starts_with(line, "shop.self=")) { shop_self = substr(line, 10, len(line)); }
+  if (starts_with(line, "shop.host=")) { shop_host = substr(line, 10, len(line)); }
+  if (starts_with(line, "api.subject=")) { api_subject = substr(line, 12, len(line)); }
+  if (starts_with(line, "api.not_after=")) { api_not_after = substr(line, 14, len(line)); }
+  if (starts_with(line, "api.key=")) { api_key = substr(line, 8, len(line)); }
+  if (starts_with(line, "api.self=")) { api_self = substr(line, 9, len(line)); }
+  if (starts_with(line, "api.host=")) { api_host = substr(line, 9, len(line)); }
+}
+assert(contains(shop_subject, "CN=shop.example.test"));
+assert(contains(api_subject, "CN=api.example.test"));
+assert(api_self == "true");
+assert(shop_host == "true" && api_host == "true");
+
+# Links (lmhtml).
+check = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@v0.7.3";
+let pages = html.load_dir("build/site");
+for (i in range(0, pages.len())) {
+  let page = pages.at(i);
+  let links = page.links();
+  for (j in range(0, links.len())) {
+    let url = links.at(j);
+    let kind = html.link_kind(page, url);
+    if (kind == "external" || kind == "special" || kind == "outside-root") { continue; }
+    if (!html.link_exists(page, url)) { report.add("broken-link", page.path(), 0, url + " not found"); }
+  }
+}
+report.write_text("build/links.txt");
+end _lmcode_
+savedsl(check, "build/links.dslb");
+r = system(concat(dsl_cli(check), ["--dsl", "build/links.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+let report_text = read_file("build/links.txt");
+let broken = 0;
+for (line in split(report_text, "\n")) {
+  if (starts_with(line, "broken-link")) { broken = broken + 1; }
+}
+assert(broken == 2);
+
+# Audit (Markdown formatted here; lmoffice writes the Word report).
+let shop_expiry = substr(shop_not_after, 0, 10);
+assert(substr(api_not_after, 0, 10) == "2027-10-24");
+let api_expiry = substr(api_not_after, 0, 10);
+let findings = """# Network audit: two services and one site
+
+## Certificates
+
+| Service | Key | Expires | Self-signed | Name matches |
+| :--- | :--- | :--- | :---: | :---: |
+""" + sprintf("| shop.example.test | %s | %s | %s | %s |\n", shop_key, shop_expiry, shop_self, shop_host) + sprintf("| api.example.test | %s | %s | %s | %s |\n", api_key, api_expiry, api_self, api_host) + """
+## Site links
+
+""" + sprintf("The site has %d broken internal links: index.html links to missing.html, and about.html links to #missing, an anchor that does not exist.\n", broken) + """
+## Actions
+
+- Both certificates are self-signed; replace them with CA-issued certificates before the earlier expiry (the API certificate, 2027-10-24).
+- Fix the two broken links, then rerun the check.
+""";
+
+audit = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";
+let scope = <<~MD;
+  ## Scope
+
+  The audit covers two certificates, read from PEM files, and every internal link on three pages.
+  External links are outside the check by policy. No live network connection is made.
+  MD
+let doc = docx.create("build/network-audit.docx");
+doc.markdown(${findings} + "\n" + scope).save();
+end _lmcode_
+savedsl(audit, "build/audit.dslb");
+r = system(concat(dsl_cli(audit), ["--dsl", "build/audit.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Counts for the chart: certificates checked, self-signed, names that match, broken links.
+let certs_n = 2.0;
+let self_n = 0.0;
+if (shop_self == "true") { self_n = self_n + 1.0; }
+if (api_self == "true") { self_n = self_n + 1.0; }
+let match_n = 0.0;
+if (shop_host == "true") { match_n = match_n + 1.0; }
+if (api_host == "true") { match_n = match_n + 1.0; }
+
+# Chart (lmvideo): the audit counts (the gallery output).
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 480); video.frames(1); video.output("images/showcase-46-network-audit.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("Network audit: checks and findings").xlabel("check").ylabel("count").x_range(0.5, 4.5).y_range(0.0, 3.0).legend("top_right").background("#ffffff");
+let counts = plot.series("count", "bar", "#1F4E78");
+counts.add(1.0, ${certs_n + 0.000000001}); counts.add(2.0, ${self_n + 0.000000001}); counts.add(3.0, ${match_n + 0.000000001}); counts.add(4.0, ${broken + 0.000000001});
+fig.draw();
+video.end();
+end _lmcode_
+savedsl(chart, "build/audit-chart.dslb");
+r = system(concat(dsl_cli(chart), ["--dsl", "build/audit-chart.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/network-audit.docx and images/showcase-46-network-audit.png");

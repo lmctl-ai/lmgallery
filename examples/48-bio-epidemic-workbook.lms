@@ -1,0 +1,118 @@
+# SPDX-License-Identifier: MIT
+# Results workbook and report for an SIR epidemic. lmbio builds the model from mass-action reactions
+# (infection S + I -> 2 I at rate 0.3 S I, recovery I -> R at rate 0.1 I), simulates 120 days at one-day
+# steps and writes the full time series. The script checks that the population is conserved, reads the peak
+# and final sizes back, and asserts them against the basic reproduction number R0 = 0.3 * 0.99 / 0.1. The
+# time series goes into an Excel workbook (typed values, one sheet) and the summary into a Word report.
+# lmvideo draws the three compartments over time (the gallery output).
+mkdir("images");
+mkdir("build");
+
+sim = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@v0.1.3";
+let m = bio.model("sir").compartment("pop", 1.0).species("S", "pop", 0.99).species("I", "pop", 0.01).species("R", "pop", 0.0);
+m.reaction("infect", "S + I -> 2 I", "0.3*S*I").reaction("recover", "I -> R", "0.1*I");
+let r = m.simulate(0.0, 120.0, 121);
+r.save_csv("build/sir.csv");
+bio.assert_true(abs(r.final("S") + r.final("I") + r.final("R") - 1.0) < 0.000001);
+bio.print("peak_i=" + str(r.max("I")));
+bio.print("peak_t=" + str(r.time_of_max("I")));
+bio.print("final_s=" + str(r.final("S")));
+bio.print("final_i=" + str(r.final("I")));
+bio.print("final_r=" + str(r.final("R")));
+end _lmcode_
+savedsl(sim, "build/sir-sim.dslb");
+r = system(concat(dsl_cli(sim), ["--dsl", "build/sir-sim.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+let peak_i = 0.0; let peak_t = 0.0; let final_s = 0.0; let final_i = 0.0; let final_r = 0.0;
+for (line in split(r.stdout, "\n")) {
+  let parts = split(line, "=");
+  if (starts_with(line, "peak_i=")) { peak_i = num(parts[1]); }
+  if (starts_with(line, "peak_t=")) { peak_t = num(parts[1]); }
+  if (starts_with(line, "final_s=")) { final_s = num(parts[1]); }
+  if (starts_with(line, "final_i=")) { final_i = num(parts[1]); }
+  if (starts_with(line, "final_r=")) { final_r = num(parts[1]); }
+}
+let r0 = 0.3 * 0.99 / 0.1;
+assert(r0 > 2.9 && r0 < 3.0);
+assert(peak_i > 0.2 && peak_i < 0.6);
+assert(final_i < 0.001);
+assert(final_r > 0.9);
+
+# Workbook (lmoffice): the time series as typed values, one sheet; the summary is the second sheet.
+let series = read_file("build/sir.csv");
+let summary = "Quantity,Value\n" + sprintf("Basic reproduction number R0,%.3f\n", r0) + sprintf("Peak infected fraction,%.4f\n", peak_i) + sprintf("Day of peak,%.0f\n", peak_t) + sprintf("Final susceptible fraction,%.4f\n", final_s) + sprintf("Final recovered fraction,%.4f\n", final_r);
+workbook = _lmcode_ cli="lmoffice xlsx" install="github:lmctl-ai/lmoffice@v0.1.21";
+let book = xlsx.create("build/sir-workbook.xlsx");
+book.sheet_from_csv("Time series", ${series});
+book.sheet_from_csv("Summary", ${summary});
+book.save();
+end _lmcode_
+savedsl(workbook, "build/sir-book.dslb");
+r = system(concat(dsl_cli(workbook), ["--dsl", "build/sir-book.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Report (lmoffice): the Markdown is formatted here from the same numbers.
+let report_md = """# SIR epidemic: results
+
+## Model
+
+Susceptible, infected and recovered fractions of one population. Infection is S + I -> 2 I at rate 0.3, recovery is I -> R at rate 0.1 per day. The model was simulated with lmbio for 120 days at one-day steps, starting with 1 % infected.
+
+## Results
+
+| Quantity | Value |
+| :--- | ---: |
+""" + sprintf("| Basic reproduction number R0 | %.2f |\n", r0) + sprintf("| Peak infected fraction | %.3f |\n", peak_i) + sprintf("| Day of peak | %.0f |\n", peak_t) + sprintf("| Final recovered fraction | %.3f |\n", final_r) + """
+## Workbook
+
+The workbook holds the 121 daily values of S, I and R (sheet Time series) and this summary (sheet Summary).
+""";
+
+report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";
+let limits = <<~MD;
+  ## Limits
+
+  The model is well mixed with no births, deaths or waning immunity, so the final recovered fraction is an
+  outbreak size rather than a forecast for a real population.
+  MD
+let doc = docx.create("build/sir-report.docx");
+doc.markdown(${report_md} + "\n" + limits).save();
+end _lmcode_
+savedsl(report, "build/sir-report.dslb");
+r = system(concat(dsl_cli(report), ["--dsl", "build/sir-report.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Samples for the chart in percent of the population: day 0, 20, ..., 120 (row k is line k + 2, after the header).
+let days = [0, 20, 40, 60, 80, 100, 120];
+let sv = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+let iv = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+let rv = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+let csv_lines = split(read_file("build/sir.csv"), "\n");
+for (j in range(0, 7)) {
+  let f = split(csv_lines[days[j] + 1], ",");
+  sv[j] = num(sprintf("%.4f", num(f[1]) * 100.0 + 0.0001));
+  iv[j] = num(sprintf("%.4f", num(f[2]) * 100.0 + 0.0001));
+  rv[j] = num(sprintf("%.4f", num(f[3]) * 100.0 + 0.0001));
+}
+
+# Chart (lmvideo): the three compartments over time (the gallery output).
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 480); video.frames(1); video.output("images/showcase-48-sir-epidemic.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("SIR epidemic: percent of the population by compartment (lmbio)").xlabel("time (days)").ylabel("percent of population").x_range(0.0, 120.0).y_range(0.0, 100.0).legend("top_right").background("#ffffff");
+let s_line = plot.series("susceptible", "line", "#1F4E78").width(2.5);
+let i_line = plot.series("infected", "line", "#dc2626").width(2.5);
+let r_line = plot.series("recovered", "line", "#0f766e").width(2.5);
+s_line.add(0.0, ${sv[0]}); s_line.add(20.0, ${sv[1]}); s_line.add(40.0, ${sv[2]}); s_line.add(60.0, ${sv[3]}); s_line.add(80.0, ${sv[4]}); s_line.add(100.0, ${sv[5]}); s_line.add(120.0, ${sv[6]});
+i_line.add(0.0, ${iv[0]}); i_line.add(20.0, ${iv[1]}); i_line.add(40.0, ${iv[2]}); i_line.add(60.0, ${iv[3]}); i_line.add(80.0, ${iv[4]}); i_line.add(100.0, ${iv[5]}); i_line.add(120.0, ${iv[6]});
+r_line.add(0.0, ${rv[0]}); r_line.add(20.0, ${rv[1]}); r_line.add(40.0, ${rv[2]}); r_line.add(60.0, ${rv[3]}); r_line.add(80.0, ${rv[4]}); r_line.add(100.0, ${rv[5]}); r_line.add(120.0, ${rv[6]});
+fig.draw();
+video.end();
+end _lmcode_
+savedsl(chart, "build/sir-chart.dslb");
+r = system(concat(dsl_cli(chart), ["--dsl", "build/sir-chart.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/sir-workbook.xlsx, build/sir-report.docx and images/showcase-48-sir-epidemic.png");

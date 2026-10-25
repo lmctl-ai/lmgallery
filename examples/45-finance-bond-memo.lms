@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: MIT
+# Desk memo on a five-year bond and a one-year call, priced on one zero curve. lmfinance bootstraps the
+# curve from six pillars, prices a 4 % annual-coupon five-year bond and a one-year at-the-money call, and
+# reports the duration and DV01 of the bond. The script rebuilds the bond price from its cash flows and the
+# curve's discount factors and asserts that the two agree. The numbers are formatted as Markdown and
+# lmoffice writes two files: a Word memo and an Excel workbook (curve and cash flows, typed). lmvideo draws
+# the zero rates (the gallery output).
+mkdir("images");
+mkdir("build");
+
+desk = _lmcode_ cli="lmfinance" install="github:lmctl-ai/lmfinance@v0.1.3";
+let curve = market.zero_curve().zero(1.0, 0.040).zero(2.0, 0.042).zero(5.0, 0.046).zero(10.0, 0.050).zero(20.0, 0.052).zero(30.0, 0.053).build();
+let bond = instrument.bond(100.0, 0.04, 5.0, 1);
+let price = pricing.bond_npv(bond, curve);
+let duration = pricing.bond_duration(bond, curve.zero(5.0));
+let dv01 = risk.bond_dv01(bond, curve);
+let base = model.black_scholes(100.0, 0.05, 0.0, 0.2);
+let call = instrument.european_call(100.0, 1.0);
+let option_price = pricing.price(call, base, pricing.analytic()).price();
+lmf.print("z1=" + str(curve.zero(1.0)));
+lmf.print("z2=" + str(curve.zero(2.0)));
+lmf.print("z5=" + str(curve.zero(5.0)));
+lmf.print("z10=" + str(curve.zero(10.0)));
+lmf.print("df1=" + str(curve.discount(1.0)));
+lmf.print("df2=" + str(curve.discount(2.0)));
+lmf.print("df3=" + str(curve.discount(3.0)));
+lmf.print("df4=" + str(curve.discount(4.0)));
+lmf.print("df5=" + str(curve.discount(5.0)));
+lmf.print("df10=" + str(curve.discount(10.0)));
+lmf.print("price=" + str(price));
+lmf.print("duration=" + str(duration));
+lmf.print("dv01=" + str(dv01));
+lmf.print("call=" + str(option_price));
+end _lmcode_
+savedsl(desk, "build/desk.dslb");
+r = system(concat(dsl_cli(desk), ["--dsl", "build/desk.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+let z1 = 0.0; let z2 = 0.0; let z5 = 0.0; let z10 = 0.0; let price = 0.0; let duration = 0.0; let dv01 = 0.0; let call = 0.0;
+let df1 = 1.0; let df2 = 1.0; let df3 = 1.0; let df4 = 1.0; let df5 = 1.0; let df10 = 1.0;
+for (line in split(r.stdout, "\n")) {
+  let parts = split(line, "=");
+  if (starts_with(line, "z1=")) { z1 = num(parts[1]); }
+  if (starts_with(line, "z2=")) { z2 = num(parts[1]); }
+  if (starts_with(line, "z5=")) { z5 = num(parts[1]); }
+  if (starts_with(line, "z10=")) { z10 = num(parts[1]); }
+  if (starts_with(line, "df1=")) { df1 = num(parts[1]); }
+  if (starts_with(line, "df2=")) { df2 = num(parts[1]); }
+  if (starts_with(line, "df3=")) { df3 = num(parts[1]); }
+  if (starts_with(line, "df4=")) { df4 = num(parts[1]); }
+  if (starts_with(line, "df5=")) { df5 = num(parts[1]); }
+  if (starts_with(line, "df10=")) { df10 = num(parts[1]); }
+  if (starts_with(line, "price=")) { price = num(parts[1]); }
+  if (starts_with(line, "duration=")) { duration = num(parts[1]); }
+  if (starts_with(line, "dv01=")) { dv01 = num(parts[1]); }
+  if (starts_with(line, "call=")) { call = num(parts[1]); }
+}
+assert(z1 < z2 && z2 < z5 && z5 < z10);
+assert(abs(call - 10.4506) < 0.001);
+
+# Independent check: the cash flows discounted with the curve's own discount factors (4 % coupons, 100 face).
+let pv1 = 4.0 * df1; let pv2 = 4.0 * df2; let pv3 = 4.0 * df3; let pv4 = 4.0 * df4; let pv5 = 104.0 * df5;
+let rebuilt = pv1 + pv2 + pv3 + pv4 + pv5;
+let gap = price - rebuilt;
+assert(abs(gap) < 0.05);
+
+# Memo and workbook (lmoffice). The Markdown is formatted here; the table values are the lmfinance results.
+let memo_md = """# Desk memo: five-year bond and one-year call
+
+## Curve
+
+The zero curve is bootstrapped from six pillars. The one-year zero rate is """ + sprintf("%.2f", z1 * 100.0) + """ % and the ten-year rate is """ + sprintf("%.2f", z10 * 100.0) + """ %.
+
+## Bond valuation
+
+| Quantity | Value |
+| :--- | ---: |
+""" + sprintf("| Price (per 100 face) | %.2f |\n", price) + sprintf("| Modified duration (years) | %.3f |\n", duration) + sprintf("| DV01 (per 100 face) | %.4f |\n", dv01) + """
+The price is the sum of the 4 % coupons and the 100 redemption, discounted with the curve. """ + sprintf("An independent rebuild from the same discount factors is %.2f per 100 face away from the lmfinance price; the memo does not model that cash-flow timing difference.", gap) + """
+
+## Option
+
+A one-year at-the-money call on a 100 spot, 5 % rate and 20 % volatility is worth """ + sprintf("%.4f", call) + """ (Black-Scholes; textbook value 10.4506).
+""";
+
+memo = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";
+let limits = <<~MD;
+  ## Limits
+
+  Prices are model values on one curve. The bond is priced without accrued interest and without credit spread.
+  Duration is taken at the five-year zero rate. The workbook holds the values only; no formulas are stored.
+  MD
+let doc = docx.create("build/desk-memo.docx");
+doc.markdown(${memo_md} + "\n" + limits).save();
+end _lmcode_
+savedsl(memo, "build/desk-memo.dslb");
+r = system(concat(dsl_cli(memo), ["--dsl", "build/desk-memo.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+let curve_csv = "Tenor (years),Zero rate,Discount factor\n" + sprintf("1,%.6f,%.6f\n", z1, df1) + sprintf("2,%.6f,%.6f\n", z2, df2) + sprintf("5,%.6f,%.6f\n", z5, df5) + sprintf("10,%.6f,%.6f\n", z10, df10);
+let book_csv = "Year,Cash flow,Present value\n" + sprintf("1,4,%.4f\n", pv1) + sprintf("2,4,%.4f\n", pv2) + sprintf("3,4,%.4f\n", pv3) + sprintf("4,4,%.4f\n", pv4) + sprintf("5,104,%.4f\n", pv5);
+workbook = _lmcode_ cli="lmoffice xlsx" install="github:lmctl-ai/lmoffice@v0.1.21";
+let book = xlsx.create("build/desk-workbook.xlsx");
+book.sheet_from_csv("Curve", ${curve_csv});
+book.sheet_from_csv("Bond cash flows", ${book_csv});
+book.save();
+end _lmcode_
+savedsl(workbook, "build/desk-book.dslb");
+r = system(concat(dsl_cli(workbook), ["--dsl", "build/desk-book.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Chart (lmvideo): zero rates at the four pillars (the gallery output).
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 480); video.frames(1); video.output("images/showcase-45-finance-bond-memo.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("Zero rates behind the bond memo (lmfinance curve)").xlabel("tenor (years)").ylabel("zero rate").x_range(0.0, 11.0).y_range(0.0, 0.06).legend("top_left").background("#ffffff");
+let rates = plot.series("zero rate", "bar", "#1F4E78");
+rates.add(1.0, ${z1 + 0.000000001}); rates.add(2.0, ${z2 + 0.000000001}); rates.add(5.0, ${z5 + 0.000000001}); rates.add(10.0, ${z10 + 0.000000001});
+fig.draw();
+video.end();
+end _lmcode_
+savedsl(chart, "build/desk-chart.dslb");
+r = system(concat(dsl_cli(chart), ["--dsl", "build/desk-chart.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/desk-memo.docx, build/desk-workbook.xlsx and images/showcase-45-finance-bond-memo.png");

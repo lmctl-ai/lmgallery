@@ -1,0 +1,88 @@
+# SPDX-License-Identifier: MIT
+# Weather briefing for a shallow-water channel, written as a slide deck. lmweather builds a linear
+# shallow-water plane (no rotation) at three depths, 100 m, 400 m and 1000 m, and reports the gravity-wave
+# speed of each. The script checks every speed against sqrt(g H) to 1 %, works out the speed ratios, and
+# formats the briefing as Markdown slides. lmvideo draws the speeds (the gallery output); lmoffice writes
+# the deck, with the chart on the third slide and the measured speeds in a table on the second.
+mkdir("images");
+mkdir("build");
+
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@v0.1.3";
+let ly = 4000000.0;
+let m100 = wx.plane(8, 200, 40000.0, ly).depth(100.0).linear();
+let m400 = wx.plane(8, 200, 40000.0, ly).depth(400.0).linear();
+let m1000 = wx.plane(8, 200, 40000.0, ly).depth(1000.0).linear();
+wx.print("c100=" + str(m100.wave_speed()));
+wx.print("c400=" + str(m400.wave_speed()));
+wx.print("c1000=" + str(m1000.wave_speed()));
+wx.assert_close(m100.wave_speed(), sqrt(9.80616 * 100.0), 0.01 * sqrt(9.80616 * 100.0));
+wx.assert_close(m400.wave_speed(), sqrt(9.80616 * 400.0), 0.01 * sqrt(9.80616 * 400.0));
+wx.assert_close(m1000.wave_speed(), sqrt(9.80616 * 1000.0), 0.01 * sqrt(9.80616 * 1000.0));
+end _lmcode_
+savedsl(sim, "build/weather-sim.dslb");
+r = system(concat(dsl_cli(sim), ["--dsl", "build/weather-sim.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+let c100 = 0.0; let c400 = 0.0; let c1000 = 0.0;
+for (line in split(r.stdout, "\n")) {
+  let parts = split(line, "=");
+  if (starts_with(line, "c100=")) { c100 = num(parts[1]); }
+  if (starts_with(line, "c400=")) { c400 = num(parts[1]); }
+  if (starts_with(line, "c1000=")) { c1000 = num(parts[1]); }
+}
+assert(abs(c1000 / c100 - sqrt(10.0)) < 0.01 * sqrt(10.0));
+
+# The briefing (Markdown slides). Each slide has one heading; the speeds come from lmweather.
+let deck_md = """# Gravity-wave briefing: shallow channel
+
+A linear shallow-water channel, no rotation, 40 km wide and 4000 km long. Three depths are compared.
+
+---
+
+# Wave speeds by depth
+
+| Depth (m) | Speed (m/s) | Check sqrt(g H) (m/s) |
+| ---: | ---: | ---: |
+""" + sprintf("| 100 | %.2f | %.2f |\n", c100, sqrt(9.80616 * 100.0)) + sprintf("| 400 | %.2f | %.2f |\n", c400, sqrt(9.80616 * 400.0)) + sprintf("| 1000 | %.2f | %.2f |\n", c1000, sqrt(9.80616 * 1000.0)) + """
+---
+
+# What changes with depth
+
+- Speed scales with the square root of depth.
+""" + sprintf("- Going from 100 m to 1000 m raises the speed by a factor of %.2f.\n", c1000 / c100) + """
+- The pulse in the channel moves at the speed of the deepest section.
+
+Note: all three speeds agree with sqrt(g H) to 1 %; the check is asserted in the build script.
+
+---
+
+# Chart
+
+![wave speed by depth](images/showcase-47-weather-briefing.png){width=640}
+""";
+
+# Chart (lmvideo): wave speed against depth (the gallery output).
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 480); video.frames(1); video.output("images/showcase-47-weather-briefing.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("Gravity-wave speed in a shallow channel (lmweather)").xlabel("depth (1 = 100 m, 2 = 400 m, 3 = 1000 m)").ylabel("speed (m/s)").x_range(0.5, 3.5).y_range(0.0, 110.0).legend("top_left").background("#ffffff");
+let speeds = plot.series("wave speed", "bar", "#0f766e");
+speeds.add(1.0, ${c100 + 0.000000001}); speeds.add(2.0, ${c400 + 0.000000001}); speeds.add(3.0, ${c1000 + 0.000000001});
+fig.draw();
+video.end();
+end _lmcode_
+savedsl(chart, "build/weather-chart.dslb");
+r = system(concat(dsl_cli(chart), ["--dsl", "build/weather-chart.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+deck = _lmcode_ cli="lmoffice pptx" install="github:lmctl-ai/lmoffice@v0.1.21";
+let slides = pptx.create("build/weather-briefing.pptx");
+slides.markdown(${deck_md}).save();
+end _lmcode_
+savedsl(deck, "build/weather-deck.dslb");
+r = system(concat(dsl_cli(deck), ["--dsl", "build/weather-deck.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+println("wrote build/weather-briefing.pptx and images/showcase-47-weather-briefing.png");

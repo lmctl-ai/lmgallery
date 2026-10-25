@@ -1,0 +1,89 @@
+# SPDX-License-Identifier: MIT
+# Lab report: friction on a 24 degree ramp. lmphysics releases a 6 kg cargo block on a ramp with a
+# friction coefficient of 0.3 (collision contact, 1 ms steps, 1.4 s) and records its velocity. The
+# script measures the acceleration from the recorded velocities, derives the friction coefficient
+# from it and asserts both against the values the model was given. The results are formatted into
+# Markdown here; lmoffice writes the Word lab report from that text, with a static limitations section
+# written as a heredoc. lmvideo draws measured and predicted acceleration (the gallery output).
+mkdir("images");
+mkdir("build");
+
+sim = _lmcode_ cli="lmphysics" install="github:lmctl-ai/lmphysics@v0.1.3";
+let th = 0.41887902047863906;
+let w = phys.system("nsc");
+w.material("m", 0.3, 0.0).timestep(0.001);
+w.box("ramp", 40.0, 4.0, 0.5, 1000.0).rot_axis(0.0, 1.0, 0.0, th).fixed(true).collide("m");
+let blk = w.box("blk", 0.4, 0.4, 0.4, 93.75).pos(0.45 * sin(th), 0.0, 0.45 * cos(th)).rot_axis(0.0, 1.0, 0.0, th).collide("m");
+w.record("blk", "vx,vz");
+w.run(1.4);
+w.save_csv("build/ramp.csv");
+end _lmcode_
+savedsl(sim, "build/ramp-sim.dslb");
+r = system(concat(dsl_cli(sim), ["--dsl", "build/ramp-sim.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Measurement: along-ramp velocity at t = 0.2 s and t = 1.4 s (rows 200 and 1400, 1 ms apart).
+let g = 9.81;
+let cos_th = 0.9135454576426009;
+let sin_th = 0.4067366430758002;
+let rows = csv_parse(read_file("build/ramp.csv"));
+let a0 = rows.get(200, null); let a1 = rows.get(1400, null);
+let v0 = a0.get("blk.vx", 0.0) * cos_th - a0.get("blk.vz", 0.0) * sin_th;
+let v1 = a1.get("blk.vx", 0.0) * cos_th - a1.get("blk.vz", 0.0) * sin_th;
+let a_meas = (v1 - v0) / 1.2;
+let mu_meas = (g * sin_th - a_meas) / (g * cos_th);
+let a_pred = g * (sin_th - 0.3 * cos_th);
+assert(abs(mu_meas - 0.3) < 0.01);
+assert(abs(a_meas - a_pred) < 0.02);
+
+# Results as Markdown: the numbers are formatted by the outer script.
+let head = """# Lab report: friction on a 24 degree ramp
+
+## Method
+
+A 6 kg cargo block was released from rest on a 24 degree ramp. The contact friction coefficient was set to 0.3 in an lmphysics collision simulation (1 ms steps, 1.4 s). The along-ramp velocity was recorded every millisecond, and the acceleration was taken between 0.2 s and 1.4 s.
+
+## Results
+
+| Quantity | Measured | Predicted |
+| :--- | ---: | ---: |
+""";
+let rows_md = sprintf("| Acceleration (m/s^2) | %.3f | %.3f |\n", a_meas, a_pred) + sprintf("| Friction coefficient | %.3f | 0.300 |\n", mu_meas);
+let tail = """
+## Conclusion
+
+The measured friction coefficient agrees with the value the model was given to within 0.01, and the acceleration agrees with g (sin 24 deg - mu cos 24 deg) to within 0.02 m/s^2.
+""";
+
+# Lab report (lmoffice): the Markdown body is built above; the limitations are a heredoc.
+report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";
+let limits = <<~MD;
+  ## Limitations
+
+  The contact model is a single rigid block on a rigid ramp with no air drag. Velocities are read at two
+  instants only, so the result is a mean over 1.2 s and does not show the stick-slip transient.
+  MD
+let body = ${head + rows_md + tail};
+let doc = docx.create("build/physics-lab-report.docx");
+doc.markdown(body + "\n" + limits).save();
+end _lmcode_
+savedsl(report, "build/physics-lab.dslb");
+r = system(concat(dsl_cli(report), ["--dsl", "build/physics-lab.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Chart (lmvideo): measured and predicted acceleration (the gallery output).
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 480); video.frames(1); video.output("images/showcase-43-physics-lab.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("Cargo on a 24 degree ramp: acceleration, measured and predicted (mu = 0.3)").xlabel("1 = measured, 2 = predicted").ylabel("acceleration (m/s^2)").x_range(0.5, 2.5).y_range(0.0, 2.0).legend("top_right").background("#ffffff");
+let amp = plot.series("acceleration", "bar", "#1F4E78");
+amp.add(1.0, ${a_meas}); amp.add(2.0, ${a_pred});
+fig.draw();
+video.end();
+end _lmcode_
+savedsl(chart, "build/physics-chart.dslb");
+r = system(concat(dsl_cli(chart), ["--dsl", "build/physics-chart.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/physics-lab-report.docx and images/showcase-43-physics-lab.png");

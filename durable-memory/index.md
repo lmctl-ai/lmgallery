@@ -10,6 +10,7 @@ Technical documentation, design notes, and operational procedures for `lmgallery
 | [03-office-and-video-compositions.md](03-office-and-video-compositions.md) | Compositions 26–33 driving lmvideo and lmoffice, LibreOffice rasterization |
 | [04-health-dashboard.md](04-health-dashboard.md) | Ecosystem-wide health dashboard script (`scripts/health.sh`), checks, and `--fix-pins` |
 | [04-part2-host-compositions.md](04-part2-host-compositions.md) | Compositions 34–42 (part 2): hosts, pins, and host limits |
+| [05-document-as-code.md](05-document-as-code.md) | Compositions 43–50: Markdown reports from computed results through lmoffice, heredocs, and office gotchas |
 
 ## Adding a new composition / example
 1. Create `examples/showcase-NN-<name>.lms` using multi-host `_dsl_` blocks (`cli="..." install="github:lmctl-ai/<host>@latest"`).

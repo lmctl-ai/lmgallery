@@ -25,6 +25,10 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#certificate-inventory-from-lmssl"><img src="../docs/images/showcase-37-cert-inventory.png" width="400" alt="Certificate inventory from lmssl"></a><br>Certificate inventory from lmssl | <a href="#product-slide-with-a-lmmagnum-3d-render"><img src="../docs/images/showcase-38-product-render.png" width="400" alt="Product slide with a lmmagnum 3D render"></a><br>Product slide with a lmmagnum 3D render |
 | <a href="#audio-harmonics-slide-with-a-wav-file"><img src="../docs/images/showcase-39-audio-harmonics.png" width="400" alt="Audio harmonics slide with a WAV file"></a><br>Audio harmonics slide with a WAV file | <a href="#predator-prey-lab-report-with-an-lmvideo-figure"><img src="../docs/images/showcase-40-predator-prey-report.png" width="400" alt="Predator-prey lab report with an lmvideo figure"></a><br>Predator-prey lab report with an lmvideo figure |
 | <a href="#gravity-wave-speed-from-a-shallow-water-pulse"><img src="../docs/images/showcase-41-gravity-wave-speed-report.png" width="400" alt="Gravity-wave speed from a shallow-water pulse"></a><br>Gravity-wave speed from a shallow-water pulse | <a href="#cell-growth-lab-report-with-an-lmvideo-figure"><img src="../docs/images/showcase-42-cell-growth-report.png" width="400" alt="Cell growth lab report with an lmvideo figure"></a><br>Cell growth lab report with an lmvideo figure |
+| <a href="#physics-lab-report-friction-on-a-ramp-measured-and-checked"><img src="../docs/images/showcase-43-physics-lab-report.png" width="400" alt="Physics lab report: friction on a ramp, measured and checked"></a><br>Physics lab report: friction on a ramp, measured and checked | <a href="#observing-plan-word-and-slides-from-one-markdown-body"><img src="../docs/images/showcase-44-observing-plan.png" width="400" alt="Observing plan: Word and slides from one Markdown body"></a><br>Observing plan: Word and slides from one Markdown body |
+| <a href="#finance-memo-bond-price-duration-and-a-workbook"><img src="../docs/images/showcase-45-finance-bond-memo.png" width="400" alt="Finance memo: bond price, duration and a workbook"></a><br>Finance memo: bond price, duration and a workbook | <a href="#network-audit-report-certificates-and-site-links"><img src="../docs/images/showcase-46-network-audit.png" width="400" alt="Network audit report: certificates and site links"></a><br>Network audit report: certificates and site links |
+| <a href="#weather-briefing-deck-gravity-wave-speed-by-depth"><img src="../docs/images/showcase-47-weather-briefing.png" width="400" alt="Weather briefing deck: gravity-wave speed by depth"></a><br>Weather briefing deck: gravity-wave speed by depth | <a href="#sir-epidemic-results-workbook-and-report"><img src="../docs/images/showcase-48-sir-report.png" width="400" alt="SIR epidemic: results workbook and report"></a><br>SIR epidemic: results workbook and report |
+| <a href="#infrastructure-change-report-from-applied-state"><img src="../docs/images/showcase-49-cloud-plan-report.png" width="400" alt="Infrastructure change report from applied state"></a><br>Infrastructure change report from applied state | <a href="#data-quality-report-from-a-logger-csv"><img src="../docs/images/showcase-50-data-quality-report.png" width="400" alt="Data-quality report from a logger CSV"></a><br>Data-quality report from a logger CSV |
 
 ## Damped oscillator dashboard
 
@@ -444,4 +448,84 @@ Hosts: lmcell → lmvideo → lmoffice. Output: `images/showcase-42-cell-growth.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/42-cell-growth-report.lms
+```
+
+## Physics lab report: friction on a ramp, measured and checked
+
+lmphysics runs a 6 kg block on a 24 degree ramp with friction 0.3 and records its velocity; the script measures the acceleration and the friction coefficient, asserts both, and formats the results as Markdown. lmoffice writes the Word lab report with a heredoc limitations section; lmvideo draws measured against predicted acceleration. The picture shows the source next to the rendered page.
+
+Hosts: lmphysics → lmoffice → lmvideo. Output: `images/showcase-43-physics-lab.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/43-physics-lab-report.lms
+```
+
+## Observing plan: Word and slides from one Markdown body
+
+lmspace propagates a satellite in an eccentric orbit for two periods; the script reads five epochs from the state history, checks the perigee and apogee distances against the elements, and formats the plan as Markdown. lmoffice writes the plan as a Word document and as a slide deck; lmvideo draws the distance at each epoch. The picture shows the source next to the rendered Word page.
+
+Hosts: lmspace → lmoffice → lmvideo. Output: `images/showcase-44-observing-plan.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/44-astronomy-observing-plan.lms
+```
+
+## Finance memo: bond price, duration and a workbook
+
+lmfinance bootstraps a zero curve, prices a 5-year 4 % bond and a one-year call, and reports the duration and DV01. The script checks the bond against the discount factors and the call against 10.4506; lmoffice writes the Word memo (with a heredoc limitations section) and an Excel workbook with the curve and the cash flows; lmvideo draws the zero rates. The picture shows the source next to the rendered memo.
+
+Hosts: lmfinance → lmoffice → lmvideo. Output: `images/showcase-45-finance-bond-memo.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/45-finance-bond-memo.lms
+```
+
+## Network audit report: certificates and site links
+
+lmssl parses two service certificates (key, expiry, self-signed status, name match) and lmhtml checks every internal link of a three-page site; the script asserts the findings it expects, formats them as Markdown, and lmoffice writes the audit as a Word report. lmvideo draws the check counts. The picture shows the source next to the rendered audit.
+
+Hosts: lmssl → lmhtml → lmoffice → lmvideo. Output: `images/showcase-46-network-audit.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/46-network-audit-report.lms
+```
+
+## Weather briefing deck: gravity-wave speed by depth
+
+lmweather computes the gravity-wave speed of a shallow channel at 100, 400 and 1000 m and checks each against sqrt(g H); the script formats the briefing as Markdown slides with a table and a chart, and lmoffice writes the deck. lmvideo draws the speeds. The picture shows the source next to the rendered table slide.
+
+Hosts: lmweather → lmoffice → lmvideo. Output: `images/showcase-47-weather-briefing.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/47-weather-briefing-slides.lms
+```
+
+## SIR epidemic: results workbook and report
+
+lmbio simulates an SIR epidemic from mass-action reactions for 120 days, checks that the population is conserved, and asserts the peak and final sizes against R0 = 2.97. The daily series goes to an Excel workbook with typed values, the summary to a Word report, and lmvideo draws the compartments. The picture shows the source next to the rendered report.
+
+Hosts: lmbio → lmoffice → lmvideo. Output: `images/showcase-48-sir-epidemic.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/48-bio-epidemic-workbook.lms
+```
+
+## Infrastructure change report from applied state
+
+lmcloud runs OpenTofu in-process on three terraform_data resources, applies them, changes one input and applies again. The script reads both Terraform states back with json_parse, compares them resource by resource, and asserts one change and two unchanged resources. lmoffice writes the change table as a Word report; lmvideo draws the outcomes. The picture shows the source next to the rendered report.
+
+Hosts: lmcloud → lmoffice → lmvideo. Output: `images/showcase-49-cloud-plan.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/49-cloud-plan-report.lms
+```
+
+## Data-quality report from a logger CSV
+
+The script generates a 48-minute logger export with planted defects (blank cells, a repeated minute, a spike) and checks it with csv_parse. lmnum loads the cleaned table, computes the column statistics and the z-score of the spike, and lmoffice writes the report as a Word document. lmvideo draws the issue counts. The picture shows the source next to the rendered report.
+
+Hosts: lmnum → lmoffice → lmvideo. Output: `images/showcase-50-data-quality.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/50-data-quality-report.lms
 ```

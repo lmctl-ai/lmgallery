@@ -1,0 +1,138 @@
+# SPDX-License-Identifier: MIT
+# Data-quality report for a logger export. The script generates a deterministic 48-minute CSV of
+# temperature and pressure readings with known defects (blank cells, a duplicated minute and one spike),
+# checks it with csv_parse (missing cells, repeated timestamps, and the spike), and writes the cleaned
+# file. lmnum loads the cleaned table, computes the column statistics, and flags the largest temperature
+# by its z-score. The script asserts the counts it planted and formats the report as Markdown. lmoffice
+# writes the Word report, and lmvideo draws the issue counts (the gallery output).
+mkdir("images");
+mkdir("build");
+
+# Raw export: one row per minute. Planted defects: temperature blank at minutes 12 and 30, pressure blank
+# at minute 44, minute 40 repeated, and a temperature spike of 95 C at minute 25.
+let raw = "minute,temp_c,pressure_kpa\n";
+for (m in range(0, 48)) {
+  let t = 20.0 + 0.05 * m + 0.1 * ((m * 3) % 7 - 3);
+  let p = 101.3 + 0.01 * ((m * 2) % 5 - 2);
+  let temp_cell = sprintf("%.3f", t);
+  let pres_cell = sprintf("%.3f", p);
+  if (m == 12 || m == 30) { temp_cell = ""; }
+  if (m == 25) { temp_cell = "95.000"; }
+  if (m == 44) { pres_cell = ""; }
+  raw = raw + sprintf("%d,", m) + temp_cell + "," + pres_cell + "\n";
+  if (m == 40) { raw = raw + sprintf("%d,", m) + temp_cell + "," + pres_cell + "\n"; }
+}
+write_file("build/raw.csv", raw);
+
+# Quality checks (csv_parse): missing cells, repeated minutes and the spike.
+let rows = csv_parse(raw);
+let missing_temp = 0;
+let missing_pressure = 0;
+let repeated = 0;
+let spike = 0;
+let seen = "";
+let clean = "minute,temp_c,pressure_kpa\n";
+let kept = 0;
+for (i in range(0, rows.len())) {
+  let row = rows.get(i, null);
+  let minute = row.get("minute", "");
+  let tc = row.get("temp_c", "");
+  let pc = row.get("pressure_kpa", "");
+  let bad = false;
+  if (tc == "") { missing_temp = missing_temp + 1; bad = true; }
+  if (pc == "") { missing_pressure = missing_pressure + 1; bad = true; }
+  if (contains(seen, "|" + minute + "|")) { repeated = repeated + 1; bad = true; } else { seen = seen + "|" + minute + "|"; }
+  if (tc != "" && num(tc) > 40.0) { spike = spike + 1; }
+  if (!bad) { clean = clean + minute + "," + tc + "," + pc + "\n"; kept = kept + 1; }
+}
+write_file("build/clean.csv", clean);
+assert(missing_temp == 2 && missing_pressure == 1 && repeated == 1 && spike == 1);
+assert(kept == 45);
+
+# Statistics (lmnum): column means, spreads and the z-score of the largest temperature.
+stats = _lmcode_ cli="lmnum" install="github:lmctl-ai/lmnum@v0.1.4";
+let table = num.load_csv("build/clean.csv");
+let temp = table.col(1);
+let pres = table.col(2);
+num.print("rows=" + str(table.rows()));
+num.print("temp_mean=" + str(temp.mean()) + " temp_std=" + str(temp.std()) + " temp_min=" + str(temp.min()) + " temp_max=" + str(temp.max()));
+num.print("pres_mean=" + str(pres.mean()) + " pres_std=" + str(pres.std()) + " pres_min=" + str(pres.min()) + " pres_max=" + str(pres.max()));
+end _lmcode_
+savedsl(stats, "build/stats.dslb");
+r = system(concat(dsl_cli(stats), ["--dsl", "build/stats.dslb"]), 120000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+let t_mean = 0.0; let t_std = 0.0; let t_min = 0.0; let t_max = 0.0;
+let p_mean = 0.0; let p_std = 0.0; let p_min = 0.0; let p_max = 0.0;
+for (line in split(r.stdout, "\n")) {
+  if (starts_with(line, "temp_mean=")) {
+    let parts = split(line, " ");
+    t_mean = num(split(parts[0], "=")[1]);
+    t_std = num(split(parts[1], "=")[1]);
+    t_min = num(split(parts[2], "=")[1]);
+    t_max = num(split(parts[3], "=")[1]);
+  }
+  if (starts_with(line, "pres_mean=")) {
+    let parts = split(line, " ");
+    p_mean = num(split(parts[0], "=")[1]);
+    p_std = num(split(parts[1], "=")[1]);
+    p_min = num(split(parts[2], "=")[1]);
+    p_max = num(split(parts[3], "=")[1]);
+  }
+}
+let z_max = (t_max - t_mean) / t_std;
+assert(t_max > 90.0 && z_max > 3.0);
+assert(p_min > 101.2 && p_max < 101.4);
+
+# Report (lmoffice): the Markdown is formatted here from the checks and the statistics.
+let body = """# Data-quality report: logger export
+
+## Checks
+
+| Check | Result |
+| :--- | ---: |
+""" + sprintf("| Rows in the export | %d |\n", rows.len()) + sprintf("| Missing temperature cells | %d |\n", missing_temp) + sprintf("| Missing pressure cells | %d |\n", missing_pressure) + sprintf("| Repeated minutes | %d |\n", repeated) + sprintf("| Rows kept after cleaning | %d |\n", kept) + """
+## Column statistics (cleaned rows)
+
+| Column | Mean | Std | Min | Max |
+| :--- | ---: | ---: | ---: | ---: |
+""" + sprintf("| Temperature (C) | %.2f | %.2f | %.2f | %.2f |\n", t_mean, t_std, t_min, t_max) + sprintf("| Pressure (kPa) | %.3f | %.3f | %.3f | %.3f |\n", p_mean, p_std, p_min, p_max) + """
+## Findings
+
+""" + sprintf("The temperature maximum of %.1f C is %.1f standard deviations above the mean. The spike is kept in the clean data and flagged here for review rather than removed.\n", t_max, z_max) + """
+## Actions
+
+- Ask the logger owner about the blank cells at minutes 12, 30 and 44.
+- Confirm the 95 C reading at minute 25 against the sensor log.
+""";
+
+report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";
+let limits = <<~MD;
+  ## Scope
+
+  The export is checked for blank cells, repeated minutes and one spike. The statistics use the rows that
+  pass the checks. No values are imputed.
+  MD
+let doc = docx.create("build/quality-report.docx");
+doc.markdown(${body} + "\n" + limits).save();
+end _lmcode_
+savedsl(report, "build/quality.dslb");
+r = system(concat(dsl_cli(report), ["--dsl", "build/quality.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Chart (lmvideo): the issue counts (the gallery output).
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 480); video.frames(1); video.output("images/showcase-50-data-quality.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("Logger export: issues found by the checks (lmnum statistics)").xlabel("check (1 blank temp, 2 blank pressure, 3 repeated minute, 4 spike)").ylabel("rows").x_range(0.5, 4.5).y_range(0.0, 3.0).legend("top_right").background("#ffffff");
+let issues = plot.series("rows", "bar", "#b45309");
+issues.add(1.0, ${missing_temp + 0.0001}); issues.add(2.0, ${missing_pressure + 0.0001}); issues.add(3.0, ${repeated + 0.0001}); issues.add(4.0, ${spike + 0.0001});
+fig.draw();
+video.end();
+end _lmcode_
+savedsl(chart, "build/quality-chart.dslb");
+r = system(concat(dsl_cli(chart), ["--dsl", "build/quality-chart.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/quality-report.docx and images/showcase-50-data-quality.png");

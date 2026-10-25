@@ -1,0 +1,110 @@
+# SPDX-License-Identifier: MIT
+# Infrastructure change report. lmcloud runs OpenTofu in-process (no cloud account, no network) on a
+# configuration of three terraform_data resources. The first apply creates all three; the script then
+# changes the input of one resource and applies again. lmcloud writes the Terraform state after each
+# apply, and the script reads both states back with json_parse, compares them resource by resource and
+# asserts the outcome (three created, then one changed and two unchanged). The table of changes goes to a
+# Word report written by lmoffice; lmvideo draws the resource outcomes (the gallery output).
+# The hosts return only status values, so the report is built from the applied state, not from the plan
+# counts.
+mkdir("images");
+mkdir("build");
+mkdir("build/infra");
+
+let tf_v1 = "resource \"terraform_data\" \"api\" {\n  input = \"v1\"\n}\nresource \"terraform_data\" \"db\" {\n  input = \"v1\"\n}\nresource \"terraform_data\" \"cache\" {\n  input = \"v1\"\n}\n";
+let tf_v2 = "resource \"terraform_data\" \"api\" {\n  input = \"v1\"\n}\nresource \"terraform_data\" \"db\" {\n  input = \"v1\"\n}\nresource \"terraform_data\" \"cache\" {\n  input = \"v2\"\n}\n";
+write_file("build/infra/main.tf", tf_v1);
+
+first = _lmcode_ cli="lmcloud" install="github:lmctl-ai/lmcloud@v0.1.8";
+let ok_init = tofu.init("build/infra");
+let plan1 = tofu.plan("build/infra");
+let ok_apply1 = tofu.apply("build/infra");
+end _lmcode_
+savedsl(first, "build/infra-first.dslb");
+r = system(concat(dsl_cli(first), ["--dsl", "build/infra-first.dslb"]), 600000);
+assert(r.code == 0, r.stdout + r.stderr);
+let state1 = json_parse(read_file("build/infra/terraform.tfstate"));
+
+# Change one input and apply again.
+write_file("build/infra/main.tf", tf_v2);
+second = _lmcode_ cli="lmcloud" install="github:lmctl-ai/lmcloud@v0.1.8";
+let ok_init2 = tofu.init("build/infra");
+let plan2 = tofu.plan("build/infra");
+let ok_apply2 = tofu.apply("build/infra");
+end _lmcode_
+savedsl(second, "build/infra-second.dslb");
+r = system(concat(dsl_cli(second), ["--dsl", "build/infra-second.dslb"]), 600000);
+assert(r.code == 0, r.stdout + r.stderr);
+let state2 = json_parse(read_file("build/infra/terraform.tfstate"));
+
+# Compare the two applied states resource by resource.
+let names = ["api", "db", "cache"];
+let before = ["", "", ""];
+let after = ["", "", ""];
+for (i in range(0, 3)) {
+  for (res in state1.get("resources", [])) {
+    if (res.get("name", "") == names[i]) {
+      before[i] = res.get("instances", []).get(0, {}).get("attributes", {}).get("input", {}).get("value", "");
+    }
+  }
+  for (res in state2.get("resources", [])) {
+    if (res.get("name", "") == names[i]) {
+      after[i] = res.get("instances", []).get(0, {}).get("attributes", {}).get("input", {}).get("value", "");
+    }
+  }
+}
+assert(before[0] == "v1" && before[1] == "v1" && before[2] == "v1");
+let changed = 0;
+let unchanged = 0;
+for (i in range(0, 3)) {
+  if (before[i] == after[i]) { unchanged = unchanged + 1; } else { changed = changed + 1; }
+}
+assert(changed == 1 && unchanged == 2);
+assert(after[2] == "v2");
+
+# Report (lmoffice): the table is formatted here from the two states.
+let rows_md = "";
+for (i in range(0, 3)) {
+  let status = "unchanged";
+  if (before[i] != after[i]) { status = "changed"; }
+  rows_md = rows_md + "| terraform_data." + names[i] + " | " + before[i] + " | " + after[i] + " | " + status + " |\n";
+}
+let body = """# Infrastructure change report
+
+## Scope
+
+A configuration of three terraform_data resources (api, db, cache) was applied with lmcloud, the embedded OpenTofu engine, with no cloud account. The input of cache was then changed from v1 to v2 and the configuration was applied again.
+
+## Changes
+
+| Resource | Input before | Input after | Status |
+| :--- | :--- | :--- | :--- |
+""" + rows_md + """
+## Outcome
+
+""" + sprintf("%d resource changed and %d resources unchanged; none was created or destroyed in the second apply.", changed, unchanged) + """
+""";
+report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";
+let doc = docx.create("build/infra-change-report.docx");
+doc.markdown(${body}).save();
+end _lmcode_
+savedsl(report, "build/infra-report.dslb");
+r = system(concat(dsl_cli(report), ["--dsl", "build/infra-report.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Chart (lmvideo): the outcome counts (the gallery output).
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 480); video.frames(1); video.output("images/showcase-49-cloud-plan.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("Infrastructure change: resources by outcome (lmcloud, applied state)").xlabel("outcome (1 created, 2 changed, 3 unchanged)").ylabel("resources").x_range(0.5, 3.5).y_range(0.0, 4.0).legend("top_right").background("#ffffff");
+let outcome = plot.series("resources", "bar", "#1F4E78");
+outcome.add(1.0, ${3.0 + 0.0001}); outcome.add(2.0, ${changed + 0.0001}); outcome.add(3.0, ${unchanged + 0.0001});
+fig.draw();
+video.end();
+end _lmcode_
+savedsl(chart, "build/infra-chart.dslb");
+r = system(concat(dsl_cli(chart), ["--dsl", "build/infra-chart.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/infra-change-report.docx and images/showcase-49-cloud-plan.png");
