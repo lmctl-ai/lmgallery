@@ -195,6 +195,7 @@ def generate_private_ci(source, product, out):
     # The source workflow's `only` selector is removed; every real release
     # dispatch builds the complete matrix. publish_test remains build-free.
     body = re.sub(r"^(\s+)ONLY_OK:\s*\$\{\{[^\n]*inputs\.only[^\n]*\}\}\s*$", r'\1ONLY_OK: "true"', body, flags=re.M)
+    body = re.sub(r"^(\s+)if: [^\n]*inputs\.only[^\n]*$", r"\1if: true", body, flags=re.M)
     # 3. Append the publish jobs from the reviewed template (RELEASE_TOKEN only).
     template = TEMPLATE.read_text(encoding="utf-8")
     publish = template[template.index("  publish-test:"):]
