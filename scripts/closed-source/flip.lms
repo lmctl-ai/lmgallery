@@ -1,6 +1,6 @@
 # Public-tree staging and owner-gated peer-repo flip.
 # Default mode is read-only. --stage writes only /home/mma/staging; --apply
-# needs both an explicit owner flag/file entry and a RELEASE_TOKEN.
+# needs an explicit owner flag/file entry and the protected token file checked by the helper.
 
 let products = ["lmdraw", "lmvideo", "lmaudio", "lmoffice", "lmcad", "lmmagnum", "lmfilament", "lmimg", "lmpdf"];
 let product = "";
@@ -25,7 +25,6 @@ if (mode == "--apply") {
   let approval = path_join(home, "tools", "closed-source-approved.txt");
   assert(file_exists(approval), "REFUSED: approval file missing: " + approval);
   assert(contains(read_lines(approval), product), "REFUSED: approval file must list " + product);
-  assert(getenv("RELEASE_TOKEN", "") != "", "REFUSED: RELEASE_TOKEN is not present in the operator environment");
   assert(regex_test(first_release_tag, "^v[0-9]+\\.[0-9]+\\.[0-9]+$"), "REFUSED: --apply requires --first-release-tag=vMAJOR.MINOR.PATCH");
 }
 let helper = "/home/mma/repos/dsl/lmgallery/scripts/closed-source/peer-flip.py";
