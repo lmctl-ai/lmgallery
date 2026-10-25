@@ -1,6 +1,6 @@
 # Closed-source peer repository model
 
-**Status: lmaudio, lmmagnum, lmimg, and lmcad flips completed; lmfilament, lmdraw, lmvideo, lmoffice, and lmpdf remain.** Final owner scope is lmdraw,
+**Status: all nine approved product flips are complete.** Final owner scope is lmdraw,
 lmvideo, lmaudio, lmoffice, lmcad, lmmagnum, lmfilament, lmimg, and lmpdf.
 The generated public-only trees are under `/home/mma/staging/closed-source/`.
 `lmplot`, `lmphysics`, all other hosts, `lmcode-*`, and `lmgallery` remain open
@@ -48,22 +48,21 @@ and a specific build or release is needed. Public example/content CI remains
 enabled. The lmfilament publish-token test already passed as run
 `40234775880`; its retry reuses that result without starting private Actions.
 
-### lmfilament retry outcome (2026-10-25)
+### lmfilament flip outcome (2026-10-25)
 
 The release version validator accepts `v0.3.20` anywhere in the binary's
 `--version` output; the actual banner is `lmfilament 0.3.20 (filament 1.78.1)`.
-On the retry, public-content run `40242296521` passed for orphan commit
-`57c8fa8c6ae5c6a9dbec8e30c34350a5b119e584`, and the republished release's
-binary and `SHA256SUMS` verified. The local post-release `lmscript --check`
-then failed on `ball-stick.lms` because
-`install="github:lmctl-ai/lmfilament@latest"` was not in the local tool cache.
-The runner restored the prior public main, refs, and release. A preceding
-attempt exposed that bare `git push origin --delete` used the source checkout's
-private remote; tag deletion now targets the public staging checkout explicitly.
-The private tags deleted by that attempt were restored from the source clone.
-Before retrying, make the local check resolve/install the just-published
-`@latest` host without weakening the check. All nine private repositories still
-have Actions disabled.
+The successful retry reused private publish-token test `40234775880` without
+running private Actions. Public-content CI run `40246174626` passed for orphan
+commit `1ee20e63ab42b17a0550133fc16e2422041190e4`. The public repo contains one
+commit, only `main` and `v0.3.20`; the 10-asset release passes `SHA256SUMS`, and
+the Linux binary reports `lmfilament 0.3.20 (filament 1.78.1)`. The local
+`ball-stick.lms` and `buckyball.lms` checks pass after `scripts/install-hosts.sh`
+downloads released hosts into a scratch `PATH` directory. Ref deletion asserts
+the explicit public repository URL and verifies the staging remote before
+deleting. A previous failed attempt accidentally deleted private tags; they
+were restored from the source clone before this successful retry. All nine
+private repositories still have Actions disabled.
 
 On each main push, private CI runs a Linux-only fast job. The full platform
 build/package matrix runs only on `workflow_dispatch` or a version tag: five
