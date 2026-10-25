@@ -1148,15 +1148,22 @@ def _prepare_release_bundle(product: str, root: Path, first_tag: str, run_stamp:
         source_license = root / "LICENSE"
         if not source_license.is_file() or not source_license.read_text(encoding="utf-8").startswith("MIT License"):
             raise FlipError(f"no published MIT LICENSE asset or MIT source LICENSE for {product}@{first_tag}")
-        shutil.copyfile(source_license, bundle / "LICENSE")
+        # The replay may add a license omitted by an older release; keep the
+        # root bundle byte-exact as the rollback copy of published assets.
+        replay = bundle / "replay"
+        replay.mkdir(exist_ok=True)
+        shutil.copyfile(source_license, replay / "LICENSE")
         selected.append("LICENSE")
+    else:
+        replay = bundle / "replay"
+        replay.mkdir(exist_ok=True)
     notice_assets = [name for name in selected if name.lower().startswith("third_party_notices")]
     if not notice_assets:
         source_notices = sorted(path for path in root.glob("THIRD_PARTY_NOTICES*") if path.is_file())
         if not source_notices:
             raise FlipError(f"no THIRD_PARTY_NOTICES* asset or source file for {product}@{first_tag}")
         for path in source_notices:
-            shutil.copyfile(path, bundle / path.name)
+            shutil.copyfile(path, replay / path.name)
             selected.append(path.name)
 
     if product == "lmcad":
@@ -1175,21 +1182,56 @@ def _prepare_release_bundle(product: str, root: Path, first_tag: str, run_stamp:
     if not any(name.lower().startswith("third_party_notices") for name in selected):
         raise FlipError(f"prepared {product} release has no third-party notices")
     for name in selected:
-        if name not in downloaded and not (bundle / name).is_file():
+        if not (replay / name).is_file():
+            if name in downloaded:
+                shutil.copyfile(bundle / name, replay / name)
+        if not (replay / name).is_file():
             raise FlipError(f"required release compliance file is missing: {name}")
-    sums = "".join(f"{hashlib.sha256((bundle / name).read_bytes()).hexdigest()}  {name}\n" for name in selected)
-    (bundle / "SHA256SUMS").write_text(sums, encoding="ascii", newline="\n")
+    sums = "".join(f"{hashlib.sha256((replay / name).read_bytes()).hexdigest()}  {name}\n" for name in selected)
+    (replay / "SHA256SUMS").write_text(sums, encoding="ascii", newline="\n")
     selected.append("SHA256SUMS")
     boundary = (f"Releases up to and including {first_tag} were published under the MIT License (see the LICENSE asset of that "
                 f"release). Releases after {first_tag} are published under the Lattice Systems Personal Use License (this file).")
-    notes_path = bundle / "release-notes-replay.md"
+    notes_path = replay / "release-notes-replay.md"
     notes_path.write_text((release.get("body") or "").rstrip() + "\n\n" + boundary + "\n", encoding="utf-8")
     stage_examples = STAGING / f"{product}-public" / "examples"
     examples = sorted(path.relative_to(stage_examples).as_posix() for path in stage_examples.rglob("*.lms"))
     if len(examples) < 2:
         raise FlipError(f"staged {product} tree has fewer than two examples for post-flip checks")
-    return {"release": release, "bundle": bundle, "asset_paths": [bundle / name for name in selected],
+    return {"release": release, "bundle": bundle, "replay": replay, "asset_paths": [replay / name for name in selected],
             "notes_path": notes_path, "examples": examples[:2], "boundary": boundary}
+
+
+def _snapshot_public_releases(product: str, backup_root: Path, stamp: str, latest_tag: str, latest_bundle: dict) -> list[dict]:
+    if backup_root.exists():
+        raise FlipError(f"release metadata backup path already exists: {backup_root}")
+    backup_root.mkdir(parents=True)
+    rows = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases?per_page=100"]).stdout)
+    latest = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases/latest"]).stdout)
+    tags = {row.get("tag_name") for row in rows}
+    if latest.get("tag_name") != latest_tag or latest_tag not in tags:
+        raise FlipError(f"{latest_tag} is not the latest public release")
+    snapshots = []
+    for row in rows:
+        tag = row.get("tag_name", "")
+        if not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
+            raise FlipError(f"unexpected release tag during snapshot: {tag}")
+        directory = Path(latest_bundle["bundle"]) if tag == latest_tag else backup_root / tag
+        directory.mkdir(parents=True, exist_ok=True)
+        assets = row.get("assets", [])
+        metadata = {
+            "tagName": tag,
+            "name": row.get("name") or tag,
+            "body": row.get("body") or "",
+            "isDraft": row.get("draft", False),
+            "isPrerelease": row.get("prerelease", False),
+            "assets": [{"name": item.get("name"), "digest": item.get("digest"), "size": item.get("size")} for item in sorted(assets, key=lambda item: item.get("name", ""))],
+        }
+        (directory / "release-metadata.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+        (directory / "release-notes.md").write_text(metadata["body"], encoding="utf-8")
+        snapshots.append({"tagName": tag, "path": str(directory), "assets": [item["name"] for item in metadata["assets"]], "assets_complete": tag == latest_tag})
+    (backup_root / "manifest.json").write_text(json.dumps({"product": product, "createdAt": stamp, "latest": latest_tag, "releases": snapshots}, indent=2) + "\n", encoding="utf-8")
+    return snapshots
 
 
 def _backup_public_refs(product: str, expected_main: str, backup_git: Path, refs_path: Path) -> dict:
@@ -1573,6 +1615,8 @@ def _rollback_public_in_place(product: str, backup_git: Path, old_refs: dict, re
 
 def _restore_public_releases(product: str, release_backups: list[dict]) -> None:
     for item in release_backups:
+        if not item.get("assets_complete", True):
+            continue
         directory = Path(item["path"])
         metadata = json.loads((directory / "release-metadata.json").read_text(encoding="utf-8"))
         args = ["gh", "release", "create", metadata["tagName"], "-R", public_repo(product), "--title", metadata["name"], "--notes-file", str(directory / "release-notes.md")]
@@ -1877,11 +1921,11 @@ def apply_general_product(product: str, first_tag: str) -> int:
     if not public_main_result.stdout.split():
         raise FlipError(f"cannot resolve public {product} main before backup")
     old_refs = _backup_public_refs(product, public_main_result.stdout.split()[0], backup_git, refs_path)
-    release_backups = _backup_all_public_releases(product, release_backup_root, stamp, first_tag)
-    latest_backup = next((item for item in release_backups if item["tagName"] == first_tag), None)
-    if latest_backup is None:
-        raise FlipError(f"latest release backup {first_tag} is missing")
     release_bundle = _prepare_release_bundle(product, root, first_tag, stamp)
+    release_backups = _snapshot_public_releases(product, release_backup_root, stamp, first_tag, release_bundle)
+    latest_backup = next((item for item in release_backups if item["tagName"] == first_tag), None)
+    if latest_backup is None or not latest_backup.get("assets_complete"):
+        raise FlipError(f"latest release backup {first_tag} is missing")
     audit(f"PREFLIGHT_PASS public_main={old_refs['main']} source_main={snapshot['ref']} release={first_tag} ref_count={len(old_refs['refs'])} pin_count={len(pins)}")
 
     # Preserve the full source tree privately before replacing public refs.
