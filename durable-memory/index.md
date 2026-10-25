@@ -12,7 +12,7 @@ Technical documentation, design notes, and operational procedures for `lmgallery
 | [04-part2-host-compositions.md](04-part2-host-compositions.md) | Compositions 34–42 (part 2): hosts, pins, and host limits |
 | [05-document-as-code.md](05-document-as-code.md) | Compositions 43–50: Markdown reports from computed results through lmoffice, heredocs, and office gotchas |
 | [05-closed-source-peer-model.md](05-closed-source-peer-model.md) | Final private/public peer model, licensing obligations, staged-tree workflow, and gated flip process |
-| [closed-source-pin-inventory.md](closed-source-pin-inventory.md) | Local versioned install/release-tag consumers for the ten in-scope products |
+| [closed-source-pin-inventory.md](closed-source-pin-inventory.md) | Local versioned install/release-tag consumers for the nine in-scope products |
 | [closed-source-staging-inventory.md](closed-source-staging-inventory.md) | Staged public-tree SHAs, validation, active-team gates, and source sync status |
 
 ## Adding a new composition / example

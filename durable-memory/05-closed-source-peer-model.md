@@ -1,7 +1,7 @@
 # Closed-source peer repository model
 
-**Status: staged, no flips performed.** Final owner scope is lmdraw, lmvideo,
-lmaudio, lmoffice, lmcad, lmblender, lmmagnum, lmfilament, lmimg, and lmpdf.
+**Status: lmaudio pilot approved; nine-product scope.** Final owner scope is lmdraw,
+lmvideo, lmaudio, lmoffice, lmcad, lmmagnum, lmfilament, lmimg, and lmpdf.
 The generated public-only trees are under `/home/mma/staging/closed-source/`.
 `lmplot`, `lmphysics`, all other hosts, `lmcode-*`, and `lmgallery` remain open
 source and are not migration targets. A future OR-tools host starts private
@@ -22,8 +22,8 @@ In particular,
 `https://raw.githubusercontent.com/lmctl-ai/<name>/main/examples/<file>.lms`
 must continue to resolve to the same example so README `lmctl autorun` captions
 and install commands stay valid. The README/docs/images/examples use MIT under
-`LICENSE-examples`; root `LICENSE` is copied from the DRAFT in
-`templates/LICENSE-binaries.md` and governs binaries after owner/legal review.
+`LICENSE-examples`; root `LICENSE` is copied from the final-for-now text in
+`templates/LICENSE-binaries.md` and governs binaries.
 `templates/LICENSE-examples-MIT` supplies the examples/docs MIT text. Full
 license texts move under `docs/third-party-licenses/` and notices remain
 `THIRD_PARTY_NOTICES*`.
@@ -181,15 +181,15 @@ actual binary link closure on dependency changes. It is not a legal opinion.
 | `lmaudio` | MIT project; complete upstream notice text for DaisySP, selected Soundpipe modules, KissFFT BSD-3-Clause, MT19937 BSD-3-Clause, PaulStretch, FAUST/STK, lmcode-cpp, and platform runtimes. The build excludes Csound-derived LGPL and GPL `zitarev` modules; keep them excluded. Source: `lmaudio/THIRD_PARTY_NOTICES`. |
 | `lmoffice` | MIT host; Open XML SDK and `System.IO.Packaging` MIT notice; .NET 8 runtime/class-library component notices; lmcode-csharp MIT. Keep the lock-file-matched component notices with binaries. Source: `lmoffice/THIRD_PARTY_NOTICES.md`. |
 | `lmcad` | MIT host; build123d Apache-2.0 plus NOTICE; PyVista MIT. Linux static OCCT 8.0.1 requires the exact LGPL-2.1 text and Open CASCADE exception plus `lmcad-linux-<arch>-relink-objects.tar.gz`, `OCCT-RELINKING.md`, and `lmcad-occt-relinking-recipe.tar.gz`; static glibc also needs LGPL text, package copyright metadata, application objects, and link instructions. Retain GPL-3 and GCC Runtime Library Exception texts for static GCC runtimes. **Do not omit the OCCT relinking assets.** Source: `lmcad/durable-memory/13-licensing.md`. |
-| `lmblender` | The combined executable is GPL-3.0-or-later because it statically includes Blender GPL internals and GPL-derived LUT data. A proprietary closed-source binary is incompatible with this current closure. Releases already require `lmblender-source-vX.Y.Z.tar.gz` containing the corresponding repository, Blender/Cycles subset, patches, and third-party sources; retain `SOURCE_OFFER.md`, `SOURCES.json`, `docs/RELINKING.md`, GPL/Apache/BSD/MIT/license texts, and Windows relinking materials. Owner must decide whether to exclude this product or replace/relicense the GPL closure before calling its binary proprietary. Source: `lmblender/docs/LICENSE_AUDIT.md`, `THIRD_PARTY_NOTICES.md`. |
 | `lmmagnum` | MIT project; Magnum and Corrade MIT `COPYING` files; stb public-domain/MIT notice; lmcode-cpp MIT; Linux static glibc LGPL-2.1+ and compiler runtime notices. Release staging copies `LICENSE`, `THIRD_PARTY_NOTICES`, and both upstream `COPYING` files. Audit any static-glibc relinking materials required by the exact distributed build. Source: `lmmagnum/THIRD_PARTY_NOTICES.md`, `scripts/stage-release-notices.sh`. |
 | `lmfilament` | MIT host; Filament Apache-2.0 `FILAMENT-LICENSE`; notices for the pinned Filament third-party libraries (including SPIR-V, zstd, meshoptimizer, mikktspace, robin-map); LLVM Apache exceptions; Linux static glibc LGPL and GCC/runtime license texts. Preserve the full staged notice inventory with each binary. Source: `lmfilament/THIRD_PARTY_NOTICES.md`. |
 | `lmimg` | MIT host; ImageMagick NOTICE, IJG README/license/attribution, selected stb license, Apache-2.0 Roboto, lmcode-cpp MIT, plus platform runtime texts. Linux dynamically links glibc (LGPL-2.1) and statically links image/codec dependencies and GCC runtimes. Keep optional GPL delegates disabled. Source: `lmimg/durable-memory/02-libraries-and-licenses.md`, `THIRD_PARTY_NOTICES`. |
 | `lmpdf` | Preserve generated `THIRD_PARTY_NOTICES.md`, full licenses for every locked Rust crate and bundled font, font attribution/hash inventory, and Rust target-runtime notices. Current policy denies GPL/AGPL-only components. Historical Caladea bytes have an Apache-2.0 notice; do not infer font licenses from current upstream names. Source: `lmpdf/durable-memory/08-release.md`, `04-decision.md`. |
 
-The binary-license text in `templates/LICENSE-binaries.md` is a DRAFT for legal
-review. The examples/docs MIT license template is
-`templates/LICENSE-examples-MIT`.
+The owner approved the current binary-license text in `templates/LICENSE-binaries.md`
+for now. The examples/docs MIT license template is `templates/LICENSE-examples-MIT`.
+`lmblender` stays open source and is excluded because its Blender/Cycles-derived
+binary is GPL-3.0-or-later and requires corresponding source.
 
 `lmplot` remains open source and is excluded. Its existing gnuplot patch and
 runtime notices are unchanged by this plan.
@@ -209,7 +209,7 @@ invoked by [`scripts/closed-source/flip.lms`](../scripts/closed-source/flip.lms)
 tag. The current owner instruction is stage-only.
 
 The final candidate list is lmdraw, lmvideo, lmaudio, lmoffice, lmcad,
-lmblender, lmmagnum, lmfilament, lmimg, and lmpdf. An OR-tools host is
+lmmagnum, lmfilament, lmimg, and lmpdf. An OR-tools host is
 future-only and has no existing repository plan. `lmplot` remains open source.
 
 Generated tracked-file plans (each includes exact public/private path lists,
@@ -221,7 +221,6 @@ asset names):
 - [lmaudio](closed-source-plans/lmaudio.md)
 - [lmoffice](closed-source-plans/lmoffice.md)
 - [lmcad](closed-source-plans/lmcad.md)
-- [lmblender](closed-source-plans/lmblender.md)
 - [lmmagnum](closed-source-plans/lmmagnum.md)
 - [lmfilament](closed-source-plans/lmfilament.md)
 - [lmimg](closed-source-plans/lmimg.md)
@@ -229,15 +228,12 @@ asset names):
 
 Owner decisions still required for later products:
 
-1. Review and approve the clearly marked DRAFT binary license; the examples/docs
-   MIT license is separate and fixed.
-2. Quiesce the reported active lmvideo/lmoffice/lmpdf teams and current active
+1. Quiesce the reported active lmvideo/lmoffice/lmpdf teams and current active
    lmfilament work before each product's apply preflight.
-3. Choose a first public release tag per product after confirming the private
+2. Choose a first public release tag per product after confirming the private
    build version, then use the pin inventory to update every consumer.
-4. Validate product-specific release packaging, especially lmcad OCCT relink
-   materials, lmvideo Skia notices, lmblender's GPL corresponding-source
-   requirement, and static-glibc obligations.
-5. Provide `RELEASE_TOKEN` only when the owner is ready to authorize coordinated
+3. Validate product-specific release packaging, especially lmcad OCCT relink
+   materials, and static-glibc obligations.
+4. Provide `RELEASE_TOKEN` only when the owner is ready to authorize coordinated
    flips and the private Actions workflow can publish to the matching public
-   repo. No product flip is authorized by the current staging task.
+   repo. The lmaudio flip is now owner-approved; do not flip another product without a separate approval.

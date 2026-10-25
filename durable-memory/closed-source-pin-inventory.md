@@ -9,11 +9,10 @@ Grep snapshot: 2026-10-25. This is a local-repository inventory from `/home/mma/
 | `lmaudio` | 2 | update to the first new public release tag |
 | `lmoffice` | 26 | update to the first new public release tag |
 | `lmcad` | 1 | update to the first new public release tag |
-| `lmblender` | 1 | update to the first new public release tag |
 | `lmmagnum` | 1 | update to the first new public release tag |
 | `lmfilament` | 0 | none found in scanned local repos |
 | `lmimg` | 7 | update to the first new public release tag |
-| `lmpdf` | 1 | update to the first new public release tag |
+| `lmpdf` | 8 | update to the first new public release tag |
 
 ## Matches by product
 
@@ -43,14 +42,14 @@ Grep snapshot: 2026-10-25. This is a local-repository inventory from `/home/mma/
 - `/home/mma/repos/dsl/lmgallery/examples/40-bio-predator-prey-report.lms:105` — `figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
 - `/home/mma/repos/dsl/lmgallery/examples/41-weather-gravity-wave-speed.lms:91` — `figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
 - `/home/mma/repos/dsl/lmgallery/examples/42-cell-growth-report.lms:55` — `figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
-- `/home/mma/repos/dsl/lmgallery/examples/43-physics-lab-report.lms:75` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
-- `/home/mma/repos/dsl/lmgallery/examples/44-astronomy-observing-plan.lms:100` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
-- `/home/mma/repos/dsl/lmgallery/examples/45-finance-bond-memo.lms:113` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
-- `/home/mma/repos/dsl/lmgallery/examples/46-network-audit-report.lms:126` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
+- `/home/mma/repos/dsl/lmgallery/examples/43-physics-lab-report.lms:91` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
+- `/home/mma/repos/dsl/lmgallery/examples/44-astronomy-observing-plan.lms:109` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
+- `/home/mma/repos/dsl/lmgallery/examples/45-finance-bond-memo.lms:128` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
+- `/home/mma/repos/dsl/lmgallery/examples/46-network-audit-report.lms:141` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
 - `/home/mma/repos/dsl/lmgallery/examples/47-weather-briefing-slides.lms:65` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
 - `/home/mma/repos/dsl/lmgallery/examples/48-bio-epidemic-workbook.lms:100` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
-- `/home/mma/repos/dsl/lmgallery/examples/49-cloud-plan-report.lms:96` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
-- `/home/mma/repos/dsl/lmgallery/examples/50-data-quality-report.lms:124` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
+- `/home/mma/repos/dsl/lmgallery/examples/49-cloud-plan-report.lms:105` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
+- `/home/mma/repos/dsl/lmgallery/examples/50-data-quality-report.lms:139` — `chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";`
 - `/home/mma/repos/lmctlhq/lmvideo/examples/carnot-cycle.lms:7` — `program = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.23";`
 - `/home/mma/repos/lmctlhq/lmvideo/examples/cavity-quiver.lms:4` — `program = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.26";`
 - `/home/mma/repos/lmctlhq/lmvideo/examples/chart-kinds-workbench.lms:3` — `program = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.26";`
@@ -97,9 +96,9 @@ Grep snapshot: 2026-10-25. This is a local-repository inventory from `/home/mma/
 - `/home/mma/repos/dsl/lmgallery/examples/41-weather-gravity-wave-speed.lms:109` — `report = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";`
 - `/home/mma/repos/dsl/lmgallery/examples/42-cell-growth-report.lms:76` — `report = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";`
 - `/home/mma/repos/dsl/lmgallery/examples/43-physics-lab-report.lms:59` — `report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";`
+- `/home/mma/repos/dsl/lmgallery/examples/44-astronomy-observing-plan.lms:100` — `deck = _lmcode_ cli="lmoffice pptx" install="github:lmctl-ai/lmoffice@v0.1.21";`
 - `/home/mma/repos/dsl/lmgallery/examples/44-astronomy-observing-plan.lms:62` — `word = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";`
-- `/home/mma/repos/dsl/lmgallery/examples/44-astronomy-observing-plan.lms:91` — `deck = _lmcode_ cli="lmoffice pptx" install="github:lmctl-ai/lmoffice@v0.1.21";`
-- `/home/mma/repos/dsl/lmgallery/examples/45-finance-bond-memo.lms:102` — `workbook = _lmcode_ cli="lmoffice xlsx" install="github:lmctl-ai/lmoffice@v0.1.21";`
+- `/home/mma/repos/dsl/lmgallery/examples/45-finance-bond-memo.lms:117` — `workbook = _lmcode_ cli="lmoffice xlsx" install="github:lmctl-ai/lmoffice@v0.1.21";`
 - `/home/mma/repos/dsl/lmgallery/examples/45-finance-bond-memo.lms:86` — `memo = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";`
 - `/home/mma/repos/dsl/lmgallery/examples/46-network-audit-report.lms:102` — `audit = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";`
 - `/home/mma/repos/dsl/lmgallery/examples/47-weather-briefing-slides.lms:80` — `deck = _lmcode_ cli="lmoffice pptx" install="github:lmctl-ai/lmoffice@v0.1.21";`
@@ -111,10 +110,6 @@ Grep snapshot: 2026-10-25. This is a local-repository inventory from `/home/mma/
 ## lmcad
 
 - `/home/mma/repos/dsl/simulation/ROADMAP.md:63` — `| [lmcad](https://github.com/lmctl-ai/lmcad) | [v0.1.4](https://github.com/lmctl-ai/lmcad/releases/tag/v0.1.4) | OpenCASCADE B-rep + built-in software renderer (PNG, APNG, STL) | MIT host; OCCT LGPL-2.1 with exception: relink objects and recipe shipped per release | 20 | 12 (11 PNG, 1 GIF) | no GPU or display needed |`
-
-## lmblender
-
-- `/home/mma/repos/dsl/simulation/ROADMAP.md:64` — `| [lmblender](https://github.com/lmctl-ai/lmblender) | [v0.3.6](https://github.com/lmctl-ai/lmblender/releases/tag/v0.3.6) | Blender Cycles path tracer as one static executable | GPL-3.0-or-later; per-platform notices, source offer and relinking notes attached to each release | 82 | 12 (11 PNG, 1 GIF) | CI on push builds linux x64/arm64; macOS and Windows run in the `platforms` workflow; all 5 platforms on the release |`
 
 ## lmmagnum
 
@@ -136,6 +131,13 @@ Grep snapshot: 2026-10-25. This is a local-repository inventory from `/home/mma/
 
 ## lmpdf
 
+- `/home/mma/repos/dsl/lmgallery/durable-memory/05-document-as-code.md:68` — `- `cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54"`;`
+- `/home/mma/repos/dsl/lmgallery/examples/43-physics-lab-report.lms:75` — `report_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";`
+- `/home/mma/repos/dsl/lmgallery/examples/44-astronomy-observing-plan.lms:71` — `word_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";`
+- `/home/mma/repos/dsl/lmgallery/examples/45-finance-bond-memo.lms:101` — `memo_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";`
+- `/home/mma/repos/dsl/lmgallery/examples/46-network-audit-report.lms:117` — `audit_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";`
+- `/home/mma/repos/dsl/lmgallery/examples/49-cloud-plan-report.lms:96` — `report_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";`
+- `/home/mma/repos/dsl/lmgallery/examples/50-data-quality-report.lms:124` — `report_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";`
 - `/home/mma/repos/dsl/lmpdf/durable-memory/08-release.md:154` — `replays, and publication. [Release v0.1.54](https://github.com/lmctl-ai/lmpdf/releases/tag/v0.1.54)`
 
 A pin can be changed only after the first public release tag is known and published. The flip runner records this inventory during staging; before apply it must re-scan and ensure consumers can be updated without overwriting dirty or actively edited checkouts.

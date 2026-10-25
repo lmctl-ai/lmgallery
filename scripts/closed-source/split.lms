@@ -27,7 +27,7 @@ fn secret_path(path) {
   return n == ".env" || starts_with(n, ".env.") || n == ".npmrc" || contains(n, "credentials") || contains(n, "private-key") || ends_with(n, ".pem") || ends_with(n, ".p12") || ends_with(n, ".pfx");
 }
 
-let products = ["lmdraw", "lmvideo", "lmaudio", "lmoffice", "lmcad", "lmblender", "lmmagnum", "lmfilament", "lmimg", "lmpdf"];
+let products = ["lmdraw", "lmvideo", "lmaudio", "lmoffice", "lmcad", "lmmagnum", "lmfilament", "lmimg", "lmpdf"];
 let product = "";
 let apply_requested = false;
 let owner_flag = false;
@@ -127,7 +127,6 @@ if (product == "lmvideo") { license_note = "Carry THIRD_PARTY_NOTICES.md, DejaVu
 if (product == "lmaudio") { license_note = "Carry full third-party notices for DaisySP, selected Soundpipe modules, KissFFT, MT19937, PaulStretch, FAUST/STK, lmcode-cpp, and runtimes; keep excluded Csound/GPL modules out."; }
 if (product == "lmoffice") { license_note = "Carry Open XML SDK/System.IO.Packaging MIT, .NET 8 component, and lmcode-csharp MIT notices under docs/third-party-licenses/."; }
 if (product == "lmcad") { license_note = "Carry OCCT LGPL-2.1/Open CASCADE exception, OCCT relink objects/recipe/instructions, glibc/GCC runtime texts, build123d Apache NOTICE and PyVista MIT; do not omit OCCT relink assets."; }
-if (product == "lmblender") { license_note = "The combined binary is GPL-3.0-or-later and cannot be described as a closed-source binary; each release still needs its corresponding source, SOURCE_OFFER, SOURCES.json, RELINKING docs, and component texts."; }
 if (product == "lmmagnum") { license_note = "Carry Magnum/Corrade MIT COPYING files, stb/lmcode-cpp notices, runtime terms, and re-check static-glibc obligations."; }
 if (product == "lmfilament") { license_note = "Carry FILAMENT-LICENSE, pinned Filament component notices, LLVM exceptions and Linux runtime terms."; }
 if (product == "lmimg") { license_note = "Carry ImageMagick NOTICE, IJG attribution, selected stb, Apache Roboto, SDK and runtime texts; optional GPL delegates remain disabled."; }

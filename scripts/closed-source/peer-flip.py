@@ -18,14 +18,13 @@ import time
 from pathlib import Path, PurePosixPath
 from urllib.parse import unquote, urlsplit
 
-PRODUCTS = ("lmdraw", "lmvideo", "lmaudio", "lmoffice", "lmcad", "lmblender", "lmmagnum", "lmfilament", "lmimg", "lmpdf")
+PRODUCTS = ("lmdraw", "lmvideo", "lmaudio", "lmoffice", "lmcad", "lmmagnum", "lmfilament", "lmimg", "lmpdf")
 PRODUCT_ROOTS = {
     "lmdraw": Path("/home/mma/repos/dsl/lmdraw"),
     "lmvideo": Path("/home/mma/repos/lmctlhq/lmvideo"),
     "lmaudio": Path("/home/mma/repos/dsl/lmaudio"),
     "lmoffice": Path("/home/mma/repos/dsl/lmoffice"),
     "lmcad": Path("/home/mma/repos/dsl/lmcad"),
-    "lmblender": Path("/home/mma/repos/dsl/lmblender"),
     "lmmagnum": Path("/home/mma/repos/dsl/lmmagnum"),
     "lmfilament": Path("/home/mma/repos/dsl/lmfilament"),
     "lmimg": Path("/home/mma/repos/dsl/lmimg"),
@@ -370,18 +369,18 @@ def replace_readme_sections(text: str, product: str) -> str:
                 out.extend([
                     "## License", "",
                     "The README, docs, images, and `examples/*.lms` are MIT-licensed under `LICENSE-examples`.",
-                    "**`LICENSE` is a DRAFT for owner/legal review.** Binary releases will be governed by it after approval. Third-party components remain under their own licenses and notices.",
+                    "Binary releases are licensed under `LICENSE`. Third-party components remain under their own licenses and notices.",
                     "",
                 ])
                 continue
         out.append(line)
     result = "\n".join(out).rstrip()
     if not re.search(r"(?im)^##\s+License\b", result):
-        result += "\n\n## License\n\nThe README, docs, images, and `examples/*.lms` are MIT-licensed under `LICENSE-examples`.\n**`LICENSE` is a DRAFT for owner/legal review.** Binary releases will be governed by it after approval. Third-party components remain under their own licenses and notices."
+        result += "\n\n## License\n\nThe README, docs, images, and `examples/*.lms` are MIT-licensed under `LICENSE-examples`.\nBinary releases are licensed under `LICENSE`. Third-party components remain under their own licenses and notices."
     result += "\n"
     note = (
         f"\n> The public README, docs, images, and examples for `{product}` are MIT under `LICENSE-examples`. "
-        f"`LICENSE` is a DRAFT for owner/legal review; binary releases will use it after approval. Implementation source and its history are maintained privately in `lmctlhq/{product}`.\n"
+        f"Binary releases use `LICENSE`; implementation source and its history are maintained privately in `lmctlhq/{product}`.\n"
     )
     match = re.search(r"^#\s+[^\n]+\n", result, re.M)
     if match and "implementation source and its history" not in result:
@@ -530,14 +529,6 @@ def stage_product(product: str, snapshot: dict, *, refresh: bool = False,
             canonical = stage / "examples/confusion-matrix.lms"
             if not alias.exists() and canonical.is_file():
                 shutil.copyfile(canonical, alias)
-        if product == "lmblender":
-            # The checked-in libjpeg license refers to README.ijg, which is not
-            # in this repo; reuse the exact IJG notice already tracked by lmvideo.
-            fallback = Path("/home/mma/repos/lmctlhq/lmvideo/licenses/README.ijg")
-            destination = stage / "docs/third-party-licenses/upstream/README.ijg"
-            if fallback.is_file() and not destination.exists():
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copyfile(fallback, destination)
         for directory in (stage / "images", stage / "img", stage / "licenses", stage / "assets", stage / "presets"):
             if directory.exists():
                 shutil.rmtree(directory)

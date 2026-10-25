@@ -30,8 +30,8 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/<product>/main/examples
 ## License and support
 
 The README, docs, pictures, and `examples/*.lms` are MIT-licensed under
-[`LICENSE-examples`](LICENSE-examples). **`LICENSE` is a DRAFT for owner/legal review and must not be treated as approved terms.**
-Binary releases will be subject to [`LICENSE`](LICENSE) after approval; third-party components remain under their own licenses
+[`LICENSE-examples`](LICENSE-examples). Binary releases are subject to
+[`LICENSE`](LICENSE); third-party components remain under their own licenses
 and notices in `THIRD_PARTY_NOTICES*` and the accompanying license texts under
 `docs/third-party-licenses/`.
 

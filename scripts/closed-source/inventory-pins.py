@@ -10,7 +10,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-PRODUCTS = ("lmdraw", "lmvideo", "lmaudio", "lmoffice", "lmcad", "lmblender", "lmmagnum", "lmfilament", "lmimg", "lmpdf")
+PRODUCTS = ("lmdraw", "lmvideo", "lmaudio", "lmoffice", "lmcad", "lmmagnum", "lmfilament", "lmimg", "lmpdf")
 ROOTS = ("/home/mma/repos/dsl", "/home/mma/repos/lmctlhq")
 
 

@@ -2,7 +2,7 @@
 # Default mode is read-only. --stage writes only /home/mma/staging; --apply
 # needs both an explicit owner flag/file entry and a RELEASE_TOKEN.
 
-let products = ["lmdraw", "lmvideo", "lmaudio", "lmoffice", "lmcad", "lmblender", "lmmagnum", "lmfilament", "lmimg", "lmpdf"];
+let products = ["lmdraw", "lmvideo", "lmaudio", "lmoffice", "lmcad", "lmmagnum", "lmfilament", "lmimg", "lmpdf"];
 let product = "";
 let mode = "--dry-run";
 let owner_flag = false;
