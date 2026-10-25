@@ -1,0 +1,187 @@
+name: Private build and public release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# This template intentionally has no pull_request trigger: RELEASE_TOKEN is
+# only available to trusted main-branch publishing, never to fork code.
+permissions:
+  contents: read
+
+env:
+  VERSION_SERIES: ${{ vars.VERSION_SERIES }}
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Validate the owner-selected major.minor series
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$VERSION_SERIES" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "Set repository variable VERSION_SERIES to MAJOR.MINOR, for example 0.1" >&2
+            exit 1
+          fi
+          version="${VERSION_SERIES}.${GITHUB_RUN_NUMBER}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            os: linux
+            arch: x64
+            suffix: ""
+          - runner: ubuntu-24.04-arm
+            os: linux
+            arch: arm64
+            suffix: ""
+          - runner: macos-15
+            os: macos
+            arch: arm64
+            suffix: ""
+          - runner: macos-15-intel
+            os: macos
+            arch: x64
+            suffix: ""
+          - runner: windows-2022
+            os: windows
+            arch: x64
+            suffix: ".exe"
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out private source
+        uses: actions/checkout@v4
+
+      - name: Check out the public examples and docs peer
+        uses: actions/checkout@v4
+        with:
+          repository: lmctl-ai/${{ github.event.repository.name }}
+          ref: main
+          path: public
+
+      - name: Set up Node for lmscript
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install the compiler that accepts _lmcode_
+        run: npm install --global @lmctl-ai/lmctl@0.2.420
+
+      # Adapt the command and output path to this product before enabling the
+      # workflow. It must build the fresh host for the current matrix target.
+      - name: Build and test the private source
+        shell: bash
+        env:
+          HOST_BIN_PATH: build/${{ github.event.repository.name }}${{ matrix.suffix }}
+        run: |
+          set -euo pipefail
+          ./scripts/build-release.sh
+          ./test.sh
+          test -f "$HOST_BIN_PATH"
+          dirname "$HOST_BIN_PATH" >> "$GITHUB_PATH"
+
+      - name: Check and execute every public example with the fresh host
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -d public/examples
+          find public/examples -type f -name '*.lms' -print0 |
+            while IFS= read -r -d '' example; do
+              relative="${example#public/}"
+              (cd public && lmscript --check "$relative" && lmscript "$relative")
+            done
+
+      - name: Stage the platform asset under the installer filename
+        shell: bash
+        env:
+          ASSET_NAME: ${{ github.event.repository.name }}-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.suffix }}
+          HOST_BIN_PATH: build/${{ github.event.repository.name }}${{ matrix.suffix }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          cp "$HOST_BIN_PATH" "$RUNNER_TEMP/release-assets/$ASSET_NAME"
+
+      - name: Upload this platform binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.os }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/release-assets/${{ github.event.repository.name }}-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.suffix }}
+          if-no-files-found: error
+          retention-days: 2
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Download all five platform assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: binary-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Verify the complete asset set and create SHA256SUMS
+        shell: bash
+        env:
+          PRODUCT: ${{ github.event.repository.name }}
+        run: |
+          set -euo pipefail
+          cd release-assets
+          for asset in \
+            "$PRODUCT-linux-x64" \
+            "$PRODUCT-linux-arm64" \
+            "$PRODUCT-macos-x64" \
+            "$PRODUCT-macos-arm64" \
+            "$PRODUCT-windows-x64.exe"; do
+            test -f "$asset"
+          done
+          sha256sum \
+            "$PRODUCT-linux-x64" \
+            "$PRODUCT-linux-arm64" \
+            "$PRODUCT-macos-x64" \
+            "$PRODUCT-macos-arm64" \
+            "$PRODUCT-windows-x64.exe" > SHA256SUMS
+
+      - name: Publish a versioned release to the public peer
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          PRODUCT: ${{ github.event.repository.name }}
+          VERSION: ${{ needs.version.outputs.version }}
+          TAG: ${{ needs.version.outputs.tag }}
+          SOURCE_COMMIT: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN"
+          public_repo="lmctl-ai/$PRODUCT"
+          cat > release-notes.md <<EOF
+          $PRODUCT $VERSION
+
+          Proprietary binary release built from private source commit $SOURCE_COMMIT.
+          Public README, docs, examples, LICENSE-binaries, and third-party notices:
+          https://github.com/$public_repo/tree/main
+
+          Verify downloaded files with SHA256SUMS.
+          EOF
+          gh release create "$TAG" \
+            --repo "$public_repo" \
+            --target main \
+            --title "$PRODUCT $VERSION" \
+            --notes-file release-notes.md \
+            release-assets/*
