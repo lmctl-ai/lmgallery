@@ -55,6 +55,14 @@ class FlipError(RuntimeError):
     pass
 
 
+def public_repo(product: str) -> str:
+    return f"lmctl-ai/{product}"
+
+
+def private_repo(product: str) -> str:
+    return f"lmctlhq/{product}"
+
+
 def command(argv: list[str], *, cwd: Path | None = None, check: bool = True,
             timeout: int = 300, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
     proc = subprocess.run(argv, cwd=cwd, text=True, capture_output=True, timeout=timeout, input=input_text)
