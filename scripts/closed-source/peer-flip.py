@@ -774,7 +774,7 @@ def _update_local_checkouts(product: str, root: Path) -> None:
     command(["git", "clone", f"https://github.com/{public_repo(product)}.git", str(public_checkout)], timeout=900)
 
 
-def _install_private_ci(product: str, root: Path, token: str, first_tag: str) -> str:
+def _install_private_ci(product: str, root: Path, first_tag: str) -> str:
     adapter = GALLERY / "scripts/closed-source/adapters" / f"{product}-private-ci.yml"
     if product == "lmaudio":
         adapter = GALLERY / "scripts/closed-source/templates/private-ci/lmaudio.yml"
@@ -791,49 +791,49 @@ def _install_private_ci(product: str, root: Path, token: str, first_tag: str) ->
     publisher.chmod(0o755)
     durable = root / "durable-memory/20-public-private-peers.md"
     durable.write_text(
-        f"# Public/private peer deployment\n\nThe source repository is private at `{private_repo(product)}`. The public peer `{public_repo(product)}` owns README, docs/images, examples/inputs, notices, and binary releases. The first public release tag is `{first_tag}`. Public source history was replaced by one orphan docs/examples commit; old source history remains private. CI checks public examples against this source build.\n",
+        f"# Public/private peer deployment\n\nThe source repository is private at `{private_repo(product)}`. The public peer `{public_repo(product)}` owns README, docs/images, examples/inputs, notices, and binary releases. The first public release tag is `{first_tag}`. Public source history was replaced by one orphan docs/examples commit; old source history remains private. CI checks public examples against this source build. Releases through `v0.2.1` remain MIT under that release's LICENSE asset; later releases use the Personal Use License in the public root LICENSE.\n",
         encoding="utf-8",
     )
     command(["git", "-C", str(root), "add", ".github/workflows/ci.yml", "scripts/release-to-public.sh", "durable-memory/20-public-private-peers.md"])
     command([
         "git", "-C", str(root), "-c", "user.name=mike-lmctl", "-c", "user.email=281311770+mike-lmctl@users.noreply.github.com",
-        "commit", "-m", "Move the first peer release behind private CI",
+        "commit", "-m", "Install private peer publishing workflow [skip ci]",
         "-m", f"Use Linux-fast default checks, full tagged/manual matrix builds, public example tests, and publish {first_tag} through the public peer.",
     ])
     command(["git", "-C", str(root), "pull", "--rebase"], timeout=600)
     command(["git", "-C", str(root), "push", "origin", "main"], timeout=900)
-    # gh secret set reads the token from stdin, keeping it out of argv and logs.
-    command(["gh", "secret", "set", "RELEASE_TOKEN", "-R", private_repo(product)], input_text=token)
     return command(["git", "-C", str(root), "rev-parse", "HEAD"]).stdout.strip()
 
 
-def _run_first_release(product: str, tag: str, private_sha: str) -> dict:
-    command(["gh", "workflow", "run", "ci.yml", "-R", private_repo(product), "--ref", "main", "-f", f"release_tag={tag}"])
-    run_id = ""
-    latest: dict = {}
-    for _ in range(60):
+def _run_publish_test(product: str, private_sha: str) -> dict:
+    before = command(["gh", "run", "list", "-R", private_repo(product), "-L", "5", "--json", "databaseId,event,headSha"], timeout=120)
+    previous_ids = {str(row.get("databaseId")) for row in json.loads(before.stdout)}
+    command(["gh", "workflow", "run", "ci.yml", "-R", private_repo(product), "--ref", "main", "-f", "publish_test=true"], timeout=300)
+    run: dict = {}
+    for _ in range(24):
         result = command(["gh", "run", "list", "-R", private_repo(product), "-L", "5", "--json", "databaseId,event,status,conclusion,headSha,url"], check=False, timeout=120)
         if result.returncode == 0:
             try:
                 rows = json.loads(result.stdout)
             except json.JSONDecodeError:
                 rows = []
-            for row in rows:
-                if row.get("event") == "workflow_dispatch" and row.get("headSha") == private_sha:
-                    latest = row
-                    run_id = str(row.get("databaseId", ""))
-                    break
-            if latest.get("status") == "completed":
-                if latest.get("conclusion") != "success":
-                    raise FlipError(f"first private release workflow failed: {latest.get('url','')}")
-                return latest
-        time.sleep(5)
-    if not run_id:
-        raise FlipError(f"private workflow_dispatch run was not found for {private_repo(product)}")
-    watch = command(["gh", "run", "watch", run_id, "-R", private_repo(product), "--exit-status"], check=False, timeout=7200)
-    if watch.returncode != 0:
-        raise FlipError(f"first private release workflow failed or timed out: {latest.get('url','')}\n{watch.stderr.strip()}")
-    return latest
+            run = next((row for row in rows if str(row.get("databaseId")) not in previous_ids and row.get("event") == "workflow_dispatch" and row.get("headSha") == private_sha), {})
+            if run:
+                break
+        time.sleep(2)
+    if not run:
+        raise FlipError(f"publish-test workflow run was not found for {private_repo(product)}")
+    watched = command(["gh", "run", "watch", str(run["databaseId"]), "-R", private_repo(product), "--exit-status"], check=False, timeout=1800)
+    details = json.loads(command(["gh", "run", "view", str(run["databaseId"]), "-R", private_repo(product), "--json", "status,conclusion,jobs,url"]).stdout)
+    jobs = {job.get("name"): job for job in details.get("jobs", [])}
+    if watched.returncode != 0 or details.get("status") != "completed" or details.get("conclusion") != "success":
+        raise FlipError(f"private publish-test failed: {details.get('url','')}")
+    if jobs.get("publish-test", {}).get("conclusion") != "success":
+        raise FlipError(f"private publish-test job did not succeed: {details.get('url','')}")
+    for name in ("linux-fast", "full-matrix", "publish"):
+        if name in jobs and jobs[name].get("conclusion") != "skipped":
+            raise FlipError(f"publish-test unexpectedly ran build/publish job {name}: {details.get('url','')}")
+    return details
 
 
 def _update_consumer_pins(product: str, first_tag: str, inventory: list[str], source_root: Path) -> list[str]:
@@ -889,154 +889,225 @@ def _update_consumer_pins(product: str, first_tag: str, inventory: list[str], so
     return updated
 
 
-def apply_flip(product: str, first_tag: str) -> int:
-    token = os.environ.get("RELEASE_TOKEN", "")
-    if not token:
-        raise FlipError("RELEASE_TOKEN is required; no flip was started")
-    if not re.fullmatch(r"v\d+\.\d+\.\d+", first_tag):
-        raise FlipError("--first-release-tag must be vMAJOR.MINOR.PATCH")
-    approval = Path.home() / "tools/closed-source-approved.txt"
-    if not approval.is_file() or product not in {line.strip() for line in approval.read_text(encoding="utf-8").splitlines()}:
-        raise FlipError(f"owner approval file must list {product}; no flip was started")
+def _set_release_secret_from_file(product: str) -> None:
+    token_path = Path.home() / ".config/lmctl/release_token"
+    if not token_path.is_file() or token_path.stat().st_mode & 0o777 != 0o600 or token_path.stat().st_size == 0:
+        raise FlipError("release-token file is missing, empty, or not mode 600; no token value was read")
+    with token_path.open("rb") as stream:
+        result = subprocess.run(["gh", "secret", "set", "RELEASE_TOKEN", "-R", private_repo(product)], stdin=stream, capture_output=True, text=True)
+    if result.returncode:
+        raise FlipError(f"could not set the private release secret: {result.stderr.strip()}")
 
-    snapshot = git_snapshot(product, fetch=True)
-    actual_origin = snapshot["origin"].rstrip("/").removesuffix(".git")
-    expected_origins = {f"https://github.com/lmctl-ai/{product}", f"git@github.com:lmctl-ai/{product}"}
-    if not snapshot["clean"] or not snapshot["pushed"] or actual_origin not in expected_origins:
-        raise FlipError("source checkout must be clean, on main, and synchronized to the current public origin")
-    active = agents_for(product, active_lmctl_members())
-    if active:
-        raise FlipError(f"active product sessions must be quiesced before flip: {', '.join(active)}")
-    if product in OWNER_REPORTED_ACTIVE:
-        # Approval-file entry is the owner's confirmation that its named team
-        # has paused; the live session check above catches active lmctl agents.
-        print(f"owner-reported active team for {product}: approval-file entry required after pause", file=sys.stderr)
-    ci = ci_latest(product, snapshot["ref"])
-    if not ci.get("ok"):
-        raise FlipError(f"latest main CI is not green: {ci.get('url','')} {ci.get('error','')}")
-    stage = STAGING / f"{product}-public"
-    manifest_path = STAGING / f"{product}-stage-manifest.json"
-    if not stage.is_dir() or not manifest_path.is_file():
-        raise FlipError(f"stage the public tree first: {stage}")
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("source_main_sha") != snapshot["ref"]:
-        raise FlipError("source origin/main changed since staging; refresh the public tree")
-    validate_stage(product, stage, manifest.get("public_file_map", {}))
-    adapter = private_ci_adapter(product)
-    if not adapter.is_file():
-        raise FlipError(f"no reviewed product-specific private CI adapter exists yet: {adapter}; stop before transfer")
-    clone_path = Path("/home/mma/repos/dsl") / f"{product}-public"
-    if clone_path.exists():
-        raise FlipError(f"public checkout path already exists: {clone_path}")
-    metadata = json.loads(command(["gh", "api", f"repos/{public_repo(product)}"]).stdout)
-    existing_private = command(["gh", "api", f"repos/{private_repo(product)}"], check=False)
-    if existing_private.returncode == 0:
-        raise FlipError(f"private target already exists: {private_repo(product)}")
-    private_text = (existing_private.stdout + existing_private.stderr).lower()
-    if "404" not in private_text and "not found" not in private_text:
-        raise FlipError(f"cannot verify private target availability: {existing_private.stderr.strip()}")
-    consumer_pins = pin_inventory(product)
-    consumer_repos = {}
-    for line in consumer_pins:
-        found = re.match(r"(.+?):[0-9]+:", line)
-        if found:
-            path = Path(found.group(1))
-            root = Path(command(["git", "-C", str(path.parent), "rev-parse", "--show-toplevel"]).stdout.strip()).resolve()
-            if root != snapshot["root"].resolve():
-                consumer_repos.setdefault(root, set()).add(path.resolve().relative_to(root).as_posix())
-    validate_consumer_checkouts(product, [str(root) for root in consumer_repos], active_lmctl_members())
 
-    # Stage a one-root commit locally before beginning irreversible GitHub steps.
+def _prepare_orphan_commit(stage: Path, product: str) -> None:
     if (stage / ".git").exists():
         raise FlipError("public stage already has Git history; refusing to reuse it")
     command(["git", "-C", str(stage), "init", "-b", "main"])
     command(["git", "-C", str(stage), "-c", "user.name=mike-lmctl", "-c", "user.email=281311770+mike-lmctl@users.noreply.github.com", "add", "-A"])
     command(["git", "-C", str(stage), "-c", "user.name=mike-lmctl", "-c", "user.email=281311770+mike-lmctl@users.noreply.github.com", "commit", "-m", f"Publish {product} public documentation and examples"])
+    parents = command(["git", "-C", str(stage), "rev-list", "--parents", "-n", "1", "HEAD"]).stdout.strip().split()
+    if len(parents) != 1:
+        raise FlipError("staged public commit is not an orphan root commit")
 
-    # Transfer preserves the complete old source history privately; the new
-    # public repo gets only the staged orphan commit. No delete_repo operation.
-    command(["gh", "api", "-X", "POST", f"repos/{public_repo(product)}/transfer", "-f", "new_owner=lmctlhq"], timeout=300)
-    private_data = {}
-    for _ in range(60):
-        view = command(["gh", "api", f"repos/{private_repo(product)}"], check=False, timeout=60)
-        if view.returncode == 0:
-            private_data = json.loads(view.stdout)
-            break
-        time.sleep(3)
-    if not private_data:
-        raise FlipError("transferred repo did not become visible under lmctlhq; stop for recovery")
-    command(["gh", "repo", "edit", private_repo(product), "--visibility", "private", "--accept-visibility-change-consequences"], timeout=300)
-    private_check = json.loads(command(["gh", "api", f"repos/{private_repo(product)}"]).stdout)
-    if not private_check.get("private"):
-        raise FlipError("source repo did not become private; stop before recreating the public slug")
 
-    create = ["gh", "repo", "create", public_repo(product), "--public"]
-    if metadata.get("description"):
-        create.extend(["--description", metadata["description"]])
-    if metadata.get("homepage"):
-        create.extend(["--homepage", metadata["homepage"]])
-    command(create, timeout=300)
-    command(["git", "-C", str(stage), "remote", "add", "origin", f"https://github.com/{public_repo(product)}.git"])
-    command(["git", "-C", str(stage), "push", "-u", "origin", "main"], timeout=900)
-    edit = ["gh", "repo", "edit", public_repo(product), "--default-branch", "main", "--enable-issues", "--enable-wiki=false", "--enable-projects=false"]
-    command(edit)
-    for topic in metadata.get("topics", []):
-        command(["gh", "repo", "edit", public_repo(product), "--add-topic", topic])
+def _release_files(product: str, release_dir: Path, first_tag: str) -> tuple[dict, list[Path]]:
+    if product != "lmaudio" or first_tag != "v0.2.1":
+        raise FlipError("the no-build release replay is only approved for lmaudio v0.2.1")
+    release = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases/latest"]).stdout)
+    if release.get("tag_name") != first_tag or release.get("name") != first_tag:
+        raise FlipError(f"unexpected latest release metadata; expected {first_tag}")
+    metadata_path = release_dir / "release-metadata.json"
+    notes_path = release_dir / "release-notes.md"
+    if not metadata_path.is_file() or not notes_path.is_file():
+        raise FlipError(f"staged release notes or metadata are missing from {release_dir}")
+    prior = json.loads(metadata_path.read_text(encoding="utf-8"))
+    boundary = ("Releases up to and including v0.2.1 were published under the MIT License "
+                "(see the LICENSE asset of that release). Releases after v0.2.1 are published "
+                "under the Lattice Systems Personal Use License (this file).")
+    expected_notes = prior.get("body", "").rstrip() + "\n\n" + boundary + "\n"
+    if prior.get("tagName") != first_tag or prior.get("name") != first_tag or prior.get("body", "").rstrip() != release.get("body", "").rstrip():
+        raise FlipError("staged release metadata no longer matches the published v0.2.1 release")
+    if notes_path.read_text(encoding="utf-8") != expected_notes:
+        raise FlipError("staged release body does not preserve the published notes plus the approved license boundary")
+    remote_assets = {asset["name"]: asset for asset in release.get("assets", [])}
+    local_assets = {path.name: path for path in release_dir.iterdir() if path.is_file() and path.name not in {"release-metadata.json", "release-notes.md"}}
+    if set(local_assets) != set(remote_assets):
+        raise FlipError("staged release asset names differ from the published release")
+    for name, path in local_assets.items():
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if remote_assets[name].get("digest") != f"sha256:{digest}":
+            raise FlipError(f"staged release asset changed from the published bytes: {name}")
+    if not (release_dir / "LICENSE").read_text(encoding="utf-8").startswith("MIT License"):
+        raise FlipError("v0.2.1 LICENSE asset is not the published MIT license")
+    command(["sha256sum", "-c", "SHA256SUMS"], cwd=release_dir)
+    return release, [local_assets[name] for name in sorted(local_assets)]
 
-    # Store the later-provided cross-repo token only in the new private repo's
-    # Actions secret; the value travels on stdin and is never logged.
-    command(["gh", "secret", "set", "RELEASE_TOKEN", "-R", private_repo(product)], input_text=token)
+
+def _publish_unchanged_release(product: str, first_tag: str, release: dict, assets: list[Path], notes: Path, verify_dir: Path) -> dict:
+    if verify_dir.exists():
+        raise FlipError(f"release verification path already exists: {verify_dir}")
+    create = ["gh", "release", "create", first_tag, "-R", public_repo(product), "--target", "main", "--title", release["name"], "--notes-file", str(notes)]
+    create.extend(str(path) for path in assets)
+    command(create, timeout=900)
+    published = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases/tags/{first_tag}"]).stdout)
+    if published.get("tag_name") != first_tag or published.get("name") != release.get("name") or published.get("body", "").rstrip() != notes.read_text(encoding="utf-8").rstrip():
+        raise FlipError("republished release metadata differs from the approved staged metadata")
+    published_assets = {item["name"]: item for item in published.get("assets", [])}
+    if set(published_assets) != {path.name for path in assets}:
+        raise FlipError("republished release asset names differ from v0.2.1")
+    for path in assets:
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if published_assets[path.name].get("digest") != f"sha256:{digest}":
+            raise FlipError(f"republished asset digest differs from staged v0.2.1: {path.name}")
+    verify_dir.mkdir(parents=True)
+    command(["gh", "release", "download", first_tag, "-R", public_repo(product), "--dir", str(verify_dir)], timeout=900)
+    downloaded = {path.name: path for path in verify_dir.iterdir() if path.is_file()}
+    if set(downloaded) != {path.name for path in assets}:
+        raise FlipError("downloaded release asset names differ from v0.2.1")
+    staged_by_name = {path.name: path for path in assets}
+    for name, path in downloaded.items():
+        if hashlib.sha256(path.read_bytes()).digest() != hashlib.sha256(staged_by_name[name].read_bytes()).digest():
+            raise FlipError(f"downloaded release asset bytes differ from v0.2.1: {name}")
+    command(["sha256sum", "-c", "SHA256SUMS"], cwd=verify_dir)
+    linux = verify_dir / f"{product}-linux-x64"
+    command(["chmod", "+x", str(linux)])
+    version = command([str(linux), "--version"]).stdout.strip()
+    if version != f"{product} {first_tag[1:]}" :
+        raise FlipError(f"republished binary returned an unexpected version: {version}")
+    for example in ("eq_before_after.lms", "karplus_strong_harp.lms"):
+        url = f"https://raw.githubusercontent.com/{public_repo(product)}/main/examples/{example}"
+        path = verify_dir / example
+        command(["curl", "-fsSL", url, "-o", str(path)], timeout=120)
+        command(["lmscript", "--check", str(path)], timeout=300)
+    return published
+
+
+def apply_lmaudio_pilot(first_tag: str) -> int:
+    product = "lmaudio"
+    if first_tag != "v0.2.1":
+        raise FlipError("the approved lmaudio pilot must replay v0.2.1 unchanged")
+    approval = Path.home() / "tools/closed-source-approved.txt"
+    if not approval.is_file() or product not in {line.strip() for line in approval.read_text(encoding="utf-8").splitlines()}:
+        raise FlipError("owner approval file must list lmaudio; no flip was started")
+    token_path = Path.home() / ".config/lmctl/release_token"
+    if not token_path.is_file() or token_path.stat().st_mode & 0o777 != 0o600 or token_path.stat().st_size == 0:
+        raise FlipError("release-token file is missing, empty, or not mode 600; no flip was started")
+
+    snapshot = git_snapshot(product, fetch=True)
+    expected_origin = f"https://github.com/{public_repo(product)}.git"
+    if snapshot["local_branch"] != "main" or not snapshot["clean"] or not snapshot["pushed"] or snapshot["origin"].rstrip("/") not in {expected_origin, expected_origin.removesuffix(".git")}:
+        raise FlipError("lmaudio source checkout must be clean, on main, and synchronized to the public origin")
+    if agents_for(product, active_lmctl_members()):
+        raise FlipError("an active lmaudio session exists; stop before transfer")
+    ci = ci_latest(product, snapshot["ref"])
+    if not ci.get("ok"):
+        raise FlipError(f"lmaudio main CI is not green: {ci.get('url','')} {ci.get('error','')}")
     root = snapshot["root"]
-    command(["git", "-C", str(root), "remote", "set-url", "origin", f"https://github.com/{private_repo(product)}.git"])
-    command(["git", "-C", str(root), "pull", "--rebase"], timeout=900)
-    clone_path.parent.mkdir(parents=True, exist_ok=True)
-    command(["git", "clone", f"https://github.com/{public_repo(product)}.git", str(clone_path)], timeout=900)
+    stage = STAGING / f"{product}-public"
+    manifest_path = STAGING / f"{product}-stage-manifest.json"
+    release_dir = STAGING / f"{product}-release"
+    verify_dir = STAGING / f"{product}-release-verify"
+    if not stage.is_dir() or not manifest_path.is_file():
+        raise FlipError(f"stage the public tree first: {stage}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("source_main_sha") != snapshot["ref"]:
+        raise FlipError("lmaudio origin/main changed since staging; refresh the public tree")
+    validation = validate_stage(product, stage, manifest.get("public_file_map", {}))
+    if validation.get("private_source_references") or validation.get("secret_findings") or validation.get("missing_autorun"):
+        raise FlipError("staged lmaudio tree failed validation")
+    expected_hashes = manifest.get("staged_file_sha256", {})
+    actual_hashes = {p.relative_to(stage).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in stage.rglob("*") if p.is_file() and ".git" not in p.parts}
+    if actual_hashes != expected_hashes:
+        raise FlipError("staged lmaudio tree differs from its reviewed manifest")
+    boundary = ("Releases up to and including v0.2.1 were published under the MIT License "
+                "(see the LICENSE asset of that release). Releases after v0.2.1 are published "
+                "under the Lattice Systems Personal Use License (this file).")
+    if boundary not in (stage / "README.md").read_text(encoding="utf-8") or not (stage / "LICENSE").read_text(encoding="utf-8").startswith(boundary):
+        raise FlipError("staged README/LICENSE omit the approved lmaudio license boundary")
+    old_release, assets = _release_files(product, release_dir, first_tag)
+    if stage.joinpath(".git").exists() or verify_dir.exists() or (Path("/home/mma/repos/dsl") / f"{product}-public").exists():
+        raise FlipError("public stage, verification path, or public checkout already exists")
 
-    adapter = private_ci_adapter(product)
-    command(["git", "-C", str(root), "pull", "--rebase"], timeout=900)
-    workflow = root / ".github/workflows/ci.yml"
-    workflow.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(adapter, workflow)
-    publisher = root / "scripts/release-to-public.sh"
-    publisher.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(GALLERY / "scripts/closed-source/templates/release-to-public.sh", publisher)
-    publisher.chmod(0o755)
-    memory = root / "durable-memory/20-public-private-peers.md"
-    memory.write_text(
-        f"# Public/private peer deployment\n\nThe source repository is private at `{private_repo(product)}`. The fresh public peer `{public_repo(product)}` is the source of truth for README/docs/images/examples and binary releases. The first public release tag is `{first_tag}`. Old public tags/history moved into private source; versioned consumer pins were updated after the first public release succeeded.\n",
-        encoding="utf-8",
-    )
-    command(["git", "-C", str(root), "add", ".github/workflows/ci.yml", "scripts/release-to-public.sh", "durable-memory/20-public-private-peers.md"])
-    command(["git", "-C", str(root), "-c", "user.name=mike-lmctl", "-c", "user.email=281311770+mike-lmctl@users.noreply.github.com", "commit", "-m", "Build private source and publish releases through the public peer"])
-    command(["git", "-C", str(root), "pull", "--rebase"], timeout=900)
-    command(["git", "-C", str(root), "push", "origin", "main"], timeout=900)
+    pins, consumer_files = consumer_repositories(product)
+    validate_consumer_checkouts(product, list(consumer_files), active_lmctl_members())
+    metadata = _repo_view(product)
+    _check_private_target_free(product)
+    if metadata.get("private") or not metadata.get("default_branch") == "main":
+        raise FlipError("public lmaudio repo metadata differs from the reviewed preflight")
+    _prepare_orphan_commit(stage, product)
 
-    dispatch = command(["gh", "workflow", "run", "ci.yml", "-R", private_repo(product), "--ref", "main", "-f", f"release_tag={first_tag}"], timeout=300)
-    run_id = ""
-    for _ in range(60):
-        run_result = command(["gh", "run", "list", "-R", private_repo(product), "-L", "5", "--json", "databaseId,event,status,conclusion,headSha,url"], check=False, timeout=120)
-        if run_result.returncode == 0:
+    transferred = False
+    private_secret_set = False
+    public_created = False
+    try:
+        command(["gh", "api", "-X", "POST", f"repos/{public_repo(product)}/transfer", "-f", "new_owner=lmctlhq"], timeout=300)
+        transferred = True
+        private_data = _wait_for_private_transfer(product, attempts=60)
+        if private_data.get("private"):
+            raise FlipError("transferred repo became private before the required immediate visibility step")
+        command(["gh", "repo", "edit", private_repo(product), "--visibility", "private", "--accept-visibility-change-consequences"], timeout=300)
+        private_data = json.loads(command(["gh", "api", f"repos/{private_repo(product)}"]).stdout)
+        if not private_data.get("private"):
+            raise FlipError("source repo did not become private")
+        _set_release_secret_from_file(product)
+        private_secret_set = True
+
+        create = ["gh", "repo", "create", public_repo(product), "--public"]
+        if metadata.get("description"):
+            create.extend(["--description", metadata["description"]])
+        if metadata.get("homepage"):
+            create.extend(["--homepage", metadata["homepage"]])
+        command(create, timeout=300)
+        public_created = True
+        command(["git", "-C", str(stage), "remote", "add", "origin", f"https://github.com/{public_repo(product)}.git"])
+        command(["git", "-C", str(stage), "push", "-u", "origin", "main"], timeout=900)
+        command(["gh", "repo", "edit", public_repo(product), "--default-branch", "main", "--enable-issues", "--enable-wiki=false", "--enable-projects=false"], timeout=300)
+        for topic in metadata.get("topics", []):
+            command(["gh", "repo", "edit", public_repo(product), "--add-topic", topic], timeout=300)
+        public_data = json.loads(command(["gh", "api", f"repos/{public_repo(product)}"]).stdout)
+        if public_data.get("private") or public_data.get("default_branch") != "main":
+            raise FlipError("fresh public lmaudio repo visibility/default branch is unexpected")
+
+        _install_private_ci(product, root, first_tag)
+        private_sha = command(["git", "-C", str(root), "rev-parse", "HEAD"]).stdout.strip()
+        private_ci = _run_publish_test(product, private_sha)
+        notes = release_dir / "release-notes.md"
+        published_release = _publish_unchanged_release(product, first_tag, old_release, assets, notes, verify_dir)
+        _update_local_checkouts(product, root)
+        update_consumer_pins(product, first_tag, consumer_files, root)
+        print(f"FLIP COMPLETE: {product} source is private; fresh public peer and unchanged {first_tag} assets verified; private publish-test succeeded at {private_ci.get('url','')}; release={published_release.get('html_url','')}")
+        return 0
+    except Exception as exc:
+        if transferred and not public_created:
             try:
-                rows = json.loads(run_result.stdout)
-            except json.JSONDecodeError:
-                rows = []
-            for row in rows:
-                if row.get("event") == "workflow_dispatch" and row.get("headSha") == command(["git", "-C", str(root), "rev-parse", "HEAD"]).stdout.strip():
-                    run_id = str(row.get("databaseId", ""))
-                    break
-        if run_id:
-            break
-        time.sleep(5)
-    if not run_id:
-        raise FlipError("private full-matrix workflow was dispatched but no run ID was found; inspect Actions")
-    command(["gh", "run", "watch", run_id, "-R", private_repo(product), "--exit-status"], timeout=10800)
-    public_release = command(["gh", "release", "view", first_tag, "-R", public_repo(product), "--json", "tagName,assets,url"], check=False, timeout=120)
-    if public_release.returncode:
-        raise FlipError(f"private CI completed but first public release is missing: {public_release.stderr.strip()}")
-    # Consumer version tags are changed only after the target release exists.
-    update_consumer_pins(product, first_tag, consumer_repos, root)
-    print(f"FLIP COMPLETE: {product} source is private, the fresh public peer is available, and {first_tag} was published by private CI.")
-    return 0
+                if private_secret_set:
+                    command(["gh", "secret", "delete", "RELEASE_TOKEN", "-R", private_repo(product)], timeout=120)
+                command(["gh", "api", "-X", "POST", f"repos/{private_repo(product)}/transfer", "-f", "new_owner=lmctl-ai"], timeout=300)
+                restored = _wait_for_transfer_back(product)
+                if restored:
+                    command(["gh", "repo", "edit", public_repo(product), "--visibility", "public", "--accept-visibility-change-consequences"], timeout=300)
+                else:
+                    raise FlipError("transferred repository did not return to lmctl-ai")
+            except Exception as rollback_error:
+                raise FlipError(f"flip failed before public recreation ({exc}); automatic rollback also failed ({rollback_error})") from exc
+        elif public_created:
+            raise FlipError(f"flip stopped after creating the fresh public repo; no delete_repo permission is available for rollback: {exc}") from exc
+        raise
+
+
+def _wait_for_transfer_back(product: str) -> bool:
+    for _ in range(60):
+        result = command(["gh", "api", f"repos/{public_repo(product)}"], check=False, timeout=60)
+        if result.returncode == 0:
+            return True
+        time.sleep(3)
+    return False
+
+
+def apply_flip(product: str, first_tag: str) -> int:
+    if product != "lmaudio":
+        raise FlipError("only the owner-approved lmaudio pilot is enabled for apply")
+    return apply_lmaudio_pilot(first_tag)
 
 
 def main() -> int:

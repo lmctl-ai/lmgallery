@@ -197,6 +197,12 @@ Lattice Systems Personal Use License for releases after `v0.2.1`; both the
 public README and the `v0.2.1` release notes state this boundary. The old release
 assets are republished byte-for-byte.
 
+The lmaudio private workflow's `publish_test` dispatch creates and removes a
+temporary draft release using `RELEASE_TOKEN` without starting a build. The
+workflow-install commit uses `[skip ci]`, so the pilot waits until the next
+source change to start its Linux build; later tagged/manual releases run the
+five-platform matrix and publish with the cross-repo secret.
+
 `lmplot` remains open source and is excluded. Its existing gnuplot patch and
 runtime notices are unchanged by this plan.
 
