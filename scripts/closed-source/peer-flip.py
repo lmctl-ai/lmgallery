@@ -1532,7 +1532,7 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
 
         for ref in sorted(r for r in old_refs["refs"] if r.startswith("refs/heads/") and r != "refs/heads/main"):
             branch = ref.removeprefix("refs/heads/")
-            command(["git", "push", "origin", "--delete", branch], timeout=300)
+            command(["git", "-C", str(stage), "push", "origin", "--delete", branch], timeout=300)
             audit(f"PUBLIC_BRANCH_DELETED {branch}")
         if not preserve_release_tags:
             for item in release_backups:
@@ -1541,7 +1541,7 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
         released_tags = {item["tagName"] for item in release_backups}
         if not preserve_release_tags:
             for ref in sorted(r for r in old_refs["refs"] if r.startswith("refs/tags/") and r.removeprefix("refs/tags/") not in released_tags):
-                command(["git", "push", "origin", "--delete", ref.removeprefix("refs/tags/")], timeout=300)
+                command(["git", "-C", str(stage), "push", "origin", "--delete", ref.removeprefix("refs/tags/")], timeout=300)
                 audit(f"PUBLIC_TAG_DELETED {ref.removeprefix('refs/tags/')}")
             _wait_for_no_public_releases(product)
         for attempt in range(1, 31):
@@ -2107,10 +2107,13 @@ def apply_general_product(product: str, first_tag: str) -> int:
         if private_ci_ready:
             if not has_secret:
                 _set_release_secret_from_file(product)
-            if actions.get("enabled") is not True:
-                _set_repo_actions_enabled(product, True)
             private_sha = snapshot["ref"]
-            private_ci = ci if ci.get("ok") else _run_publish_test(product, private_sha)
+            if actions.get("enabled") is not True:
+                if not ci.get("ok"):
+                    raise FlipError(f"private Actions are disabled and no successful recorded publisher check exists for {product}")
+                private_ci = ci
+            else:
+                private_ci = ci if ci.get("ok") else _run_publish_test(product, private_sha)
         else:
             _set_release_secret_from_file(product)
             private_sha = _install_private_ci(product, root, first_tag)
