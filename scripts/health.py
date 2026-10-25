@@ -40,7 +40,9 @@ NON_BINARY_REPOS = {
 
 UNRELEASED_HOSTS = {
     'lmproxy',
-    'lmdb',
+    'lmpdf',
+    'lmawscli',
+    'lmnet',
 }
 
 ALLOWED_OVERSIZED = {
@@ -55,6 +57,8 @@ ALLOWED_OVERSIZED = {
 }
 
 STALE_WORDS = ['cpp-dsl-sdk', 'rust-dsl-sdk', 'lmterraform']
+
+MIN_COMPILER_PIN = (0, 2, 420)
 
 USE_COLOR = sys.stdout.isatty()
 
@@ -368,18 +372,54 @@ def check_release(repo_name):
   }
 
 
+def check_declares_std(repo_path, repo_name):
+  if repo_name in NON_BINARY_REPOS or repo_name == 'lmvideo':
+    return False
+  repos_root = get_repos_root()
+  cpp_std_path = os.path.join(
+      repos_root, 'lmcode-cpp', 'std', 'lmcode-std.schema.json'
+  )
+  if not os.path.exists(cpp_std_path):
+    return False
+  try:
+    with open(cpp_std_path, 'r') as f:
+      std_data = json.load(f)
+    std_funcs = set(std_data.get('functions', {}).keys())
+    std_types = set(std_data.get('types', {}).keys())
+  except Exception:
+    return False
+
+  schema_dir = os.path.join(repo_path, 'schema')
+  if os.path.isdir(schema_dir):
+    for sf in os.listdir(schema_dir):
+      if sf.endswith('.json') and 'lmcode-std' not in sf:
+        try:
+          with open(os.path.join(schema_dir, sf), 'r') as f:
+            data = json.load(f)
+          funcs = set(data.get('functions', {}).keys())
+          types = set(data.get('types', {}).keys())
+          if funcs.intersection(std_funcs) or types.intersection(std_types):
+            return True
+        except Exception:
+          pass
+  return False
+
+
 def check_sdk_pin(repo_path, repo_name):
   lock_path = os.path.join(repo_path, 'sdk.lock')
+  declares_std = check_declares_std(repo_path, repo_name)
   if not os.path.exists(lock_path):
+    disp = 'std migration pending' if declares_std else 'n/a'
     return {
         'has_lock': False,
         'pinned_repo': None,
         'commit': None,
         'behind': 0,
-        'std_status': 'n/a',
-        'display': 'n/a',
+        'std_status': 'migration pending' if declares_std else 'n/a',
+        'display': disp,
         'is_red': False,
         'is_stale': False,
+        'declares_std': declares_std,
     }
 
   pinned_repo = None
@@ -398,10 +438,16 @@ def check_sdk_pin(repo_path, repo_name):
   else:
     for line in text.splitlines():
       line = line.strip()
-      if line.startswith('repo=') or line.startswith('repository='):
+      line_lower = line.lower()
+      if line_lower.startswith('repo=') or line_lower.startswith('repository=') or line_lower.startswith('sdk_repo='):
         pinned_repo = line.split('=', 1)[1].strip()
-      elif line.startswith('commit='):
+      elif line_lower.startswith('commit=') or line_lower.startswith('sdk_commit='):
         commit = line.split('=', 1)[1].strip()
+      elif line and not line.startswith('#') and ' ' in line and '=' not in line:
+        parts = line.split()
+        if len(parts) >= 2:
+          pinned_repo = parts[0]
+          commit = parts[1]
 
   if not commit:
     return {
@@ -413,6 +459,7 @@ def check_sdk_pin(repo_path, repo_name):
         'display': 'no-commit',
         'is_red': True,
         'is_stale': False,
+        'declares_std': declares_std,
     }
 
   repos_root = get_repos_root()
@@ -420,6 +467,10 @@ def check_sdk_pin(repo_path, repo_name):
     target_repo_path = os.path.join(repos_root, 'lmcode-csharp')
   elif pinned_repo and 'lmcode-java' in pinned_repo:
     target_repo_path = os.path.join(repos_root, 'lmcode-java')
+  elif pinned_repo and 'lmcode-go' in pinned_repo:
+    target_repo_path = os.path.join(repos_root, 'lmcode-go')
+  elif pinned_repo and 'lmcode-rust' in pinned_repo:
+    target_repo_path = os.path.join(repos_root, 'lmcode-rust')
   else:
     target_repo_path = os.path.join(repos_root, 'lmcode-cpp')
 
@@ -474,8 +525,16 @@ def check_sdk_pin(repo_path, repo_name):
     else:
       std_status = 'present'
 
+  if declares_std:
+    std_status = 'migration pending'
+
   is_stale = behind > 0
-  if behind == 0:
+  if declares_std:
+    if behind == 0:
+      display = 'std migration pending'
+    else:
+      display = f'{behind} behind (std migration pending)'
+  elif behind == 0:
     display = 'synced'
   else:
     std_part = f' (std:{std_status})' if std_status != '-' else ''
@@ -491,12 +550,105 @@ def check_sdk_pin(repo_path, repo_name):
       'is_red': False,
       'is_stale': is_stale,
       'commit_exists': commit_exists,
+      'declares_std': declares_std,
+  }
+
+
+def check_compiler_pin(repo_path, repo_name):
+  stale_pins = []
+  found_versions = []
+  targets = []
+  wf_dir = os.path.join(repo_path, '.github', 'workflows')
+  if os.path.isdir(wf_dir):
+    for f in os.listdir(wf_dir):
+      if f.endswith(('.yml', '.yaml')):
+        targets.append(os.path.join(wf_dir, f))
+  sp = os.path.join(repo_path, 'scripts', 'select-compiler.sh')
+  if os.path.exists(sp):
+    targets.append(sp)
+
+  for t in targets:
+    try:
+      with open(t, 'r', errors='ignore') as fh:
+        content = fh.read()
+      for m in re.finditer(r'@lmctl-ai/lmctl@([0-9]+)\.([0-9]+)\.([0-9]+)', content):
+        ver_tuple = (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+        ver_str = f'{m.group(1)}.{m.group(2)}.{m.group(3)}'
+        found_versions.append((ver_tuple, ver_str))
+        if ver_tuple < MIN_COMPILER_PIN:
+          rel = os.path.relpath(t, repo_path)
+          stale_pins.append(f'{rel}@{ver_str}')
+    except Exception:
+      pass
+
+  if not found_versions:
+    return {
+        'display': '-',
+        'is_stale': False,
+        'stale_pins': [],
+        'version': None,
+    }
+
+  min_ver_tuple, min_ver_str = min(found_versions, key=lambda x: x[0])
+  is_stale = min_ver_tuple < MIN_COMPILER_PIN
+  display = min_ver_str
+  return {
+      'display': display,
+      'is_stale': is_stale,
+      'stale_pins': stale_pins,
+      'version': min_ver_str,
+  }
+
+
+def check_examples(repo_path, repo_name):
+  examples_dir = os.path.join(repo_path, 'examples')
+  if not os.path.isdir(examples_dir):
+    return {
+        'total': 0,
+        'lmcode_count': 0,
+        'dsl_count': 0,
+        'dsl_files': [],
+        'display': '-',
+        'is_red': False,
+    }
+
+  lms_files = []
+  for root, dirs, files in os.walk(examples_dir):
+    for f in files:
+      if f.endswith('.lms'):
+        lms_files.append(os.path.join(root, f))
+
+  total = len(lms_files)
+  dsl_files = []
+  lmcode_count = 0
+  for fp in lms_files:
+    try:
+      with open(fp, 'r', errors='ignore') as fh:
+        text = fh.read()
+      has_dsl = bool(re.search(r'\b_dsl_\b', text))
+      has_lmcode = bool(re.search(r'\b_lmcode_\b', text))
+      if has_dsl:
+        dsl_files.append(os.path.relpath(fp, repo_path))
+      if has_lmcode:
+        lmcode_count += 1
+    except Exception:
+      pass
+
+  display = f'{len(dsl_files)} _dsl_ (info)' if dsl_files else ('OK' if total > 0 else '-')
+  return {
+      'total': total,
+      'lmcode_count': lmcode_count,
+      'dsl_count': len(dsl_files),
+      'dsl_files': dsl_files,
+      'display': display,
+      'is_red': False,
   }
 
 
 def check_readme(repo_path, repo_name):
   readme_path = os.path.join(repo_path, 'README.md')
   if not os.path.exists(readme_path):
+    is_red = repo_name not in UNRELEASED_HOSTS
     return {
         'exists': False,
         'pictures': 0,
@@ -505,7 +657,7 @@ def check_readme(repo_path, repo_name):
         'missing_alt': 0,
         'oversized': [],
         'display': 'no README',
-        'is_red': True,
+        'is_red': is_red,
     }
 
   with open(readme_path, 'r', errors='ignore') as f:
@@ -730,6 +882,8 @@ def audit_repo(repo_info):
   ci = check_ci(name)
   rel = check_release(name)
   sdk = check_sdk_pin(path, name)
+  compiler = check_compiler_pin(path, name)
+  examples = check_examples(path, name)
   readme = check_readme(path, name)
   git_info = check_git(path)
   dm = check_durable_memory(path)
@@ -739,6 +893,7 @@ def audit_repo(repo_info):
       ci['is_red']
       or rel['is_red']
       or sdk['is_red']
+      or compiler['is_stale']
       or readme['is_red']
       or dm['is_red']
       or stale['is_red']
@@ -750,6 +905,8 @@ def audit_repo(repo_info):
       'ci': ci,
       'release': rel,
       'sdk': sdk,
+      'compiler': compiler,
+      'examples': examples,
       'readme': readme,
       'git': git_info,
       'durable_memory': dm,
@@ -764,6 +921,7 @@ def print_table(results):
       'ci': 18,
       'release': 23,
       'sdk': 22,
+      'compiler': 10,
       'readme': 26,
       'git': 15,
       'dm': 10,
@@ -775,6 +933,7 @@ def print_table(results):
       f"{'CI (main)':<{col_widths['ci']}} "
       f"{'Release':<{col_widths['release']}} "
       f"{'SDK Pin':<{col_widths['sdk']}} "
+      f"{'Compiler':<{col_widths['compiler']}} "
       f"{'README':<{col_widths['readme']}} "
       f"{'Git Tree':<{col_widths['git']}} "
       f"{'Durable':<{col_widths['dm']}} "
@@ -793,6 +952,7 @@ def print_table(results):
   missing_dm = 0
   stale_names_cnt = 0
   stale_pins_cnt = 0
+  stale_compiler_cnt = 0
   dirty_trees_cnt = 0
 
   for r in results:
@@ -808,6 +968,8 @@ def print_table(results):
       stale_names_cnt += 1
     if r['sdk']['is_stale']:
       stale_pins_cnt += 1
+    if r['compiler']['is_stale']:
+      stale_compiler_cnt += 1
     if r['git']['is_dirty']:
       dirty_trees_cnt += 1
 
@@ -843,8 +1005,19 @@ def print_table(results):
       c_sdk = yellow(sdk_disp)
     elif sdk_disp == 'synced':
       c_sdk = green(sdk_disp)
+    elif 'std migration pending' in sdk_disp:
+      c_sdk = yellow(sdk_disp)
     else:
       c_sdk = sdk_disp
+
+    # Compiler
+    comp_disp = r['compiler']['display']
+    if r['compiler']['is_stale']:
+      c_comp = yellow(comp_disp)
+    elif comp_disp == '0.2.420':
+      c_comp = green(comp_disp)
+    else:
+      c_comp = comp_disp
 
     # README
     rdm_disp = r['readme']['display']
@@ -886,6 +1059,7 @@ def print_table(results):
         f"{pad(c_ci, col_widths['ci'])} "
         f"{pad(c_rel, col_widths['release'])} "
         f"{pad(c_sdk, col_widths['sdk'])} "
+        f"{pad(c_comp, col_widths['compiler'])} "
         f"{pad(c_rdm, col_widths['readme'])} "
         f"{pad(c_git, col_widths['git'])} "
         f"{pad(c_dm, col_widths['dm'])} "
@@ -901,6 +1075,7 @@ def print_table(results):
       f'{missing_dm} missing index repos, '
       f'{stale_names_cnt} stale name repos, '
       f'{stale_pins_cnt} stale SDK pins, '
+      f'{stale_compiler_cnt} stale compiler pins, '
       f'{dirty_trees_cnt} dirty trees.'
   )
   if red_count > 0:
@@ -920,6 +1095,12 @@ def print_table(results):
           )
         if r['release']['is_red']:
           issues.append(f"Release incomplete: {r['release']['display']}")
+        if r['sdk']['is_red']:
+          issues.append(f"SDK lock: {r['sdk']['display']}")
+        if r['compiler']['is_stale']:
+          issues.append(
+              f"Stale compiler pin: {r['compiler']['display']} < 0.2.420 ({', '.join(r['compiler']['stale_pins'])})"
+          )
         if r['readme']['broken_images']:
           issues.append(f"Broken images: {r['readme']['broken_images']}")
         if r['readme']['broken_autorun']:
@@ -931,6 +1112,12 @@ def print_table(results):
         if r['stale']['is_red']:
           issues.append(f"Stale identifiers: {r['stale']['stale_hits']}")
         print(f"  * {bold(r['name'])}: {'; '.join(issues)}")
+
+  info_repos = [r for r in results if r['examples']['dsl_count'] > 0]
+  if info_repos:
+    print('\n' + bold(cyan('Info Notes (examples with _dsl_ spelling; _lmcode_ expected):')))
+    for r in info_repos:
+      print(f"  * {bold(r['name'])}: {r['examples']['dsl_count']} file(s) use _dsl_ ({r['examples']['lmcode_count']} use _lmcode_)")
 
 
 def fix_pins(results):
