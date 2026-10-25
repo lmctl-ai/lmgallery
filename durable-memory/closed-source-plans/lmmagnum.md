@@ -162,3 +162,54 @@
 - Public-plan secret scan: PASS
 
 This is a read-only plan. No files were copied or changed, no GitHub operation was performed, and no visibility was changed.
+
+
+## Staging results (2026-10-25, STAGING only; nothing flipped)
+
+- Staged from `origin/main` `41a7d8504826` (clean, pushed) into `/home/mma/staging/closed-source/lmmagnum-public/`: 90 files, public CI `.github/workflows/public-ci.yml` included.
+- Release assets: latest `v0.2.14` (published 2026-10-25) downloaded to `lmmagnum-release/` with `SHA256SUMS`.
+  - All 5 platform binaries (`lmmagnum-linux-arm64`, `lmmagnum-linux-x64`, `lmmagnum-macos-arm64`, `lmmagnum-macos-x64`, `lmmagnum-windows-x64.exe`) verify against `SHA256SUMS` (`sha256sum -c`).
+  - Upstream notice files (`Magnum-COPYING`, `Corrade-COPYING`, `LICENSE`, `THIRD_PARTY_NOTICES`) verified.
+- Staged release metadata and notes: `release-metadata.json` and `release-notes.md` generated with the MIT boundary up to and including `v0.2.14`.
+- Verified: 37/37 README `lmctl autorun` targets exist in the staged tree; 41 local image/link refs resolve (37 README images present in `docs/images/`); no `/home/mma` path, no secret-like text, no private source links.
+- Licensing notices: complete for binary (Magnum MIT `COPYING`, Corrade MIT `COPYING`, stb public-domain/MIT, lmcode-cpp MIT, static glibc LGPL-2.1+).
+- Staged `LICENSE` and `README.md` carry the boundary sentence: "Releases up to and including v0.2.14 were published under the MIT License (see the LICENSE asset of that release). Releases after v0.2.14 are published under the Lattice Systems Personal Use License (this file)."
+
+### Host execution and example check results
+
+- Verified with published release binary `lmmagnum 0.2.14` on PATH:
+  - **All 37/37 examples pass `lmscript --check`!**
+
+### Technical assessment
+
+No code or packaging blockers found. The repository is clean, origin/main CI is passing across all 5 platforms, and the latest published binary `v0.2.14` runs all 37 public examples without issues.
+
+### Private CI
+
+Staged at `/home/mma/staging/closed-source/lmmagnum-private-ci.yml`, adapted from the current `.github/workflows/ci.yml`:
+- Fast Linux job on `push: branches: [main]` and `pull_request`: builds with Ninja, runs `./test.sh`, and tests public examples against the fresh Linux host.
+- Full 5-platform matrix (`linux-x64`, `linux-arm64`, `macos-arm64`, `macos-x64`, `windows-x64`) on `workflow_dispatch` or `v*` tag.
+- `publish-test` job verifies public write access with `secrets.RELEASE_TOKEN` without building.
+- Gated publish job collects platform binaries and notice assets, calculates `SHA256SUMS`, and publishes to `lmctl-ai/lmmagnum` with `secrets.RELEASE_TOKEN`.
+
+### Pin inventory (1 consumer)
+
+- `/home/mma/repos/dsl/lmgallery/examples/38-product-render-slide.lms:10` — `render = _lmcode_ cli="lmmagnum" install="github:lmctl-ai/lmmagnum@v0.2.11";`
+
+After the first new tag `<FIRST_TAG>` is published:
+
+```bash
+sed -i -E 's|(github:lmctl-ai/lmmagnum@)v[0-9]+\.[0-9]+\.[0-9]+|\1<FIRST_TAG>|g; s|(github\.com/lmctl-ai/lmmagnum/releases/(tag|download)/)v[0-9]+\.[0-9]+\.[0-9]+|\1<FIRST_TAG>|g' /home/mma/repos/dsl/lmgallery/examples/38-product-render-slide.lms
+```
+
+### Quiesce and decisions before flip
+
+- No active `lmctl` team detected for `lmmagnum`; working tree is clean and synced with `origin/main`.
+- Owner decisions:
+  1. Approve `lmmagnum` in `~/tools/closed-source-approved.txt`.
+  2. Provide `RELEASE_TOKEN` for the private CI workflow.
+  3. Determine first new release tag or approve replay of `v0.2.14`.
+
+### Ready to flip: YES (technically ready; pending owner approval & token)
+
+Reasons: All 37 public examples pass `lmscript --check` against the fresh 5-platform `v0.2.14` release; clean and synchronized source tree; full notice closure; only 1 consumer pin; no active team; awaiting only owner sign-off and `RELEASE_TOKEN`.

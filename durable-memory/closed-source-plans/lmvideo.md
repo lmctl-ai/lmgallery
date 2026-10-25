@@ -231,3 +231,59 @@
 - Public-plan secret scan: PASS
 
 This is a read-only plan. No files were copied or changed, no GitHub operation was performed, and no visibility was changed.
+
+
+## Staging results (2026-10-25, STAGING only; nothing flipped)
+
+- Staged from `origin/main` `30494ec4691e` (clean, pushed) into `/home/mma/staging/closed-source/lmvideo-public/`: 138 files, public CI `.github/workflows/public-ci.yml` included.
+- Release assets: latest `v0.1.34` downloaded to `lmvideo-release/`.
+  - Four platform binaries present: `lmvideo-linux-x64`, `lmvideo-linux-arm64`, `lmvideo-macos-x64`, `lmvideo-macos-arm64`, each with a matching `.sha256` checksum file.
+  - Windows binary (`lmvideo-windows-x64.exe`) is not present in `v0.1.34` because JetBrains Skia packs are only locked/supported for Linux and macOS.
+  - Generated unified `SHA256SUMS` covering all 4 binaries, `lmvideo-third-party-licenses.tar.gz`, `LICENSE`, and `THIRD_PARTY_NOTICES.md`; verified with `sha256sum -c SHA256SUMS`.
+- Staged release metadata and notes: `release-metadata.json` and `release-notes.md` generated with the MIT boundary up to and including `v0.1.34`.
+- Verified: 43/43 README `lmctl autorun` targets exist in the staged tree (including alias `confusion_matrix.lms`); 105 local image/link refs resolve (41 README images present in `docs/images/`); no `/home/mma` paths, no secret-like text, no private source links (private links to `scripts/skia.lock` and `scripts/sync-sdk.sh` sanitized).
+- Licensing notices: complete for binary (DejaVu font license, Skia BSD-3-Clause, exact linked pack texts for ICU, Expat, IJG, libpng, zlib, HarfBuzz, libwebp, FreeType FTL bundled in `docs/third-party-licenses/`; FFmpeg is an external user-selected process).
+- Staged `LICENSE` and `README.md` carry the boundary sentence: "Releases up to and including v0.1.34 were published under the MIT License (see the LICENSE asset of that release). Releases after v0.1.34 are published under the Lattice Systems Personal Use License (this file)."
+
+### Host execution and example check results
+
+- Verified with published release binary `lmvideo 0.1.34` on PATH:
+  - **All 44/44 examples pass `lmscript --check`!**
+
+### Blockers and considerations
+
+1. **Active team quiescence**: Meta-Lead and gallery inventory report `lmvideo` as having an active team that must be quiesced before any flip.
+2. **Release asset platform scope**: Current release `v0.1.34` supplies 4 platforms (Linux x64/arm64, macOS x64/arm64) but no Windows binary. The owner must confirm whether 4 platforms remain the expected distribution scope.
+3. **Consumer pin volume**: 50 versioned consumer pins across `lmgallery` and `lmvideo` must be updated concurrently upon flipping.
+
+### Private CI
+
+Staged at `/home/mma/staging/closed-source/lmvideo-private-ci.yml`, adapted from the current `.github/workflows/ci.yml`:
+- Fast Linux job on `push: branches: [main]` and `pull_request`: caches and fetches Skia, builds static executable, runs `bash test.sh`, and tests public examples against the fresh Linux host.
+- 4-platform matrix (`linux-x64`, `linux-arm64`, `macos-arm64`, `macos-x64`) on `workflow_dispatch` or `v*` tag.
+- `publish-test` job verifies public write access with `secrets.RELEASE_TOKEN` without building.
+- Gated publish job packages `lmvideo-third-party-licenses.tar.gz`, calculates unified `SHA256SUMS`, and publishes to `lmctl-ai/lmvideo` with `secrets.RELEASE_TOKEN`.
+
+### Pin inventory (50 consumers)
+
+- 28 in `lmgallery/examples/*.lms` (`v0.1.25`, `v0.1.28`).
+- 22 in `lmctlhq/lmvideo/examples/*.lms` (`v0.1.23`, `v0.1.25`, `v0.1.26`, `v0.1.29`).
+
+After the first new tag `<FIRST_TAG>` is published:
+
+```bash
+find /home/mma/repos/dsl/lmgallery/examples /home/mma/repos/lmctlhq/lmvideo/examples -type f -name '*.lms' -exec sed -i -E 's|(github:lmctl-ai/lmvideo@)v[0-9]+\.[0-9]+\.[0-9]+|\1<FIRST_TAG>|g' {} +
+```
+
+### Quiesce and decisions before flip
+
+- Quiesce the active `lmvideo` team and verify `git status` is clean before any apply.
+- Owner decisions:
+  1. Confirm 4-platform release asset scope (Linux + macOS).
+  2. Approve `lmvideo` in `~/tools/closed-source-approved.txt`.
+  3. Provide `RELEASE_TOKEN` for the private CI workflow.
+  4. Quiesce `lmgallery` pushes while rewriting the 50 consumer pins.
+
+### Ready to flip: NO
+
+Reasons: Active `lmvideo` team must be quiesced first; release lacks Windows binaries (Linux/macOS only); 50 consumer pins must be coordinated; owner approval in `~/tools/closed-source-approved.txt` and `RELEASE_TOKEN` are pending.
