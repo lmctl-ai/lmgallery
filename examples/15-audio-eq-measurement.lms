@@ -6,7 +6,7 @@
 # the EQ does to a real signal. lmplot overlays design and measurement.
 mkdir("build/eq");
 mkdir("images");
-a = _dsl_ cli="lmaudio" install="github:lmctl-ai/lmaudio@latest";
+a = _lmcode_ cli="lmaudio" install="github:lmctl-ai/lmaudio@latest";
 let sr = 48000;
 let low = audio.biquad_design("lowshelf", 150.0, 0.707, -8.0, sr);
 let mid = audio.biquad_design("peak", 2500.0, 1.5, 9.0, sr);
@@ -36,7 +36,7 @@ let eq_string = high.apply(mid.apply(low.apply(string)));
 string.spectrum("hann", 16384).save_csv("build/eq/string_dry.csv", 12000.0);
 eq_string.spectrum("hann", 16384).save_csv("build/eq/string_eq.csv", 12000.0);
 string.concat(audio.silence(sr, 0.3)).concat(eq_string).normalize(0.9).save_wav("build/eq/pluck_dry_then_eq.wav", 16);
-end _dsl_
+end _lmcode_
 savedsl(a, "build/eq/audio.dslb");
 r = system ${dsl_cli(a)} --dsl build/eq/audio.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
@@ -48,7 +48,7 @@ for (line in lines(read_file("build/eq/reference.csv"))) {
 }
 assert(found == 1, "reference spectrum not parsed");
 
-plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-15-audio-eq-measurement.png", 900, 560);
 plot.cmd("set datafile separator ','; ref_db = " + str(${ref_db}));
 plot.cmd("set multiplot title 'Three-band equalizer: designed biquads against the impulse-measured chain (lmaudio), drawn by lmplot' font ',12'");
@@ -65,7 +65,7 @@ plot.cmd("set xlabel 'frequency (Hz)'; set ylabel 'level (dB)'; set yrange [-90:
 plot.cmd("plot 'build/eq/string_dry.csv' using 1:3 with lines lw 1.2 lc rgb '#94a3b8' title 'dry', 'build/eq/string_eq.csv' using 1:3 with lines lw 1.2 lc rgb '#dc2626' title 'equalized'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(plot, "build/eq/plot.dslb");
 r = system ${dsl_cli(plot)} --dsl build/eq/plot.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

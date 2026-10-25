@@ -43,7 +43,7 @@ jobs:
         with:
           node-version: 24
       - name: Install the verified runner version
-        run: npm install --global @lmctl-ai/lmctl@0.2.401
+        run: npm install --global @lmctl-ai/lmctl@0.2.419
       - name: Install ffmpeg for the animated composition
         if: matrix.example == '12' || matrix.example == '33'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg

@@ -8,7 +8,7 @@
 mkdir("build/sweep");
 mkdir("images");
 zetas = [0.05, 0.2, 0.5, 0.7, 1.0, 2.0];
-sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+sim = _lmcode_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
 let zetas = num.parse("0.05 0.2 0.5 0.7 1.0 2.0");
 for (i in range(0, 6)) {
   let zeta = zetas.get(0, i);
@@ -29,7 +29,7 @@ for (i in range(0, 6)) {
   }
   num.print("row," + str(i) + "," + str(zeta) + "," + str(overshoot));
 }
-end _dsl_
+end _lmcode_
 savedsl(sim, "build/sweep/sim.dslb");
 r = system ${dsl_cli(sim)} --dsl build/sweep/sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
@@ -46,7 +46,7 @@ for (i in range(0, 6)) {
   push(colors, zeta < 1.0 ? "#2563eb" : (zeta == 1.0 ? "#059669" : "#dc2626"));
   push(titles, sprintf("zeta = %.2f (%s): %.0f%%", zeta, kind, overshoot[i]));
 }
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#e4e9ef'; unset key");
 plot.cmd("set xrange [0:20]; set yrange [0:2]; set xtics 5 font ',9'; set ytics 0.5 font ',9'");
 plot.cmd("set xlabel 'omega t' font ',9' offset 0,0.5; set ylabel 'response' font ',9'");
@@ -65,12 +65,12 @@ for (i in range(0, 6)) {
   plot.cmd("plot 'build/sweep/step_" + str(i) + ".csv' using 1:2 with lines lw 2.2 lc rgb '" + color + "'");
   plot.close();
 }
-end _dsl_
+end _lmcode_
 savedsl(draw, "build/sweep/draw.dslb");
 r = system ${dsl_cli(draw)} --dsl build/sweep/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-sheet = _dsl_ cli="lmimg" install="github:lmctl-ai/lmimg@latest";
+sheet = _lmcode_ cli="lmimg" install="github:lmctl-ai/lmimg@latest";
 let grid = img.montage();
 for (i in range(0, 6)) {
   grid.add(img.open("build/sweep/panel_" + str(i) + ".png"));
@@ -84,7 +84,7 @@ board.text(16.0, 40.0, "lmnum integrates each case and checks its overshoot (the
 board.blend(panels, "over", 1.0, 0, 64);
 board.text(720.0, 524.0, "sheet assembled by lmimg", 10.0, 0.45, 0.50, 0.58, 1.0);
 board.save("images/showcase-14-num-sweep-contact-sheet.png");
-end _dsl_
+end _lmcode_
 savedsl(sheet, "build/sweep/sheet.dslb");
 r = system ${dsl_cli(sheet)} --dsl build/sweep/sheet.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

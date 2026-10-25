@@ -13,17 +13,17 @@ let vp = sqrt(mu * (2.0 / 7000.0 - 1.0 / a));
 let tper = 2.0 * 3.141592653589793 * sqrt(a * a * a / mu);
 let e0 = 0.5 * vp * vp - mu / 7000.0;
 
-sim = _dsl_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
+sim = _lmcode_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
 let earth = space.body("earth", 398600.4418);
 let sat = space.body("sat", 0.000000000001, 7000.0, 0.0, 0.0, 0.0, ${vp}, 0.0);
 let out = space.system().add(earth).add(sat).propagate(${2.0 * tper}, 801, 5.0, "rk45", 0.000000000001);
 out.save_csv("build/kepler.csv");
-end _dsl_
+end _lmcode_
 savedsl(sim, "build/kepler-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl build/kepler-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 # build/kepler.csv has no header. Columns: 1 t [s]; 8-10 satellite x y z [km]; 11-13 vx vy vz [km/s].
 plot.data("PERI", "7000,0\n");
 plot.data("APO", "-15000,0\n");
@@ -60,7 +60,7 @@ plot.cmd("set xrange [0:" + ${str(2.0 * tper / 3600.0)} + "]; set yrange [-0.000
 plot.cmd("plot 'build/kepler.csv' using ($1/3600):((0.5*($11**2+$12**2+$13**2) - mu/sqrt($8**2+$9**2+$10**2) - E0)/abs(E0)) with lines lw 1.6 lc rgb '#059669' notitle");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "build/kepler-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl build/kepler-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

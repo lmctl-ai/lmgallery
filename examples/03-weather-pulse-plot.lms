@@ -3,7 +3,7 @@
 # snapshots from the resulting field, making the propagation speed visible.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let lx = 4000000.0;
 let nx = 160;
 let m = wx.plane(nx, 6, lx, 60000.0).depth(100.0).linear();
@@ -29,12 +29,12 @@ wx.save_text("data/pulse-1.csv", rows1);
 wx.save_text("data/pulse-2.csv", rows2);
 wx.save_text("data/pulse-3.csv", rows3);
 wx.print("gravity-wave speed = " + str(c) + " m/s");
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/pulse-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/pulse-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-03-weather-pulse.png", 900, 540);
 plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'");
 plot.cmd("set title 'Shallow-water gravity pulse from lmweather' font ',15'");
@@ -43,7 +43,7 @@ plot.cmd("set xrange [0:4000]; set yrange [-0.12:1.08]; set key top right box op
 plot.cmd("set label 'c = sqrt(gH) = 31.3 m/s' at 150,0.94 tc rgb '#334155'");
 plot.cmd("plot 'data/pulse-0.csv' using 1:3 with lines lw 2.5 lc rgb '#2563eb' title 't = 0 h', 'data/pulse-1.csv' using 1:3 with lines lw 2.5 lc rgb '#059669' title 't = 1.7 h', 'data/pulse-2.csv' using 1:3 with lines lw 2.5 lc rgb '#f59e0b' title 't = 3.3 h', 'data/pulse-3.csv' using 1:3 with lines lw 2.5 lc rgb '#dc2626' title 't = 5.0 h'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/pulse-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/pulse-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

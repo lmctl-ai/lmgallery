@@ -9,7 +9,7 @@
 mkdir("images");
 mkdir("build");
 
-sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+sim = _lmcode_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
 let nh = 60;
 let nf = 12;
 let p = 4;
@@ -50,12 +50,12 @@ for (f in range(0, nf)) {
 }
 num.assert_close(covered, 11.0, 1.5);
 forecast.save_csv("build/forecast-band.csv");
-end _dsl_
+end _lmcode_
 savedsl(sim, "build/forecast-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl build/forecast-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-21-forecast-band.png", 900, 500);
 plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'; set key font ',9' samplen 2 bottom right box opaque");
 plot.cmd("set title 'Monthly demand: 12-month forecast with a 95 % prediction band (lmnum least squares)' font ',13'");
@@ -63,7 +63,7 @@ plot.cmd("set xlabel 'month'; set ylabel 'demand'");
 plot.cmd("set xrange [0:72]; set yrange [100:300]");
 plot.cmd("plot 'build/forecast-band.csv' using 1:3:4 with filledcurves fc rgb '#bfdbfe' fs solid 0.9 title '95 % prediction band', 'build/forecast-history.csv' using 1:3 with lines lw 2.2 lc rgb '#2563eb' title 'fitted trend and season', 'build/forecast-history.csv' using 1:2 with points pt 7 ps 0.9 lc rgb '#1e3a8a' title 'observed', 'build/forecast-band.csv' using 1:2 with lines dt 2 lw 2.2 lc rgb '#dc2626' title 'forecast', 'build/forecast-band.csv' using 1:5 with lines dt 3 lw 1.6 lc rgb '#111827' title 'true curve (generator)'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "build/forecast-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl build/forecast-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

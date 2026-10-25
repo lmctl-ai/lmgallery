@@ -6,7 +6,7 @@
 # the law is a straight line, and shows the scattered photons that a detector
 # would see on top of it (build-up).
 mkdir("build/particle");
-compute = _dsl_ cli="lmparticle" install="github:lmctl-ai/lmparticle@latest";
+compute = _lmcode_ cli="lmparticle" install="github:lmctl-ai/lmparticle@latest";
 let water = rad.builtin("water");
 let mu = water.mu(0.662);
 rad.print("mu," + str(mu) + "," + str(water.hvl(0.662)));
@@ -24,7 +24,7 @@ for (i in range(0, 6)) {
   rad.assert_close(measured, expected, 5.0 * se + 0.0001);
   rad.print("row," + str(thickness) + "," + str(measured) + "," + str(expected) + "," + str(se) + "," + str(result.plane_count("exit")) + "," + str(result.plane_count_err("exit")));
 }
-end _dsl_
+end _lmcode_
 savedsl(compute, "build/particle/compute.dslb");
 r = system ${dsl_cli(compute)} --dsl build/particle/compute.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
@@ -37,7 +37,7 @@ for (line in split(r.stdout, "\n")) {
 assert(mu > 0.05 && mu < 0.1, "unexpected water attenuation coefficient");
 write_file("build/particle/attenuation.csv", csv);
 mkdir("images");
-plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-09-photon-transport.png", 900, 560);
 plot.cmd("set datafile separator ','; mu = " + str(${mu}) + "; hvl = " + str(${hvl}));
 plot.cmd("set title sprintf('662 keV photons through water (lmparticle Monte Carlo): mu = %.4f /cm, half-value layer %.1f cm', mu, hvl) font ',12'");
@@ -48,7 +48,7 @@ plot.cmd("set label 1 'a straight line on a log axis: uncollided beam = exp(-mu 
 plot.cmd("set label 2 'scattered photons add build-up' at 11.2, 0.56 font ',9' tc rgb '#15803d'");
 plot.cmd("plot exp(-mu*x) with lines lw 2 lc rgb '#d7191d' title 'exp(-mu x)', 'build/particle/attenuation.csv' every ::1 using 1:2:4 with yerrorbars pt 7 ps 1.3 lw 1.5 lc rgb '#2c7bb6' title 'uncollided, 20000 histories each', '' every ::1 using 1:5:6 with yerrorbars pt 5 ps 1.1 lw 1.5 lc rgb '#15803d' title 'all forward crossings (incl. scattered)'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(plot, "build/particle/draw.dslb");
 r = system ${dsl_cli(plot)} --dsl build/particle/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

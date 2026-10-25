@@ -7,7 +7,7 @@
 mkdir("images");
 mkdir("build");
 
-sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+sim = _lmcode_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
 let n = 11;
 let z = num.normal(n, 1, 77);
 let x_design = num.matrix(n, 2);
@@ -24,12 +24,12 @@ let beta = x_design.lstsq(y_log);
 let growth = num.eval("exp(" + str(beta.get(1, 0)) + ") - 1");
 num.print("growth=" + str(growth));
 num.assert_close(growth, 0.17, 0.01);
-end _dsl_
+end _lmcode_
 savedsl(sim, "build/revenue-sim.dslb");
 r = system(concat(dsl_cli(sim), ["--dsl", "build/revenue-sim.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-32-revenue-bars.png", 900, 500);
 plot.cmd("set border 3; set tics nomirror; set grid ytics lc rgb '#e2e8f0'; unset key");
 plot.cmd("set title 'Annual revenue, 2015 to 2025, with a 17 % compound growth model (lmnum)' font ',12'");
@@ -40,7 +40,7 @@ plot.cmd("set xrange [2014.4:2025.6]; set xtics 2015,1,2025 format '%.0f'");
 plot.cmd("set style fill solid 0.85 border -1; set boxwidth 0.62");
 plot.cmd("plot 'build/revenue.dat' using 1:2 with boxes lc rgb '#2563eb' notitle, 'build/revenue.dat' using 1:2:(sprintf('$%.0fB', $2)) with labels offset 0,0.8 font ',9' notitle");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "build/revenue-draw.dslb");
 r = system(concat(dsl_cli(draw), ["--dsl", "build/revenue-draw.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);

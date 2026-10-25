@@ -10,7 +10,7 @@ mkdir("build");
 write_file("build/shop.pem", "-----BEGIN CERTIFICATE-----\nMIIB8jCCAZigAwIBAgIUL393/SzRXf6iryY1aiJHoLlBo+swCgYIKoZIzj0EAwIw\nMzEaMBgGA1UEAwwRc2hvcC5leGFtcGxlLnRlc3QxFTATBgNVBAoMDExhdHRpY2Ug\nVGVzdDAeFw0yNjEwMjQyMzU4MTNaFw0zNjEwMjEyMzU4MTNaMDMxGjAYBgNVBAMM\nEXNob3AuZXhhbXBsZS50ZXN0MRUwEwYDVQQKDAxMYXR0aWNlIFRlc3QwWTATBgcq\nhkjOPQIBBggqhkjOPQMBBwNCAAQHOWWogylYdo5SXEDr3aVbvZUFtQWWlufUD542\nCreAQeI0pN/BYmVP18Fs83l5cO4vFnuKhPxnfxCE1GoPWzf0o4GJMIGGMB0GA1Ud\nDgQWBBRQ/nohsxXoqZY5KXTllOKlG36InTAfBgNVHSMEGDAWgBRQ/nohsxXoqZY5\nKXTllOKlG36InTAPBgNVHRMBAf8EBTADAQH/MDMGA1UdEQQsMCqCEXNob3AuZXhh\nbXBsZS50ZXN0ghV3d3cuc2hvcC5leGFtcGxlLnRlc3QwCgYIKoZIzj0EAwIDSAAw\nRQIhAM8X5B79DjeFq4wa3RhcVH3LS8CCiGwAXI7OB8lOQEDFAiAE6wRJHV49V3SB\nL/QSrGZzwV/GmZSlTkDAN9JRkrPaVg==\n-----END CERTIFICATE-----\n");
 write_file("build/api.pem", "-----BEGIN CERTIFICATE-----\nMIIDYjCCAkqgAwIBAgIUHy8phHM5GM4NkEHwkauz9CLWIGMwDQYJKoZIhvcNAQEL\nBQAwMjEZMBcGA1UEAwwQYXBpLmV4YW1wbGUudGVzdDEVMBMGA1UECgwMTGF0dGlj\nZSBUZXN0MB4XDTI2MTAyNDIzNTgxM1oXDTI3MTAyNDIzNTgxM1owMjEZMBcGA1UE\nAwwQYXBpLmV4YW1wbGUudGVzdDEVMBMGA1UECgwMTGF0dGljZSBUZXN0MIIBIjAN\nBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1UBfJBxDjHK1G9JxguIBa7SkVsOh\nvFgYZ84okrg7AbQ33wRdw51F3Y3RGWN99Nrdviz+rta7s0y0YXtylf2BBWpZHfNu\nfH2Hm7hbd5lG4jTKjSh3J4iUOYz51IRfG9MN2yqCy1xxiJpRXBjP1NZTtNdfFwRx\nyVruhdeYs2WGeW5jsDVZLybxpnO1xb+gBvODNVE3aK0JI9yIjj5kNtnI2X2j/UmG\nc3oeMhjCnss4tdgUQgEq0iLMRzpaoCds9oPl7AR7NMhUSYCE2561hjP8jyUhwh33\nT5RbrY/gP1BlbRntl0/7n2f0wQqJlO0odRUbKnedqizAvG9OewO4TsoqfwIDAQAB\no3AwbjAdBgNVHQ4EFgQUcdMJXL/DExM5qlMkNgIN90d3SNMwHwYDVR0jBBgwFoAU\ncdMJXL/DExM5qlMkNgIN90d3SNMwDwYDVR0TAQH/BAUwAwEB/zAbBgNVHREEFDAS\nghBhcGkuZXhhbXBsZS50ZXN0MA0GCSqGSIb3DQEBCwUAA4IBAQA46sQl3XgN9mpr\n4ofR4KGz9HleaeGRlb/R8i/7bonKu+lnfA3BkBeOpDOIFWBIqFMWUMNRpxxH2oqD\ntw7qCJbjCl4zXz7lwWdTeFjaTEV0j7oGWpjP/oVt3o0qDm52+XFGojYODmza7wP9\nN5zHREvSUcIwGqRBZBC8w+Be8aNLLSIai0+s8M1YfeEzEreeXJnNL+DAZeMmZHc3\nkjkSDFFy7lga7SPWB4DFRzGSxCmXx8dbJT5ZakUUptnwEAm7lMiLWHTcC7N9t45X\nzT6D5MlxHdqO0y1VLK0Hs25IrqvNeizKs61I+ZqLPzHlqIae8AvCBrXO7z/ODr+r\nv7lfRWao\n-----END CERTIFICATE-----\n");
 
-inventory = _dsl_ cli="lmssl" install="github:lmctl-ai/lmssl@v0.1.0";
+inventory = _lmcode_ cli="lmssl" install="github:lmctl-ai/lmssl@v0.1.0";
 let shop = ssl.load_cert("build/shop.pem");
 let api = ssl.load_cert("build/api.pem");
 out.line("shop.subject=" + shop.subject());
@@ -25,7 +25,7 @@ out.line("api.key=" + api.key_type());
 out.line("api.fp=" + api.fingerprint("sha256"));
 out.line("api.self=" + str(api.self_signed()));
 out.line("api.host=" + str(api.matches_host("api.example.test")));
-end _dsl_
+end _lmcode_
 savedsl(inventory, "build/inventory.dslb");
 r = system(concat(dsl_cli(inventory), ["--dsl", "build/inventory.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
@@ -59,7 +59,7 @@ assert(shop_not_after == "2036-10-21T23:58:13Z");
 assert(api_not_after == "2027-10-24T23:58:13Z");
 
 # Card view (lmvideo): one card per certificate, the gallery output.
-cards = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+cards = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
 video.size(900, 360); video.frames(1); video.output("images/showcase-37-cert-inventory.png"); video.begin();
 video.frame();
 canvas.clear("#f1f5f9");
@@ -78,13 +78,13 @@ canvas.text("expires: " + ${api_not_after}, 476.0, 150.0, font(17.0), paint().co
 canvas.text("self-signed: " + ${api_self}, 476.0, 180.0, font(17.0), paint().color("#334155"));
 canvas.text("SHA-256 " + ${api_fp_short}, 476.0, 230.0, font(14.0), paint().color("#475569"));
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(cards, "build/cards.dslb");
 r = system(concat(dsl_cli(cards), ["--dsl", "build/cards.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Word inventory (lmoffice).
-word = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+word = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
 let doc = office.docx("build/cert-inventory.docx");
 doc.title("Certificate inventory").author("Platform security");
 doc.heading("Certificate inventory", 1).bold(true);
@@ -97,7 +97,7 @@ doc.image("images/showcase-37-cert-inventory.png", 600, 240);
 doc.heading("Action", 2);
 doc.paragraph("Renew both certificates from the internal CA before the api certificate expires in October 2027.");
 doc.save();
-end _dsl_
+end _lmcode_
 savedsl(word, "build/cert-inventory.dslb");
 r = system(concat(dsl_cli(word), ["--dsl", "build/cert-inventory.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);

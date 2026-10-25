@@ -8,7 +8,7 @@
 mkdir("images");
 mkdir("build");
 
-fit_program = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+fit_program = _lmcode_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
 let n = 24;
 let z = num.normal(n, 1, 31);
 let x_design = num.matrix(n, 2);
@@ -25,7 +25,7 @@ num.print("slope=" + str(beta.get(1, 0)));
 num.print("sd=" + str(sd));
 num.assert_close(beta.get(1, 0), 3.0, 0.5);
 num.assert_close(sd, 4.0, 1.0);
-end _dsl_
+end _lmcode_
 savedsl(fit_program, "build/forecast-fit.dslb");
 r = system(concat(dsl_cli(fit_program), ["--dsl", "build/forecast-fit.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
@@ -42,7 +42,7 @@ for (line in split(r.stdout, "\n")) {
 }
 
 # Forecast chart (lmvideo): history, fit and 12-month forecast with the 95 % band.
-chart_program = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+chart_program = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
 video.size(900, 480); video.frames(1); video.output("images/showcase-28-forecast-workbook.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -65,13 +65,13 @@ for (k in range(0, 12)) {
 }
 fig.draw();
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(chart_program, "build/forecast-chart.dslb");
 r = system(concat(dsl_cli(chart_program), ["--dsl", "build/forecast-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Workbook (lmoffice): forecast table, formulas, and a native bar chart beside it.
-book_program = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
+book_program = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
 let book = office.xlsx("build/sales-forecast.xlsx");
 let sheet = book.sheet("Forecast");
 sheet.set(1, 1, "Month").set(1, 2, "Forecast ($k)").set(1, 3, "Low 95% ($k)").set(1, 4, "High 95% ($k)").set(1, 5, "Target ($k)").set(1, 6, "Variance ($k)");
@@ -93,7 +93,7 @@ sheet.col_width(1, 14.0).col_width(2, 16.0).col_width(3, 16.0).col_width(4, 16.0
 sheet.fit_to_page(1, 1).page_orientation("landscape");
 sheet.bar_chart(1, 8, 22, 19, "Forecast against target ($k)", "A2:A13", "B2:B13");
 book.save();
-end _dsl_
+end _lmcode_
 savedsl(book_program, "build/forecast-book.dslb");
 r = system(concat(dsl_cli(book_program), ["--dsl", "build/forecast-book.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);

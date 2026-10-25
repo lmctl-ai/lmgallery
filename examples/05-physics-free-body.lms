@@ -2,7 +2,7 @@
 # lmphysics measures a cargo block's velocity; the measured acceleration and
 # force balance are then passed to lmdraw for a data-driven loading diagram.
 mkdir("build/examples"); mkdir("build/rendered"); mkdir("images");
-sim = _dsl_ cli="lmphysics" install="github:lmctl-ai/lmphysics@latest";
+sim = _lmcode_ cli="lmphysics" install="github:lmctl-ai/lmphysics@latest";
 let th = 0.41887902047863906;
 let w = phys.system("nsc");
 w.material("m", 0.3, 0.0).timestep(0.001);
@@ -12,7 +12,7 @@ phys.assert_close(blk.mass(), 6.0, 0.000001);
 w.record("blk", "vx,vz");
 w.run(1.4);
 w.save_csv("build/examples/physics.csv");
-end _dsl_
+end _lmcode_
 savedsl(sim, "build/physics.dslb");
 r = system ${dsl_cli(sim)} --dsl build/physics.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
@@ -48,7 +48,7 @@ let normal_x2 = center_x - scale * normal * 0.4067366430758002;
 let normal_y2 = center_y - scale * normal * 0.9135454576426009;
 let friction_x2 = center_x + scale * friction * 0.9135454576426009;
 let friction_y2 = center_y - scale * friction * 0.4067366430758002;
-d = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+d = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(900, 620, "#0f1720");
 scene.text(40.0, 45.0, 25.0, ${title}, "#e6edf3").set_attr("font-weight", "700");
 scene.text(40.0, 73.0, 14.0, ${subtitle}, "#9fb3c8");
@@ -66,7 +66,7 @@ scene.text(660.0, 334.0, 15.0, ${net_label}, "#c9d6e2");
 scene.text(660.0, 410.0, 18.0, ${accel_label}, "#f5c16c");
 scene.text(150.0, 550.0, 15.0, "24 deg cargo ramp; arrows are scaled by measured forces", "#9fb3c8");
 scene.render_png("build/rendered/physics-free-body.png", 900, 620, 1);
-end _dsl_
+end _lmcode_
 savedsl(d, "build/draw.dslb");
 r = system ${dsl_cli(d)} --dsl build/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

@@ -9,7 +9,7 @@
 mkdir("images");
 mkdir("build");
 
-pipeline = _dsl_ cli="lmimg" install="github:lmctl-ai/lmimg@v0.1.3";
+pipeline = _lmcode_ cli="lmimg" install="github:lmctl-ai/lmimg@v0.1.3";
 let original = img.pattern(288, 180, "0.18 + 0.62*x", "0.12 + 0.50*y + 0.08*noise(9*x, 6*y, 3)", "0.76 - 0.30*y", "1");
 # lmimg operations work in place and return the same image, so each step copies its input.
 let leveled = original.copy().levels(0.05, 1.0, 0.95);
@@ -26,7 +26,7 @@ graded.save("build/pipeline-graded.png");
 img.print("ssim=" + str(after_ssim));
 img.print("psnr=" + str(after_psnr));
 img.print("levels_ssim=" + str(levels_ssim));
-end _dsl_
+end _lmcode_
 savedsl(pipeline, "build/pipeline.dslb");
 r = system(concat(dsl_cli(pipeline), ["--dsl", "build/pipeline.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
@@ -45,7 +45,7 @@ for (line in split(r.stdout, "\n")) {
 cp = system cp build/pipeline-sheet.png images/showcase-34-image-pipeline.png;
 assert(cp.code == 0);
 
-deck = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+deck = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
 let slides = office.pptx("build/image-pipeline.pptx");
 let s1 = slides.slide();
 s1.title("Image pipeline: levels, sharpen, grade");
@@ -55,7 +55,7 @@ s1.bullet(60.0, 520.0, 1160.0, 40.0, "SSIM of the graded image against the origi
 s1.bullet(60.0, 570.0, 1160.0, 40.0, "PSNR of the graded image against the original (dB): " + ${psnr_text});
 s1.notes("Steps: levels 0.05-0.95, unsharp mask (radius 0.6, amount 0.2), S-curve grade.");
 slides.save();
-end _dsl_
+end _lmcode_
 savedsl(deck, "build/image-pipeline.dslb");
 r = system(concat(dsl_cli(deck), ["--dsl", "build/image-pipeline.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);

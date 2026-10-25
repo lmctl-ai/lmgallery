@@ -12,7 +12,7 @@ mkdir("images");
 ke = 0.11552453009332421;
 volume = 40.0;
 clearance = ke * volume;
-compute = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+compute = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("oral_one_compartment").compartment("body", 1.0).species("G", "body", 0.0).species("C", "body", 0.0);
 m.param("ka", 1.0).param("ke", ${ke}).param("AUC", 0.0);
 m.reaction("absorb", "G -> C", "ka*G").reaction("eliminate", "C ->", "ke*C");
@@ -45,7 +45,7 @@ for (regimen in range(0, 2)) {
   if (regimen == 0) { bio.assert_true(inside == samples); } else { bio.assert_true(inside < samples); }
   bio.print(tag + "," + str(inside) + "," + str(samples) + "," + str(auc_last / tau));
 }
-end _dsl_
+end _lmcode_
 savedsl(compute, "build/pk/compute.dslb");
 r = system ${dsl_cli(compute)} --dsl build/pk/compute.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
@@ -59,7 +59,7 @@ cov12 = coverage["q12"]; cov24 = coverage["q24"];
 half_life = 0.6931471805599453 / ke;
 println(sprintf("Css,avg = %.2f mg/L; time in window at steady state: q12 %.0f%%, q24 %.0f%%", css, coverage["q12"], coverage["q24"]));
 
-d = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+d = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(400, 560, "#f8fafc");
 scene.text(20.0, 36.0, 17.0, "One-compartment oral model", "#0f172a").set_attr("font-weight", "700");
 scene.text(20.0, 58.0, 12.0, "first-order absorption and elimination", "#475569");
@@ -83,12 +83,12 @@ scene.text(200.0, 473.0, 13.0, "elimination", "#334155").set_attr("text-anchor",
 scene.text(200.0, 492.0, 11.0, ${sprintf("CL = ke V = %.2f L/h", clearance)}, "#334155").set_attr("text-anchor", "middle");
 scene.text(20.0, 540.0, 11.0, ${sprintf("Css,avg = dose / (CL tau) = %.1f mg/L for both regimens", css)}, "#0f172a");
 scene.render_png("build/rendered/pk_model.png", 400, 560, 1);
-end _dsl_
+end _lmcode_
 savedsl(d, "build/pk/draw.dslb");
 r = system ${dsl_cli(d)} --dsl build/pk/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-13-bio-dosing-regimen.png", 900, 560);
 plot.cmd("set datafile separator ','");
 plot.cmd("set label 99 'Same daily dose, different regimen: 400 mg every 12 h stays in the window, 800 mg once a day does not' at screen 0.5, 0.955 center font ',12'");
@@ -105,7 +105,7 @@ plot.cmd("set label 3 sprintf('q12: in window %.0f%% of the time', cov12) at 2, 
 plot.cmd("set label 4 sprintf('q24: in window %.0f%% of the time', cov24) at 2, 19.2 font ',9' tc rgb '#dc2626'");
 plot.cmd("plot for [k=0:7] sprintf('build/pk/q12_%d.csv', k) using 1:3 with lines lw 2.4 lc rgb '#1d4ed8' title (k == 0 ? '400 mg every 12 h' : ''), for [k=0:3] sprintf('build/pk/q24_%d.csv', k) using 1:3 with lines lw 2.4 lc rgb '#dc2626' title (k == 0 ? '800 mg every 24 h' : '')");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(plot, "build/pk/plot.dslb");
 r = system ${dsl_cli(plot)} --dsl build/pk/plot.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

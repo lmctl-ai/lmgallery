@@ -6,7 +6,7 @@
 mkdir("images");
 mkdir("build");
 
-skills = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+skills = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
 fn skill_bar(canvas_row: int, label: string, level: float) -> void {
   let y = 56.0 + float(canvas_row - 1) * 50.0;
   canvas.text(label, 40.0, y + 24.0, font(20.0), paint().color("#0f172a"));
@@ -26,13 +26,13 @@ skill_bar(4, "Statistics", 70.0);
 skill_bar(5, "Docker", 58.0);
 skill_bar(6, "Rust", 42.0);
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(skills, "build/skills.dslb");
 r = system(concat(dsl_cli(skills), ["--dsl", "build/skills.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Resume (lmoffice). The levels are the bar lengths printed on the chart.
-resume_program = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
+resume_program = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
 let doc = office.docx("build/resume-jordan-lee.docx");
 doc.title("Jordan Lee, data engineer").author("Jordan Lee");
 doc.heading("Jordan Lee", 1).bold(true);
@@ -50,7 +50,7 @@ doc.bullet("Built forecasting models for stock planning across 40 stores.");
 doc.heading("Education", 2);
 doc.paragraph("MSc Statistics, University of Leeds (2016)");
 doc.save();
-end _dsl_
+end _lmcode_
 savedsl(resume_program, "build/resume.dslb");
 r = system(concat(dsl_cli(resume_program), ["--dsl", "build/resume.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);

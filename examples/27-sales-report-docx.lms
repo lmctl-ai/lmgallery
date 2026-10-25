@@ -9,7 +9,7 @@ mkdir("images");
 mkdir("build");
 
 # Chart 1: revenue by region, Q3 2026 ($M).
-charts_1 = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+charts_1 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
 video.size(900, 480); video.frames(1); video.output("images/showcase-27-sales-report.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -23,13 +23,13 @@ p1.annotate(3.0, -1.8, "APAC", "#1e293b");
 p1.annotate(4.0, -1.8, "LATAM", "#1e293b");
 fig1.draw();
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(charts_1, "build/sales-chart1.dslb");
 r = system(concat(dsl_cli(charts_1), ["--dsl", "build/sales-chart1.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart 2: revenue by product line, Q3 2026 ($M).
-charts_2 = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+charts_2 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
 video.size(900, 480); video.frames(1); video.output("build/sales-products.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -42,13 +42,13 @@ p2.annotate(2.0, -1.8, "Support", "#1e293b");
 p2.annotate(3.0, -1.8, "Services", "#1e293b");
 fig2.draw();
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(charts_2, "build/sales-chart2.dslb");
 r = system(concat(dsl_cli(charts_2), ["--dsl", "build/sales-chart2.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart 3: monthly revenue trend, July to June ($M).
-charts_3 = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+charts_3 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
 video.size(900, 480); video.frames(1); video.output("build/sales-trend.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -71,7 +71,7 @@ p3.annotate(11.0, 13.2, "Aug", "#1e293b");
 p3.annotate(12.0, 13.2, "Sep", "#1e293b");
 fig3.draw();
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(charts_3, "build/sales-chart3.dslb");
 r = system(concat(dsl_cli(charts_3), ["--dsl", "build/sales-chart3.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
@@ -84,7 +84,7 @@ assert(abs(regions - 67.5) < 0.0001);
 assert(abs(products - 67.5) < 0.0001);
 assert(abs(year - 281.9) < 0.0001);
 
-report_program = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
+report_program = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
 let doc = office.docx("build/sales-report.docx");
 doc.title("Sales report, Q3 2026").author("Novaterra Technologies");
 doc.heading("Sales report, Q3 2026", 1).bold(true);
@@ -114,7 +114,7 @@ doc.paragraph("Revenue rose in every one of the last twelve months, from $19.8M 
 doc.image("build/sales-trend.png", 600, 320);
 doc.paragraph("Total revenue for the twelve months is $281.9M.").italic(true);
 doc.save();
-end _dsl_
+end _lmcode_
 savedsl(report_program, "build/sales-report.dslb");
 r = system(concat(dsl_cli(report_program), ["--dsl", "build/sales-report.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);

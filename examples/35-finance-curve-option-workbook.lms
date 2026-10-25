@@ -9,7 +9,7 @@
 mkdir("images");
 mkdir("build");
 
-desk = _dsl_ cli="lmfinance" install="github:lmctl-ai/lmfinance@v0.1.3";
+desk = _lmcode_ cli="lmfinance" install="github:lmctl-ai/lmfinance@v0.1.3";
 let curve = market.zero_curve().zero(1.0, 0.040).zero(2.0, 0.042).zero(5.0, 0.046).zero(10.0, 0.050).zero(20.0, 0.052).zero(30.0, 0.053).build();
 lmf.print("z1=" + str(curve.zero(1.0)));
 lmf.print("z2=" + str(curve.zero(2.0)));
@@ -26,7 +26,7 @@ lmf.print("p90=" + str(pricing.price(call, base.with_spot(90.0), pricing.analyti
 lmf.print("p100=" + str(at_the_money.price()));
 lmf.print("p110=" + str(pricing.price(call, base.with_spot(110.0), pricing.analytic()).price()));
 lmf.print("p120=" + str(pricing.price(call, base.with_spot(120.0), pricing.analytic()).price()));
-end _dsl_
+end _lmcode_
 savedsl(desk, "build/desk.dslb");
 r = system(concat(dsl_cli(desk), ["--dsl", "build/desk.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
@@ -52,7 +52,7 @@ assert(z1 < z2 && z2 < z5 && z5 < z10 && z10 < z20 && z20 < z30);
 assert(p80 < p90 && p90 < p100 && p100 < p110 && p110 < p120);
 
 # Chart (lmvideo): the zero-rate curve, also the gallery output (900 px wide).
-chart = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
 video.size(900, 480); video.frames(1); video.output("images/showcase-35-rates-options.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -62,13 +62,13 @@ let curve = plot.series("zero rate", "line", "#1F4E78").width(3.0).marker("circl
 curve.add(1.0, ${z1}); curve.add(2.0, ${z2}); curve.add(5.0, ${z5}); curve.add(10.0, ${z10}); curve.add(20.0, ${z20}); curve.add(30.0, ${z30});
 fig.draw();
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(chart, "build/rates-chart.dslb");
 r = system(concat(dsl_cli(chart), ["--dsl", "build/rates-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Workbook: yield curve and option tables, formulas stored, native charts beside each table.
-book = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+book = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
 let xl = office.xlsx("build/rates-and-options.xlsx");
 let curve_sheet = xl.sheet("Yield curve");
 curve_sheet.set(1, 1, "Tenor (years)").set(1, 2, "Zero rate").set(1, 3, "Discount factor");
@@ -116,7 +116,7 @@ memo.paragraph("At 120 the call is worth " + ${str(round(p120 * 10000.0) / 10000
 memo.heading("Limits", 2);
 memo.paragraph("Prices are model values from a flat-volatility Black-Scholes model; the workbook formulas are not evaluated by lmoffice.");
 memo.save();
-end _dsl_
+end _lmcode_
 savedsl(book, "build/desk-book.dslb");
 r = system(concat(dsl_cli(book), ["--dsl", "build/desk-book.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);

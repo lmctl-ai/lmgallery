@@ -6,7 +6,7 @@
 # they bunch together near apogee, where the spacecraft is slowest (Kepler II).
 mkdir("build");
 mkdir("images");
-sim = _dsl_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
+sim = _lmcode_ cli="lmspace" install="github:lmctl-ai/lmspace@latest";
 let mu = 398600.4418;
 let h = hohmann(7000.0, 42164.0, mu);
 let v1 = sqrt(mu / 7000.0) + h.get(0, 0);
@@ -15,7 +15,7 @@ let sat = space.body("sat", 0.000000000001, 7000.0, 0.0, 0.0, 0.0, v1, 0.0);
 let out = space.system().add(earth).add(sat).propagate(h.get(0, 2), 61, 5.0, "rk45", 0.000000000001);
 assert_close(sqrt(out.get(60, 7) * out.get(60, 7) + out.get(60, 8) * out.get(60, 8)), 42164.0, 50.0);
 out.save_csv("build/orbit.csv");
-end _dsl_
+end _lmcode_
 savedsl(sim, "build/space.dslb");
 r = system ${dsl_cli(sim)} --dsl build/space.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
@@ -29,7 +29,7 @@ for (k in range(0, rows.len())) {
 }
 write_file("build/orbit-keys.csv", key_text);
 
-cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+cad = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 let keys = read_keyframes_csv("build/orbit-keys.csv");
 let earth_mat = material().color(0.12, 0.32, 0.78).roughness(0.5);
 let orbit_mat = material().color(0.95, 0.45, 0.08).roughness(0.35).specular(0.4);
@@ -59,7 +59,7 @@ scene.directional_light(-0.6, -1.0, -0.4, 0.9);
 scene.fill_light(0.8, -0.2, 0.8, 0.25);
 scene.background(0.95, 0.97, 1.0);
 scene.render_png("images/showcase-04-space-orbit-cad.png", 900, 600);
-end _dsl_
+end _lmcode_
 savedsl(cad, "build/cad.dslb");
 r = system ${dsl_cli(cad)} --dsl build/cad.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

@@ -8,7 +8,7 @@
 mkdir("images");
 mkdir("build");
 
-sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+sim = _lmcode_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
 let n = 19;
 let sys = num.ode(n);
 sys.param("alpha", 0.1);
@@ -35,7 +35,7 @@ for (i in range(0, n)) {
   if (err > worst) { worst = err; }
 }
 num.assert_close(worst, 0.0, 0.005);
-end _dsl_
+end _lmcode_
 savedsl(sim, "build/heat-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl build/heat-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
@@ -62,7 +62,7 @@ for (c in range(0, 19)) {
 }
 write_file("build/heat-profiles.txt", prof);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-20-heat-spacetime.png", 900, 460);
 plot.cmd("set multiplot title 'Heat conduction in one dimension: lmnum method of lines against the exact decay' font ',13'");
 plot.cmd("set border 3; set tics nomirror; set grid lc rgb '#dbe4ee'; set key font ',9' samplen 2");
@@ -88,7 +88,7 @@ plot.cmd("set key bottom center box opaque font ',8'");
 plot.cmd("plot exp(-pi*pi*alpha*0.0)*sin(pi*x) with lines lw 1.4 lc rgb '#111827' title 'exact, t = 0', exp(-pi*pi*alpha*0.1)*sin(pi*x) with lines lw 1.4 lc rgb '#2563eb' title 'exact, t = 0.1 s', exp(-pi*pi*alpha*0.5)*sin(pi*x) with lines lw 1.4 lc rgb '#dc2626' title 'exact, t = 0.5 s', 'build/heat-profiles.txt' using 1:2 with points pt 7 ps 0.8 lc rgb '#2563eb' title 'lmnum', 'build/heat-profiles.txt' using 1:4 with points pt 7 ps 0.8 lc rgb '#dc2626' notitle");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "build/heat-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl build/heat-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

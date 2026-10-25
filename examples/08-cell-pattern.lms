@@ -3,7 +3,7 @@
 # populations with different cycle and death rates; lmplot renders computed
 # final positions. Published 0.1.0 has no chemotaxis or history recorder.
 mkdir("build/cell");
-compute = _dsl_ cli="lmcell" install="github:lmctl-ai/lmcell@latest";
+compute = _lmcode_ cli="lmcell" install="github:lmctl-ai/lmcell@latest";
 let s = cell.sim(8080).domain(0.0, 600.0, 0.0, 420.0, 20.0);
 s.cell_type("slow").radius(5.0).motility(1.0, 3.0).cycle(0.012).death(0.001);
 s.cell_type("fast").radius(5.0).motility(1.6, 1.5).cycle(0.020).death(0.004);
@@ -13,12 +13,12 @@ let cells = result.cells();
 cell.assert_true(cells.rows() > 100);
 cells.save_csv("build/cell/final_cells.csv");
 result.counts().save_csv("build/cell/counts.csv");
-end _dsl_
+end _lmcode_
 savedsl(compute, "build/cell/compute.dslb");
 r = system ${dsl_cli(compute)} --dsl build/cell/compute.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 mkdir("images");
-plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-08-cell-pattern.png", 900, 560);
 plot.cmd("set datafile separator ','; set multiplot layout 1,2 title 'Two cell populations: final positions and live counts'; set grid back lc rgb '#e4e9ef'");
 plot.cmd("set title 'Final living cells at 120 min'; set xlabel 'x (micrometres)'; set ylabel 'y (micrometres)'; set xrange [20:260]; set yrange [0:420]; set size ratio -1; set key left top font ',10'");
@@ -26,7 +26,7 @@ plot.cmd("plot 'build/cell/final_cells.csv' using ($3==0&&$4>0?$1:NaN):2 with po
 plot.cmd("set title 'Combined population growth'; set xlabel 'time (minutes)'; set ylabel 'Living cells'; set xrange [0:120]; set yrange [0:*]; set size noratio; unset key");
 plot.cmd("plot 'build/cell/counts.csv' using 1:2 with lines lw 2.5 lc rgb '#5e4fa2'; unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(plot, "build/cell/draw.dslb");
 r = system ${dsl_cli(plot)} --dsl build/cell/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

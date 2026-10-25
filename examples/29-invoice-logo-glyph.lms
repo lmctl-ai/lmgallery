@@ -15,19 +15,19 @@ assert(abs(subtotal - 2020.0) < 0.0001);
 assert(abs(total - 2181.6) < 0.0001);
 
 # Logo and glyph images for the invoice (lmvideo).
-art = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+art = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
 video.size(400, 400); video.frames(1); video.output("build/logo.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
 canvas.oval(20.0, 20.0, 360.0, 360.0, paint().gradient(20.0, 20.0, 380.0, 380.0, "#1F4E78", "#2E75B6"));
 canvas.text("LS", 96.0, 258.0, font(150.0).bold(true), paint().color("#ffffff"));
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(art, "build/logo-art.dslb");
 r = system(concat(dsl_cli(art), ["--dsl", "build/logo-art.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
-glyph = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+glyph = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
 video.size(330, 330); video.frames(1); video.output("build/glyph.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -51,13 +51,13 @@ for (row in range(0, 21)) {
   }
 }
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(glyph, "build/glyph-art.dslb");
 r = system(concat(dsl_cli(glyph), ["--dsl", "build/glyph-art.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Gallery output: the brand sheet, 900 px wide, with the logo and glyph.
-sheet = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+sheet = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
 video.size(900, 480); video.frames(1); video.output("images/showcase-29-invoice-logo.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -69,13 +69,13 @@ canvas.text("Lattice Systems", 430.0, 150.0, font(42.0).bold(true), paint().colo
 canvas.text("Brand mark and payment glyph", 430.0, 200.0, font(24.0), paint().color("#475569"));
 canvas.image_rect(glyph_art, 430.0, 240.0, 220.0, 220.0);
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(sheet, "build/brand-art.dslb");
 r = system(concat(dsl_cli(sheet), ["--dsl", "build/brand-art.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Invoice (lmoffice).
-book = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
+book = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.8";
 let doc = office.docx("build/invoice-INV-1042.docx");
 doc.title("Invoice INV-1042").author("Lattice Systems");
 doc.image("build/logo.png", 110, 110);
@@ -94,7 +94,7 @@ doc.paragraph("Payment reference (decorative glyph, not a scannable code):");
 doc.image("build/glyph.png", 150, 150);
 doc.paragraph("Thank you for your business.").italic(true).align("right");
 doc.save();
-end _dsl_
+end _lmcode_
 savedsl(book, "build/invoice.dslb");
 r = system(concat(dsl_cli(book), ["--dsl", "build/invoice.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);

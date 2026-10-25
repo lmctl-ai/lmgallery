@@ -13,7 +13,7 @@ write_file("build/site/index.html", "<!doctype html><html><body><h1>Lattice docs
 write_file("build/site/about.html", "<!doctype html><html><body><h1 id=\"team\">Team</h1><a href=\"sub/page.html\">Sub page</a><a href=\"#missing\">Missing anchor</a><a href=\"https://example.com/\">External</a></body></html>");
 write_file("build/site/sub/page.html", "<!doctype html><html><body><a href=\"/index.html\">Home</a></body></html>");
 
-check = _dsl_ cli="lmhtml" install="github:lmctl-ai/lmhtml@v0.7.3";
+check = _lmcode_ cli="lmhtml" install="github:lmctl-ai/lmhtml@v0.7.3";
 let pages = html.load_dir("build/site");
 for (i in range(0, pages.len())) {
   let page = pages.at(i);
@@ -26,7 +26,7 @@ for (i in range(0, pages.len())) {
   }
 }
 report.write_text("build/links.txt");
-end _dsl_
+end _lmcode_
 savedsl(check, "build/links.dslb");
 r = system(concat(dsl_cli(check), ["--dsl", "build/links.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
@@ -48,7 +48,7 @@ assert(contains(report_text, "missing.html not found"));
 assert(contains(report_text, "#missing not found"));
 
 # Terminal-style picture of the run (lmvideo), the gallery output.
-term = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+term = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
 video.size(900, 360); video.frames(1); video.output("images/showcase-36-link-check.png"); video.begin();
 video.frame();
 canvas.clear("#0f172a");
@@ -61,13 +61,13 @@ canvas.text("  " + ${first}, 24.0, 184.0, font(18.0), paint().color("#fecaca"));
 canvas.text("  " + ${second}, 24.0, 218.0, font(18.0), paint().color("#fecaca"));
 canvas.text("exit 1", 24.0, 268.0, font(18.0), paint().color("#fca5a5"));
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(term, "build/link-term.dslb");
 r = system(concat(dsl_cli(term), ["--dsl", "build/link-term.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Word report (lmoffice).
-report_doc = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+report_doc = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
 let doc = office.docx("build/link-check-report.docx");
 doc.title("Link-check report").author("Documentation tooling");
 doc.heading("Link-check report: Lattice docs", 1).bold(true);
@@ -82,7 +82,7 @@ doc.image("images/showcase-36-link-check.png", 600, 240);
 doc.heading("Next steps", 2);
 doc.paragraph("Fix the two links, then rerun the check; the pages are in the site folder the report names.");
 doc.save();
-end _dsl_
+end _lmcode_
 savedsl(report_doc, "build/link-check.dslb");
 r = system(concat(dsl_cli(report_doc), ["--dsl", "build/link-check.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);

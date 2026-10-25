@@ -6,7 +6,7 @@
 # decaying inside its exp(-2 zeta omega t) envelope.
 mkdir("images");
 mkdir("data");
-sim = _dsl_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
+sim = _lmcode_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
 let sys = num.ode(2);
 sys.param("omega", 2.0).param("zeta", 0.08);
 sys.rhs(0, "y1");
@@ -21,12 +21,12 @@ let wd = 2.0 * sqrt(1.0 - 0.08 * 0.08);
 let x12 = pow(2.718281828459045, -0.16 * 12.0) * (cos(wd * 12.0) + 0.16 / wd * sin(wd * 12.0));
 num.assert_close(sol.get(1200, 1), x12, 0.00001);
 num.assert_close(sol.get(1200, 1), 0.04079380257785417, 0.000001);
-end _dsl_
+end _lmcode_
 savedsl(sim, "data/oscillator-sim.dslb");
 r = system ${dsl_cli(sim)} --dsl data/oscillator-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-01-oscillator.png", 900, 560);
 plot.cmd("w = 2.0; z = 0.08; wd = w*sqrt(1-z**2)");
 plot.cmd("xa(t) = exp(-z*w*t)*(cos(wd*t) + z*w/wd*sin(wd*t))");
@@ -51,7 +51,7 @@ plot.cmd("set xrange [0:12]; set yrange [0.01:3]; set logscale y; set key bottom
 plot.cmd("plot 'data/oscillator.csv' using 1:(0.5*$3**2 + 0.5*w**2*$2**2) with lines lw 2.2 lc rgb '#059669' title 'E(t)', 2*exp(-2*z*w*x) with lines dt 2 lw 1.4 lc rgb '#111827' title '2 e^{-2 zeta omega t}'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "data/oscillator-draw.dslb");
 r = system ${dsl_cli(draw)} --dsl data/oscillator-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

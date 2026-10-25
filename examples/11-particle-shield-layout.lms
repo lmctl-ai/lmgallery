@@ -9,7 +9,7 @@
 mkdir("build/shield");
 mkdir("build/rendered");
 mkdir("images");
-compute = _dsl_ cli="lmparticle" install="github:lmctl-ai/lmparticle@latest";
+compute = _lmcode_ cli="lmparticle" install="github:lmctl-ai/lmparticle@latest";
 let seed = 4100;
 for (k in range(0, 3)) {
   let name = "lead";
@@ -35,7 +35,7 @@ for (k in range(0, 3)) {
     rad.print("row," + name + "," + str(areal) + "," + str(x) + "," + str(measured) + "," + str(se) + "," + str(result.plane_count("exit")) + "," + str(result.plane_count_err("exit")));
   }
 }
-end _dsl_
+end _lmcode_
 savedsl(compute, "build/shield/compute.dslb");
 r = system(concat(dsl_cli(compute), ["--dsl", "build/shield/compute.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
@@ -55,7 +55,7 @@ fn row_title(name) { return sprintf("%s: rho = %.2f g/cm3, so 10 g/cm2 = %.2f cm
 # 20 px per cm; the 0.001 keeps the water width (exactly 200 px) a non-integral float for the DSL
 w_lead = 200.0 / density["lead"] + 0.001; w_alu = 200.0 / density["aluminum"] + 0.001; w_water = 200.0 / density["water"] + 0.001;
 t_lead = row_title("lead"); t_alu = row_title("aluminum"); t_water = row_title("water");
-d = _dsl_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
+d = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
 scene.canvas(400, 520, "#f8fafc");
 scene.text(20.0, 34.0, 17.0, "Three shields, each 10 g/cm2", "#0f172a").set_attr("font-weight", "700");
 scene.text(20.0, 56.0, 12.0, "drawn to scale, 20 px per cm; 662 keV photons enter from the left", "#475569");
@@ -77,12 +77,12 @@ for (k in range(0, 3)) {
 }
 scene.text(20.0, 500.0, 10.5, "dashed: what reaches the exit plane (uncollided and scattered)", "#475569");
 scene.render_png("build/rendered/shield_layout.png", 400, 520, 1);
-end _dsl_
+end _lmcode_
 savedsl(d, "build/shield/draw.dslb");
 r = system ${dsl_cli(d)} --dsl build/shield/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-11-particle-shield-layout.png", 900, 560);
 plot.cmd("set datafile separator ','");
 plot.cmd("set label 99 'Equal mass, equal shielding? 662 keV photons through lead, aluminum and water (lmparticle, lmdraw, lmplot)' at screen 0.5, 0.955 center font ',12'");
@@ -96,7 +96,7 @@ plot.cmd("set label 2 'filled: uncollided Monte Carlo' at 31.5, 0.81 right font 
 plot.cmd("mm_lead = " + str(${mm_lead}) + "; mm_alu = " + str(${mm_alu}) + "; mm_water = " + str(${mm_water}));
 plot.cmd("plot exp(-mm_lead*x) with lines lw 2 lc rgb '#1e293b' title sprintf('lead, mu/rho = %.3f cm^2/g', mm_lead), exp(-mm_alu*x) with lines lw 2 lc rgb '#64748b' title sprintf('aluminum, mu/rho = %.3f', mm_alu), exp(-mm_water*x) with lines lw 2 lc rgb '#0284c7' title sprintf('water, mu/rho = %.3f', mm_water), 'build/shield/transmission.csv' every ::1 using (stringcolumn(1) eq 'lead' ? $2 : NaN):4:5 with yerrorbars pt 7 ps 1.2 lc rgb '#1e293b' notitle, '' every ::1 using (stringcolumn(1) eq 'aluminum' ? $2 : NaN):4:5 with yerrorbars pt 7 ps 1.2 lc rgb '#64748b' notitle, '' every ::1 using (stringcolumn(1) eq 'water' ? $2 : NaN):4:5 with yerrorbars pt 7 ps 1.2 lc rgb '#0284c7' notitle, '' every ::1 using (stringcolumn(1) eq 'lead' ? $2 : NaN):6 with points pt 6 ps 1.2 lc rgb '#1e293b' notitle, '' every ::1 using (stringcolumn(1) eq 'aluminum' ? $2 : NaN):6 with points pt 6 ps 1.2 lc rgb '#64748b' notitle, '' every ::1 using (stringcolumn(1) eq 'water' ? $2 : NaN):6 with points pt 6 ps 1.2 lc rgb '#0284c7' notitle");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(plot, "build/shield/plot.dslb");
 r = system ${dsl_cli(plot)} --dsl build/shield/plot.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

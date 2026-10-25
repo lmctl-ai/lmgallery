@@ -7,7 +7,7 @@
 # curve, so geometry and energy come from the same computed coordinates.
 mkdir("build/dimer");
 mkdir("images");
-sim_prog = _dsl_ cli="lmmolecule" install="github:lmctl-ai/lmmolecule@latest";
+sim_prog = _lmcode_ cli="lmmolecule" install="github:lmctl-ai/lmmolecule@latest";
 md.platform("reference");
 let kcal = 4.184;
 # TIP3P: r(O-H) = 0.09572 nm, H-O-H = 104.52 deg, q(O) = -0.834, q(H) = 0.417, LJ on oxygen only.
@@ -62,7 +62,7 @@ for (k in range(0, 38)) {
 md.assert_close(e_min, -6.5, 0.5);
 md.assert_close(r_oo, 0.274, 0.01);
 md.print("summary," + str(r_oo) + "," + str(e_min) + "," + str(angle_deg) + "," + str(donor));
-end _dsl_
+end _lmcode_
 savedsl(sim_prog, "build/dimer/sim.dslb");
 r = system ${dsl_cli(sim_prog)} --dsl build/dimer/sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
@@ -107,7 +107,7 @@ println(sprintf("minimized dimer: R(O-O) = %.4f nm, E = %.3f kcal/mol, O-H...O a
 label_text = sprintf("R(O-O) = %.2f A   E = %.2f kcal/mol   O-H...O = %.0f deg", 10.0 * r_oo, e_min, angle_deg);
 min_row = sprintf("%.4f %.4f\n", 10.0 * r_oo, e_min);
 
-cad = _dsl_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
+cad = _lmcode_ cli="lmcad" install="github:lmctl-ai/lmcad@latest";
 let atoms = read_keyframes_csv("build/dimer/atoms.csv");
 let oxygen = material().color(0.88, 0.10, 0.08).roughness(0.38).specular(0.35);
 let hydrogen = material().color(0.90, 0.92, 0.96).roughness(0.42).specular(0.25);
@@ -132,12 +132,12 @@ let acceptor = atoms.at(3);
 scene.tube_between(d.x(), d.y(), d.z(), acceptor.x(), acceptor.y(), acceptor.z(), 0.005, hbond);
 scene.camera(30.0, ${ex}, ${ey}, ${ez}, ${cx}, ${cy}, ${cz});
 scene.render_png("build/dimer/render.png", 520, 520);
-end _dsl_
+end _lmcode_
 savedsl(cad, "build/dimer/cad.dslb");
 r = system ${dsl_cli(cad)} --dsl build/dimer/cad.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-10-molecule-dimer-cad.png", 900, 520);
 plot.cmd("set label 99 'TIP3P water dimer: lmmolecule minimizes it, lmcad renders it, lmplot adds the O-O energy scan' at screen 0.5, 0.95 center font ',12'");
 plot.cmd("set pixmap 1 'build/dimer/render.png' at screen 0.02, 0.04 width screen 0.46");
@@ -152,7 +152,7 @@ plot.cmd("set label 1 'Jorgensen 1983: -6.50 at 2.74 A' at 2.85, -7.1 font ',9' 
 plot.data("MIN", ${min_row});
 plot.cmd("plot 'build/dimer/scan.csv' using 1:2 with lines lw 2.6 lc rgb '#2563eb' title 'rigid scan along O-O', $MIN with points pt 7 ps 1.6 lc rgb '#dc2626' title 'minimum found'");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(plot, "build/dimer/plot.dslb");
 r = system ${dsl_cli(plot)} --dsl build/dimer/plot.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

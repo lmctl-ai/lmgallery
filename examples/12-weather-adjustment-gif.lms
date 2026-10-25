@@ -9,7 +9,7 @@
 # still shows the first and last frames.
 mkdir("images");
 mkdir("build/adjust");
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@latest";
 let lx = 12000000.0;
 let m = wx.plane(128, 128, lx, lx).depth(1000.0).coriolis(0.0001, 0.0).linear();
 m.fields("pow(2.718281828459045, -((x - lx / 2) * (x - lx / 2) + (y - ly / 2) * (y - ly / 2)) / 720000000000.0)", "0", "0");
@@ -25,13 +25,13 @@ let h1 = m.h_at(lx / 2.0, lx / 2.0) - 1000.0;
 wx.assert_close(m.pv_anomaly_rms() / q0, 1.0, 0.002);
 wx.assert_true(h1 > 0.05 * h0 && h1 < 0.8 * h0);
 wx.print("Rossby radius " + str(m.rossby_radius() / 1000.0) + " km; central height anomaly after 14 h: " + str(h1) + " m of " + str(h0));
-end _dsl_
+end _lmcode_
 savedsl(sim, "build/adjust/sim.dslb");
 r = system(concat(dsl_cli(sim), ["--dsl", "build/adjust/sim.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println(split(r.stdout, "{\"ok\"")[0]);
 
-draw = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.cmd("set pm3d map; unset key; set size ratio -1");
 plot.cmd("set palette defined (0 '#1d4ed8', 0.25 '#93c5fd', 0.4 '#f8fafc', 0.6 '#fde68a', 0.8 '#f97316', 1 '#7f1d1d')");
 plot.cmd("set xrange [0:12000]; set yrange [0:12000]; set cbrange [-0.3:0.9]; set cbtics 0.3");
@@ -52,7 +52,7 @@ plot.cmd("set lmargin at screen 0.07; set rmargin at screen 0.44; set title 't =
 plot.cmd("set lmargin at screen 0.50; set rmargin at screen 0.87; set title 't = 14 h' font ',11'; unset ylabel; set colorbox; set cblabel 'height anomaly [m]'; splot 'build/adjust/f28.csv' using ($1/1000):($2/1000):($3-1000) with pm3d");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(draw, "build/adjust/draw.dslb");
 r = system(concat(dsl_cli(draw), ["--dsl", "build/adjust/draw.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);

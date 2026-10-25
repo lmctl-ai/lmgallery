@@ -5,7 +5,7 @@
 # the hyperbola v = Vmax S / (Km + S) with Km = (koff + kcat) / kon = 0.4375 and
 # Vmax = kcat E0 = 0.03, which the mechanism never states explicitly.
 mkdir("build/enzyme");
-compute = _dsl_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
+compute = _lmcode_ cli="lmbio" install="github:lmctl-ai/lmbio@latest";
 let m = bio.model("michaelis_menten").compartment("cell", 1.0).species("E", "cell", 0.02).species("S", "cell", 1.0).species("ES", "cell", 0.0).species("P", "cell", 0.0);
 m.param("kon", 8.0).param("koff", 2.0).param("kcat", 1.5);
 m.reaction("bind", "E + S -> ES", "kon*E*S").reversible("bind", "koff*ES").reaction("turnover", "ES -> E + P", "kcat*ES");
@@ -25,7 +25,7 @@ for (i in range(0, 10)) {
   bio.print("row," + str(s_mean) + "," + str(rate) + "," + str(predicted));
 }
 bio.print("constants," + str(km) + "," + str(vmax));
-end _dsl_
+end _lmcode_
 savedsl(compute, "build/enzyme/compute.dslb");
 r = system ${dsl_cli(compute)} --dsl build/enzyme/compute.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
@@ -38,7 +38,7 @@ for (line in split(r.stdout, "\n")) {
 write_file("build/enzyme/rates.csv", csv);
 assert(km > 0.4 && vmax > 0.02);
 mkdir("images");
-plot = _dsl_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
+plot = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-07-enzyme-response.png", 900, 560);
 plot.cmd("set datafile separator ','; km = " + str(${km}) + "; vmax = " + str(${vmax}));
 plot.cmd("set multiplot title 'Michaelis-Menten kinetics measured from the elementary mechanism (lmbio runs, lmplot figure)' font ',13'");
@@ -59,7 +59,7 @@ plot.cmd("set xlabel 'time'; set ylabel 'product P'; set xrange [0:1.4]; set yra
 plot.cmd("plot 'build/enzyme/course_1.csv' using 1:5 with lines lw 2.2 lc rgb '#cbd5e1' title 'S0 = 0.085', 'build/enzyme/course_3.csv' using 1:5 with lines lw 2.2 lc rgb '#93c5fd' title 'S0 = 0.25', 'build/enzyme/course_6.csv' using 1:5 with lines lw 2.2 lc rgb '#3b82f6' title 'S0 = 1.2', 'build/enzyme/course_9.csv' using 1:5 with lines lw 2.2 lc rgb '#1e3a8a' title 'S0 = 5.9'");
 plot.cmd("unset multiplot");
 plot.close();
-end _dsl_
+end _lmcode_
 savedsl(plot, "build/enzyme/draw.dslb");
 r = system ${dsl_cli(plot)} --dsl build/enzyme/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);

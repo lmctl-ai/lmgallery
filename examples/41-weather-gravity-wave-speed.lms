@@ -7,7 +7,7 @@
 mkdir("images");
 mkdir("build");
 
-sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@v0.1.3";
+sim = _lmcode_ cli="lmweather" install="github:lmctl-ai/lmweather@v0.1.3";
 let ly = 4000000.0;
 let m = wx.plane(8, 200, 40000.0, ly).depth(1000.0).coriolis(0.0, 0.0).linear();
 m.fields("pow(2.718281828459045, -(y - ly / 2) * (y - ly / 2) / 5000000000.0)", "0", "0");
@@ -67,7 +67,7 @@ for (j in range(103, 200)) {
 wx.print("p5=" + str(peak5));
 m.run(2000.0);
 
-end _dsl_
+end _lmcode_
 savedsl(sim, "build/gravity-wave-sim.dslb");
 r = system(concat(dsl_cli(sim), ["--dsl", "build/gravity-wave-sim.dslb"]), 900000);
 assert(r.code == 0, r.stdout + r.stderr);
@@ -88,7 +88,7 @@ let measured = (p5 - p1) / 8000.0;
 assert(abs(measured - c) / c < 0.03);
 
 # Figure (lmvideo): crest distance against time, measured points and the predicted line.
-figure = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
 video.size(900, 480); video.frames(1); video.output("images/showcase-41-gravity-wave-speed.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -100,13 +100,13 @@ let measured_line = plot.series("lmweather crest", "scatter", "#1F4E78").marker(
 measured_line.add(0.555556, ${p1 / 1000.0 + 0.000000001}); measured_line.add(1.111111, ${p2 / 1000.0 + 0.000000001}); measured_line.add(1.666667, ${p3 / 1000.0 + 0.000000001}); measured_line.add(2.222222, ${p4 / 1000.0 + 0.000000001}); measured_line.add(2.777778, ${p5 / 1000.0 + 0.000000001});
 fig.draw();
 video.end();
-end _dsl_
+end _lmcode_
 savedsl(figure, "build/gravity-wave-figure.dslb");
 r = system(concat(dsl_cli(figure), ["--dsl", "build/gravity-wave-figure.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Report (lmoffice).
-report = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+report = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
 let doc = office.docx("build/gravity-wave-report.docx");
 doc.title("Gravity-wave speed from a shallow-water pulse").author("Atmospheric dynamics group");
 doc.heading("Gravity-wave speed from a shallow-water pulse", 1).bold(true);
@@ -121,7 +121,7 @@ doc.image("images/showcase-41-gravity-wave-speed.png", 600, 320);
 doc.heading("Conclusion", 2);
 doc.paragraph("The pulse splits and its crest moves at the gravity-wave speed, as linear shallow-water theory predicts.");
 doc.save();
-end _dsl_
+end _lmcode_
 savedsl(report, "build/gravity-wave-report.dslb");
 r = system(concat(dsl_cli(report), ["--dsl", "build/gravity-wave-report.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
