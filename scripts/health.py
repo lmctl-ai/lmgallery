@@ -328,7 +328,47 @@ def check_ci(repo_name):
   }
 
 
+def check_actions_permissions(product_name):
+  res = gh_cmd(['api', f'repos/lmctlhq/{product_name}/actions/permissions'])
+  if res.returncode == 0 and res.stdout.strip():
+    try:
+      data = json.loads(res.stdout)
+      return data.get('enabled')
+    except Exception:
+      pass
+  return None
+
+
+def check_run_has_budget_annotation(product_name, run_id):
+  res = gh_cmd([
+      'api',
+      f'repos/lmctlhq/{product_name}/actions/runs/{run_id}/jobs',
+  ])
+  if res.returncode == 0 and res.stdout.strip():
+    try:
+      data = json.loads(res.stdout)
+      for j in data.get('jobs', []):
+        if j.get('conclusion') in ('failure', 'startup_failure'):
+          jid = j.get('id')
+          if jid:
+            ann_res = gh_cmd([
+                'api',
+                f'repos/lmctlhq/{product_name}/check-runs/{jid}/annotations',
+            ])
+            if ann_res.returncode == 0 and ann_res.stdout.strip():
+              anns = json.loads(ann_res.stdout)
+              for a in anns:
+                msg = (a.get('message') or '').lower()
+                if 'budget' in msg:
+                  return True
+    except Exception:
+      pass
+  return False
+
+
 def check_private_ci(product_name):
+  actions_enabled = check_actions_permissions(product_name)
+
   res = gh_cmd([
       'run',
       'list',
@@ -353,6 +393,15 @@ def check_private_ci(product_name):
         'databaseId,status,conclusion,url,headSha',
     ])
     if res.returncode != 0 or not res.stdout.strip():
+      if actions_enabled is False:
+        return {
+            'status': 'hold',
+            'conclusion': 'actions_disabled',
+            'display': 'HOLD (actions disabled)',
+            'failed_jobs': [],
+            'run_url': '',
+            'is_red': False,
+        }
       return {
           'status': 'no_runs',
           'conclusion': 'none',
@@ -365,16 +414,18 @@ def check_private_ci(product_name):
   try:
     runs = json.loads(res.stdout)
   except Exception:
-    return {
-        'status': 'error',
-        'conclusion': 'unknown',
-        'display': 'error',
-        'failed_jobs': [],
-        'run_url': '',
-        'is_red': False,
-    }
+    runs = []
 
   if not runs:
+    if actions_enabled is False:
+      return {
+          'status': 'hold',
+          'conclusion': 'actions_disabled',
+          'display': 'HOLD (actions disabled)',
+          'failed_jobs': [],
+          'run_url': '',
+          'is_red': False,
+      }
     return {
         'status': 'no_runs',
         'conclusion': 'none',
@@ -390,6 +441,16 @@ def check_private_ci(product_name):
   run_id = run.get('databaseId')
   run_url = run.get('url', '')
 
+  if actions_enabled is False:
+    return {
+        'status': 'hold',
+        'conclusion': 'actions_disabled',
+        'display': 'HOLD (actions disabled)',
+        'failed_jobs': [],
+        'run_url': run_url,
+        'is_red': False,
+    }
+
   failed_jobs = []
   is_red = False
 
@@ -398,33 +459,46 @@ def check_private_ci(product_name):
   elif status in ('queued', 'in_progress', 'waiting', 'requested'):
     display = status
   elif conclusion in ('failure', 'startup_failure', 'timed_out', 'cancelled'):
-    is_red = conclusion != 'cancelled'
-    if run_id:
-      job_res = gh_cmd([
-          'run',
-          'view',
-          str(run_id),
-          '-R',
-          f'lmctlhq/{product_name}',
-          '--json',
-          'jobs',
-      ])
-      if job_res.returncode == 0:
-        try:
-          job_data = json.loads(job_res.stdout)
-          failed_jobs = [
-              j.get('name', 'job')
-              for j in job_data.get('jobs', [])
-              if j.get('conclusion') in ('failure', 'startup_failure')
-          ]
-        except Exception:
-          pass
-    job_str = (
-        f"[{', '.join(failed_jobs)}]"
-        if failed_jobs
-        else f'[{conclusion or status}]'
-    )
-    display = f'FAIL {job_str}'
+    if conclusion != 'cancelled':
+      if run_id and check_run_has_budget_annotation(product_name, run_id):
+        return {
+            'status': 'hold',
+            'conclusion': 'budget',
+            'display': 'HOLD (budget)',
+            'failed_jobs': [],
+            'run_url': run_url,
+            'is_red': False,
+        }
+
+      is_red = True
+      if run_id:
+        job_res = gh_cmd([
+            'run',
+            'view',
+            str(run_id),
+            '-R',
+            f'lmctlhq/{product_name}',
+            '--json',
+            'jobs',
+        ])
+        if job_res.returncode == 0:
+          try:
+            job_data = json.loads(job_res.stdout)
+            failed_jobs = [
+                j.get('name', 'job')
+                for j in job_data.get('jobs', [])
+                if j.get('conclusion') in ('failure', 'startup_failure')
+            ]
+          except Exception:
+            pass
+      job_str = (
+          f"[{', '.join(failed_jobs)}]"
+          if failed_jobs
+          else f'[{conclusion or status}]'
+      )
+      display = f'FAIL {job_str}'
+    else:
+      display = 'cancelled'
   else:
     display = conclusion or status or 'unknown'
 
@@ -1467,10 +1541,9 @@ def audit_repo(target):
     ci_display = priv_ci['display']
   elif pub_ci['display'] in ('queued', 'in_progress'):
     ci_display = pub_ci['display']
-  elif priv_ci['display'] in ('PASS', 'no runs (OK)') and pub_ci['display'] in (
-      'PASS',
-      'no runs',
-  ):
+  elif pub_ci['display'] == 'PASS':
+    ci_display = 'PASS'
+  elif priv_ci['display'] in ('PASS', 'no runs (OK)'):
     ci_display = 'PASS'
   else:
     ci_display = priv_ci['display']
@@ -1588,7 +1661,7 @@ def print_products_table(results):
       'age': 7,
       'assets': 8,
       'pub_ci': 12,
-      'priv_ci': 22,
+      'priv_ci': 24,
   }
 
   header_line = (
@@ -1662,6 +1735,8 @@ def print_products_table(results):
       priv_ci_disp = r['private_ci']['display']
       if r['private_ci']['is_red']:
         c_priv_ci = red(priv_ci_disp)
+      elif 'HOLD' in priv_ci_disp:
+        c_priv_ci = yellow(priv_ci_disp)
       elif priv_ci_disp in ('PASS', 'no runs (OK)'):
         c_priv_ci = green(priv_ci_disp)
       elif priv_ci_disp in ('queued', 'in_progress'):
@@ -1687,7 +1762,16 @@ def print_products_table(results):
       )
       c_assets = assets_disp
       c_pub_ci = 'staging'
-      c_priv_ci = 'staging'
+      q_priv_ci = check_private_ci(prod)
+      priv_ci_disp = q_priv_ci['display']
+      if q_priv_ci['is_red']:
+        c_priv_ci = red(priv_ci_disp)
+      elif 'HOLD' in priv_ci_disp:
+        c_priv_ci = yellow(priv_ci_disp)
+      elif priv_ci_disp in ('PASS', 'no runs (OK)'):
+        c_priv_ci = green(priv_ci_disp)
+      else:
+        c_priv_ci = priv_ci_disp
 
     line = (
         f"{pad(c_name, col_widths['name'])} "
@@ -1702,6 +1786,12 @@ def print_products_table(results):
     print(line)
 
   print('=' * sep_len)
+  print(
+      cyan(
+          'Legend: HOLD (actions disabled / budget) = private Actions paused on'
+          ' budget hold (not a failure); FAIL = real failure.'
+      )
+  )
   print()
 
 
@@ -1711,7 +1801,7 @@ def print_table(results):
 
   col_widths = {
       'name': 14,
-      'ci': 18,
+      'ci': 24,
       'release': 23,
       'sdk': 22,
       'compiler': 10,

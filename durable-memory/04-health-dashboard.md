@@ -23,7 +23,8 @@ The tool audits all repositories under the local checkouts tree and sibling `lmv
      * Audits README demo pictures, broken images, and broken autorun links.
      * Public side never flags missing durable-memory (`no dm/` is suppressed).
    - **Private Repository Audits**:
-     * Monitors private push CI via `gh run list -R lmctlhq/<name>` (missing recent runs are allowed; failures flagged).
+     * Monitors private push CI via `gh run list -R lmctlhq/<name>`: reports `HOLD (actions disabled)` when repository Actions permissions are disabled (`enabled: false`), `HOLD (budget)` when annotations report an Actions budget hold, and flags `FAIL` only for genuine build/test failures (missing recent runs are allowed).
+     * Displays a one-line legend explaining hold vs failure states.
      * Confirms presence of `RELEASE_TOKEN` secret via `gh secret list -R lmctlhq/<name>`.
      * Confirms private/public repository visibility (`lmctlhq/<name>` is PRIVATE, `lmctl-ai/<name>` is PUBLIC).
      * Verifies latest private main HEAD matches commit SHA referenced in public release notes (if present).
