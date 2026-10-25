@@ -1956,15 +1956,18 @@ def apply_general_product(product: str, first_tag: str) -> int:
     active = active_lmctl_members()
     if agents_for(product, active):
         raise FlipError(f"an active {product} session exists; stop before private peer creation")
+    root = snapshot["root"]
     if product in {"lmoffice", "lmpdf"}:
         recent = command(["git", "-C", str(snapshot["root"]), "log", "--since=30 minutes ago", "--format=%H", "origin/main"], timeout=120).stdout.strip()
         if recent:
             raise FlipError(f"{product} origin/main has a commit from the last 30 minutes; defer this product")
     ci = ci_latest(product, snapshot["ref"], private_repo(product) if source_is_private else public_repo(product))
-    if not ci.get("ok"):
+    current_private_workflow = root / ".github/workflows/ci.yml"
+    current_private_text = current_private_workflow.read_text(encoding="utf-8") if current_private_workflow.is_file() else ""
+    private_ci_ready = "  publish-test:" in current_private_text and "RELEASE_TOKEN" in current_private_text and (root / "scripts/release-to-public.sh").is_file()
+    if not ci.get("ok") and not (source_is_private and not private_ci_ready):
         raise FlipError(f"{product} main CI is not green: {ci.get('url','')} {ci.get('error','')}")
 
-    root = snapshot["root"]
     stage = STAGING / f"{product}-public"
     manifest_path = STAGING / f"{product}-stage-manifest.json"
     if not stage.is_dir() or not manifest_path.is_file():
@@ -2009,6 +2012,11 @@ def apply_general_product(product: str, first_tag: str) -> int:
     latest_backup = next((item for item in release_backups if item["tagName"] == first_tag), None)
     if latest_backup is None or not latest_backup.get("assets_complete"):
         raise FlipError(f"latest release backup {first_tag} is missing")
+    local_ref_lines = command(["git", "-C", str(root), "for-each-ref", "--format=%(objectname) %(refname)", "refs/heads", "refs/tags"]).stdout.splitlines()
+    source_refs = {parts[1]: parts[0] for line in local_ref_lines if len(parts := line.split()) == 2}
+    missing_source_refs = sorted(ref for ref, sha in old_refs["refs"].items() if source_refs.get(ref) != sha)
+    if missing_source_refs:
+        raise FlipError(f"local source mirror is missing or differs from public refs: {', '.join(missing_source_refs)}")
     if product == "lmvideo":
         release_tags = {item["tagName"] for item in release_backups}
         tag_refs = {ref.removeprefix("refs/tags/") for ref in old_refs["refs"] if ref.startswith("refs/tags/")}
@@ -2040,20 +2048,33 @@ def apply_general_product(product: str, first_tag: str) -> int:
         private_main = command(["git", "ls-remote", private_url, "refs/heads/main"], timeout=300).stdout.split()[0]
         if private_main != snapshot["ref"]:
             raise FlipError(f"existing private {product} main no longer matches the clean local source checkout")
+        _assert_private_mirror_refs(product, source_refs)
         secrets = json.loads(command(["gh", "secret", "list", "-R", private_repo(product), "--json", "name"]).stdout)
         actions = json.loads(command(["gh", "api", f"repos/{private_repo(product)}/actions/permissions"]).stdout)
-        if not any(item.get("name") == "RELEASE_TOKEN" for item in secrets) or actions.get("enabled") is not True:
-            raise FlipError(f"existing private {product} peer is missing its release secret or enabled Actions")
-        private_sha = snapshot["ref"]
-        private_ci = ci
-        audit(f"PRIVATE_RESUME_VERIFIED repo={private_repo(product)} main={private_main}")
+        workflow_path = root / ".github/workflows/ci.yml"
+        workflow_text = workflow_path.read_text(encoding="utf-8") if workflow_path.is_file() else ""
+        private_ci_ready = "  publish-test:" in workflow_text and "RELEASE_TOKEN" in workflow_text and (root / "scripts/release-to-public.sh").is_file()
+        has_secret = any(item.get("name") == "RELEASE_TOKEN" for item in secrets)
+        if private_ci_ready:
+            if not has_secret:
+                _set_release_secret_from_file(product)
+            if actions.get("enabled") is not True:
+                _set_repo_actions_enabled(product, True)
+            private_sha = snapshot["ref"]
+            private_ci = ci if ci.get("ok") else _run_publish_test(product, private_sha)
+        else:
+            _set_release_secret_from_file(product)
+            private_sha = _install_private_ci(product, root, first_tag)
+            _set_repo_actions_enabled(product, True)
+            private_ci = _run_publish_test(product, private_sha)
+        audit(f"PRIVATE_RESUME_VERIFIED repo={private_repo(product)} main={private_sha} publisher_ready={private_ci_ready}")
     else:
         _set_repo_actions_enabled(product, False)
         command(["git", "-C", str(root), "push", "--mirror", private_url], timeout=900)
         command(["gh", "repo", "edit", private_repo(product), "--default-branch", "main"], timeout=300)
         for topic in metadata.get("topics", []):
             command(["gh", "repo", "edit", private_repo(product), "--add-topic", topic], timeout=300)
-        _assert_private_mirror_refs(product, old_refs["refs"])
+        _assert_private_mirror_refs(product, source_refs)
         _set_release_secret_from_file(product)
         private_sha = _install_private_ci(product, root, first_tag)
         _set_repo_actions_enabled(product, True)
