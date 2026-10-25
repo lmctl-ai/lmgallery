@@ -127,7 +127,7 @@ def check(network=False):
         # One composition generates a second self-executing LMS program from
         # computed data. Its quoted bindings still belong in the host inventory.
         bindings = source.replace('\\"', '"')
-        bound = set(re.findall(r'cli="([a-z]+)"', bindings))
+        bound = set(re.findall(r'cli="([a-z]+)(?: [a-z]+)?"', bindings))
         assert len(bound) >= 2 and bound == set(e["hosts"]), f"host chain mismatch: {e['file']}"
         for host in bound:
             assert f'install="github:lmctl-ai/{host}@' in bindings, f"missing install binding: {host}"
