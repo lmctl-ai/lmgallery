@@ -22,7 +22,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#science-report-damping-recovered-from-simulated-peaks"><img src="../docs/images/showcase-31-science-report.png" width="400" alt="Science report: damping recovered from simulated peaks"></a><br>Science report: damping recovered from simulated peaks | <a href="#annual-revenue-bars-with-currency-ticks"><img src="../docs/images/showcase-32-revenue-bars.png" width="400" alt="Annual revenue bars with currency ticks"></a><br>Annual revenue bars with currency ticks |
 | <a href="#standing-waves-on-a-membrane-animated"><img src="../docs/images/showcase-33-wave-2d.png" width="400" alt="Standing waves on a membrane, animated"></a><br>Standing waves on a membrane, animated | <a href="#image-pipeline-with-a-before/after-contact-sheet"><img src="../docs/images/showcase-34-image-pipeline.png" width="400" alt="Image pipeline with a before/after contact sheet"></a><br>Image pipeline with a before/after contact sheet |
 | <a href="#rates-and-options-desk-pack-curve-option-table-and-memo"><img src="../docs/images/showcase-35-rates-options.png" width="400" alt="Rates and options desk pack: curve, option table and memo"></a><br>Rates and options desk pack: curve, option table and memo | <a href="#html-link-check-report-with-a-terminal-picture"><img src="../docs/images/showcase-36-link-check.png" width="400" alt="HTML link-check report with a terminal picture"></a><br>HTML link-check report with a terminal picture |
-| <a href="#certificate-inventory-from-lmssl"><img src="../docs/images/showcase-37-cert-inventory.png" width="400" alt="Certificate inventory from lmssl"></a><br>Certificate inventory from lmssl | |
+| <a href="#certificate-inventory-from-lmssl"><img src="../docs/images/showcase-37-cert-inventory.png" width="400" alt="Certificate inventory from lmssl"></a><br>Certificate inventory from lmssl | <a href="#product-slide-with-a-lmmagnum-3d-render"><img src="../docs/images/showcase-38-product-render.png" width="400" alt="Product slide with a lmmagnum 3D render"></a><br>Product slide with a lmmagnum 3D render |
 
 ## Damped oscillator dashboard
 
@@ -392,4 +392,14 @@ Hosts: lmssl → lmvideo → lmoffice. Output: `images/showcase-37-cert-inventor
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/37-cert-inventory-docx.lms
+```
+
+## Product slide with a lmmagnum 3D render
+
+lmmagnum builds a sensor housing from primitives (box body, teal cap, lens, mounting rings), lights it and renders a 900 x 540 PNG; lmoffice places the render on a product slide with the specification bullets and speaker notes. The picture is a LibreOffice render of the slide.
+
+Hosts: lmmagnum → lmoffice. Output: `images/showcase-38-product-render.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/38-product-render-slide.lms
 ```

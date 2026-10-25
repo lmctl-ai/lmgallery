@@ -415,5 +415,16 @@
     ],
     "output": "images/showcase-37-cert-inventory.png",
     "image": "docs/images/showcase-37-cert-inventory.png"
+  },
+  {
+    "file": "examples/38-product-render-slide.lms",
+    "title": "Product slide with a lmmagnum 3D render",
+    "description": "lmmagnum builds a sensor housing from primitives (box body, teal cap, lens, mounting rings), lights it and renders a 900 x 540 PNG; lmoffice places the render on a product slide with the specification bullets and speaker notes. The picture is a LibreOffice render of the slide.",
+    "hosts": [
+      "lmmagnum",
+      "lmoffice"
+    ],
+    "output": "images/showcase-38-product-render.png",
+    "image": "docs/images/showcase-38-product-render.png"
   }
 ]
