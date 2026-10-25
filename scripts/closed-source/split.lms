@@ -1,0 +1,172 @@
+# Dry-run planner for the closed-source peer-repository model.
+# This script only reads product repositories and prints a plan. It never
+# copies, removes, edits, commits, pushes, or changes GitHub settings.
+
+fn public_file(path, product) {
+  let name = basename(path);
+  if (path == "README.md" || path == "LICENSE" || path == "LICENSE-binaries") { return true; }
+  if (starts_with(path, "docs/") || starts_with(path, "examples/")) { return true; }
+  if (starts_with(path, "images/") || starts_with(path, "licenses/")) { return true; }
+  if (starts_with(name, "THIRD_PARTY_NOTICES") || starts_with(name, "COPYING") || starts_with(name, "NOTICE")) { return true; }
+  if (starts_with(path, "assets/fonts/") && (starts_with(name, "LICENSE") || starts_with(name, "OFL"))) { return true; }
+  if (product == "lmplot" && starts_with(path, "patches/")) { return true; }
+  return false;
+}
+
+fn text_file(path) {
+  return ends_with(path, ".md") || ends_with(path, ".lms") || ends_with(path, ".txt") || ends_with(path, ".json") || ends_with(path, ".svg") || ends_with(path, ".html") || ends_with(path, ".xml") || ends_with(path, ".yml") || ends_with(path, ".yaml") || ends_with(path, ".toml");
+}
+
+fn secret_path(path) {
+  let n = lower(basename(path));
+  return n == ".env" || starts_with(n, ".env.") || n == ".npmrc" || contains(n, "credentials") || contains(n, "private-key") || ends_with(n, ".pem") || ends_with(n, ".p12") || ends_with(n, ".pfx");
+}
+
+let products = ["lmdraw", "lmvideo", "lmaudio", "lmoffice", "lmcad", "lmblender", "lmmagnum", "lmfilament", "lmplot", "lmimg", "lmpdf"];
+let product = "";
+let apply_requested = false;
+let owner_flag = false;
+for (arg in ARGV) {
+  if (arg == "--apply") { apply_requested = true; }
+  else if (arg == "--dry-run") { }
+  else if (arg == "--i-have-owner-approval") { owner_flag = true; }
+  else if (starts_with(arg, "--")) { error("unknown option: " + arg); }
+  else if (product == "") { product = arg; }
+  else { error("unexpected argument: " + arg); }
+}
+assert(product != "", "usage: lmscript scripts/closed-source/split.lms PRODUCT [--dry-run | --apply --i-have-owner-approval]");
+assert(contains(products, product), "unknown candidate product: " + product);
+assert(!(apply_requested && contains(ARGV, "--dry-run")), "choose either --dry-run or --apply");
+
+if (apply_requested) {
+  assert(owner_flag, "REFUSED: --apply requires explicit --i-have-owner-approval");
+  let home = getenv("HOME", "");
+  assert(home != "", "REFUSED: HOME is unavailable");
+  let approval = path_join(home, "tools", "closed-source-approved.txt");
+  assert(file_exists(approval), "REFUSED: approval file missing: " + approval);
+  assert(contains(read_lines(approval), product), "REFUSED: approval file does not list " + product);
+  error("REFUSED: apply operations are intentionally not implemented in this dry-run-only planner");
+}
+
+let repo = "/home/mma/repos/dsl/" + product;
+if (product == "lmvideo") { repo = "/home/mma/repos/lmctlhq/lmvideo"; }
+let top = system(["git", "-C", repo, "rev-parse", "--show-toplevel"]);
+assert(top.code == 0, "not a Git repository: " + repo + " (" + top.stderr + ")");
+let revision_result = system(["git", "-C", repo, "rev-parse", "HEAD"]);
+assert(revision_result.code == 0, "cannot read HEAD in " + repo);
+let revision = trim(revision_result.stdout);
+let listing = system(["git", "-C", repo, "ls-files"]);
+assert(listing.code == 0, "cannot list tracked files in " + repo);
+let all_files = sort(lines(listing.stdout));
+let public_files = [];
+let private_files = [];
+for (path in all_files) {
+  if (public_file(path, product)) { push(public_files, path); }
+  else { push(private_files, path); }
+}
+
+let readme_path = path_join(repo, "README.md");
+let readme_lines = [];
+if (file_exists(readme_path)) { readme_lines = read_lines(readme_path); }
+let autorun_count = 0;
+let autorun_ok = 0;
+let autorun_bad = [];
+for (line in readme_lines) {
+  if (contains(lower(line), "lmctl autorun")) {
+    let urls = regex_find_all(line, "https://raw\\.githubusercontent\\.com/[^ \\t\\r\\n<>`]+");
+    for (match in urls) {
+      let url = match[0];
+      let clean = regex_replace(url, "[),.;]+$", "");
+      let parts = split(clean, "/");
+      if (len(parts) >= 7) {
+        let target = join(slice(parts, 6), "/");
+        target = regex_replace(target, "[?#].*$", "");
+        autorun_count = autorun_count + 1;
+        if (contains(public_files, target) && ends_with(target, ".lms")) { autorun_ok = autorun_ok + 1; }
+        else { push(autorun_bad, target); }
+      }
+    }
+  }
+}
+
+let source_ref_pattern = "\\]\\([^)]*(src|cpp|schema|tests|scripts|[.]github)/[^)]*\\)|https?://github[.]com/[^/]+/[^/]+/(blob|tree)/[^/]+/(src|cpp|schema|tests|scripts|[.]github)/";
+let source_refs = [];
+for (path in public_files) {
+  if (path == "README.md" || (starts_with(path, "docs/") && ends_with(path, ".md"))) {
+    let doc_lines = read_lines(path_join(repo, path));
+    for (i in range(0, len(doc_lines))) {
+      let matches = regex_find_all(doc_lines[i], source_ref_pattern, "i");
+      for (match in matches) { push(source_refs, path + ":" + str(i + 1) + " -> " + match[0]); }
+    }
+  }
+}
+
+let secret_findings = [];
+let token_patterns = ["gh[pousr]_[a-z0-9]{30,}", "github_pat_[a-z0-9_]{30,}", "akia[a-z0-9]{16}", "-----begin [a-z ]*private key-----", "(api[_-]?key|access[_-]?token|client[_-]?secret|password)[\"']?\\s*[:=]\\s*[\"'][a-z0-9_./+=-]{20,}[\"']"];
+for (path in public_files) {
+  if (secret_path(path)) { push(secret_findings, path + " (sensitive filename)"); }
+  else if (text_file(path)) {
+    let content = read_file(path_join(repo, path));
+    for (pattern in token_patterns) {
+      if (regex_test(lower(content), pattern)) { push(secret_findings, path); break; }
+    }
+  }
+}
+
+let ci_files = [];
+for (path in all_files) { if (starts_with(path, ".github/workflows/")) { push(ci_files, path); } }
+let license_note = "Carry the current THIRD_PARTY_NOTICES*, applicable full license texts, and LICENSE-binaries (owner-approved text); re-check the product licensing table before release.";
+if (product == "lmdraw") { license_note = "Ship LICENSE, THIRD_PARTY_NOTICES, licenses/*.txt, Noto Sans/Noto Sans Math OFL texts and the existing source archive; keep LunaSVG/PlutoVG MIT, FreeType FTL, stb notices, and runtime license texts."; }
+if (product == "lmvideo") { license_note = "Ship LICENSE, THIRD_PARTY_NOTICES.md, licenses/*, DejaVu font license, Skia BSD-3-Clause, ICU, Expat, libjpeg/IJG, libpng, zlib, HarfBuzz, libwebp and FreeType FTL texts. FFmpeg is a user-selected external process, not bundled."; }
+if (product == "lmaudio") { license_note = "Ship LICENSE and full THIRD_PARTY_NOTICES. Preserve MIT notices for DaisySP, Soundpipe's selected modules, lmcode-cpp and the listed BSD-3-Clause KissFFT/MT19937 texts; do not include the excluded Csound/GPL Soundpipe modules."; }
+if (product == "lmoffice") { license_note = "Ship LICENSE, THIRD_PARTY_NOTICES.md, Open XML SDK/System.IO.Packaging MIT notices, .NET 8 runtime component notices, lmcode-csharp MIT notice, and LICENSE-binaries separately."; }
+if (product == "lmcad") { license_note = "Ship THIRD_PARTY_NOTICES.md and exact license texts. Linux artifacts must retain OCCT LGPL-2.1 + Open CASCADE exception, OCCT relink objects/command/recipe, glibc LGPL materials and GCC exception materials; also build123d Apache-2.0 NOTICE and PyVista MIT."; }
+if (product == "lmblender") { license_note = "The combined binary is GPL-3.0-or-later, so it cannot be represented as a closed-source binary. Every release must keep LICENSE, THIRD_PARTY_NOTICES, full source asset lmblender-source-vX.Y.Z.tar.gz, SOURCE_OFFER.md, SOURCES.json, RELINKING docs and all linked-component license texts."; }
+if (product == "lmmagnum") { license_note = "Ship LICENSE, THIRD_PARTY_NOTICES.md, Magnum and Corrade MIT COPYING files, stb notice, lmcode-cpp notice, and platform runtime license texts; Linux static glibc remains LGPL-2.1+."; }
+if (product == "lmfilament") { license_note = "Ship LICENSE, THIRD_PARTY_NOTICES.md, FILAMENT-LICENSE, all pinned Filament third-party notices, LLVM exception/runtime texts and Linux glibc LGPL materials."; }
+if (product == "lmplot") { license_note = "Ship LICENSE, THIRD_PARTY_NOTICES, gnuplot's exact license text and every modified-source patch with binaries, preserve gnuplot version/contact markings, DejaVu font notices and runtime license texts."; }
+if (product == "lmimg") { license_note = "Ship LICENSE, THIRD_PARTY_NOTICES, ImageMagick NOTICE, IJG README/license/attribution, chosen stb license, Apache-2.0 Roboto, SDK MIT and platform runtime texts; no GPL delegates are linked."; }
+if (product == "lmpdf") { license_note = "Ship LICENSE and generated THIRD_PARTY_NOTICES.md, every pinned crate/font license text and font attribution/hash inventory, plus Rust target runtime notices; its policy denies GPL/AGPL-only components."; }
+
+println("# Closed-source split dry-run: " + product);
+println("");
+println("- Source repo: `" + repo + "`");
+println("- Source revision: `" + revision + "`");
+println("- Private peer target: `lmctlhq/" + product + "` (create/copy only after owner approval)");
+println("- Public peer target: `lmctl-ai/" + product + "` (preserve the existing public URL)");
+println("");
+println("## Exact tracked-file plan");
+println("");
+println("### Public peer (`lmctl-ai/" + product + "`): " + str(len(public_files)) + " tracked files");
+for (path in public_files) { println("- `" + path + "`"); }
+println("- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)");
+println("");
+println("### Private peer (`lmctlhq/" + product + "`): " + str(len(private_files)) + " tracked files");
+for (path in private_files) { println("- `" + path + "`"); }
+println("");
+println("## Required path and release changes");
+println("");
+println("- README-relative image/docs/example paths stay byte-for-byte at their current paths in the public peer.");
+println("- Raw autorun links checked: " + str(autorun_ok) + "/" + str(autorun_count) + " map to public `.lms` files.");
+if (autorun_count == 0) { println("  - No README `lmctl autorun` raw URLs were found."); }
+if (len(autorun_bad) > 0) { for (path in autorun_bad) { println("  - MISSING PUBLIC AUTORUN TARGET: `" + path + "`"); } }
+println("- Existing CI workflow paths move to the private peer; replace them with the private CI template and add public `.github/workflows/public-ci.yml`.");
+if (len(ci_files) == 0) { println("  - No tracked `.github/workflows/` files found."); }
+else { for (path in ci_files) { println("  - Private CI path: `" + path + "`"); } }
+println("- Expected public release assets: `" + product + "-linux-x64`, `" + product + "-linux-arm64`, `" + product + "-macos-x64`, `" + product + "-macos-arm64`, `" + product + "-windows-x64.exe`, plus `SHA256SUMS`.");
+println("- README links to private source paths checked: " + str(len(source_refs)) + " finding(s).");
+for (finding in source_refs) { println("  - SOURCE REFERENCE TO REVIEW: `" + finding + "`"); }
+println("- Public-plan secret scan: " + str(len(secret_findings)) + " finding(s); values are never printed.");
+for (finding in secret_findings) { println("  - SECRET REVIEW: `" + finding + "`"); }
+println("- Licensing: " + license_note);
+println("");
+println("## Verification result");
+println("");
+if (autorun_count == autorun_ok && len(autorun_bad) == 0) { println("- Autorun path check: PASS"); }
+else { println("- Autorun path check: REVIEW REQUIRED"); }
+if (len(source_refs) == 0) { println("- Public docs source-reference check: PASS"); }
+else { println("- Public docs source-reference check: REVIEW REQUIRED"); }
+if (len(secret_findings) == 0) { println("- Public-plan secret scan: PASS"); }
+else { println("- Public-plan secret scan: REVIEW REQUIRED"); }
+println("");
+println("This is a read-only plan. No files were copied or changed, no GitHub operation was performed, and no visibility was changed.");
