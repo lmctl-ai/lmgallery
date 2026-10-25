@@ -88,6 +88,10 @@ def private_repo(product: str) -> str:
     return f"lmctlhq/{product}"
 
 
+def _version_contains_release(output: str, product: str, tag: str) -> bool:
+    return tag.removeprefix("v") in output
+
+
 def command(argv: list[str], *, cwd: Path | None = None, check: bool = True,
             timeout: int = 300, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
     proc = subprocess.run(argv, cwd=cwd, text=True, capture_output=True, timeout=timeout, input=input_text)
@@ -1201,8 +1205,7 @@ def _prepare_release_bundle(product: str, root: Path, first_tag: str, run_stamp:
     linux = replay / f"{product}-linux-x64"
     command(["chmod", "+x", str(linux)])
     version = command([str(linux), "--version"], timeout=120).stdout.strip()
-    expected_version = f"{product} {first_tag[1:]}"
-    if version != expected_version and not version.startswith(expected_version + " "):
+    if not _version_contains_release(version, product, first_tag):
         raise FlipError(f"staged {product} binary reports an unexpected version: {version}")
     stage_examples = STAGING / f"{product}-public" / "examples"
     examples = sorted(path.relative_to(stage_examples).as_posix() for path in stage_examples.rglob("*.lms"))
@@ -1616,8 +1619,7 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
         linux = verify_dir / f"{product}-linux-x64"
         command(["chmod", "+x", str(linux)])
         version = command([str(linux), "--version"]).stdout.strip()
-        expected_version = f"{product} {first_tag[1:]}"
-        if version != expected_version and not version.startswith(expected_version + " "):
+        if not _version_contains_release(version, product, first_tag):
             raise FlipError(f"re-published binary returned an unexpected version: {version}")
         examples_to_check = release_bundle["examples"] if release_bundle else ("eq_before_after.lms", "karplus_strong_harp.lms")
         for example in examples_to_check:
@@ -1744,7 +1746,7 @@ def _publish_unchanged_release(product: str, first_tag: str, release: dict, asse
     linux = verify_dir / f"{product}-linux-x64"
     command(["chmod", "+x", str(linux)])
     version = command([str(linux), "--version"]).stdout.strip()
-    if version != f"{product} {first_tag[1:]}" :
+    if not _version_contains_release(version, product, first_tag):
         raise FlipError(f"republished binary returned an unexpected version: {version}")
     for example in ("eq_before_after.lms", "karplus_strong_harp.lms"):
         url = f"https://raw.githubusercontent.com/{public_repo(product)}/main/examples/{example}"

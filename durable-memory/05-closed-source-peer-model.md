@@ -36,6 +36,18 @@ material.
 
 ## Private CI and release publication
 
+### Actions budget
+
+On 2026-10-25 the `lmctlhq` organization exhausted its GitHub Actions budget.
+Actions are disabled at the repository level for all nine private peers
+(`lmaudio`, `lmmagnum`, `lmimg`, `lmcad`, `lmfilament`, `lmdraw`, `lmvideo`,
+`lmoffice`, and `lmpdf`) using the repository Actions permissions API. This
+prevents push, tag, and dispatch workflows from starting while the budget is
+unavailable. Re-enable a peer only after the owner confirms budget availability
+and a specific build or release is needed. Public example/content CI remains
+enabled. The lmfilament publish-token test already passed as run
+`40234775880`; its retry reuses that result without starting private Actions.
+
 On each main push, private CI runs a Linux-only fast job. The full platform
 build/package matrix runs only on `workflow_dispatch` or a version tag: five
 platforms where supported and four for lmvideo. Do not expose `RELEASE_TOKEN` to
