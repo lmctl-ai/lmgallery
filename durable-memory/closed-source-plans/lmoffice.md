@@ -337,3 +337,9 @@ Reasons: the .NET runtime notice bundle is missing; the staged notices carry pla
 2. Quiesce main pushes and the release pipeline; the first tag and `RELEASE_TOKEN` are owner decisions.
 3. Install `scripts/release-to-public.sh` and the generated `lmoffice-private-ci.yml` into `lmctlhq/lmoffice`; the workflow has not been run.
 4. Pin rewrite to the first new tag (see the sed above).
+
+## Re-staging after the release-contents and notice fixes (2026-10-25, latest)
+
+- Source `origin/main` `0d7e76d` (notices, `global.json` SDK pin, UTF-8 notice check, LF attributes). Staged 186 files; boundary `v0.1.27` (latest tag). Release `v0.1.27` assets verify; its `THIRD_PARTY_NOTICES.md` is byte-identical to the source.
+- Verified: 90/90 autorun targets, 180 refs, no leaks; `lmscript --check` 90/90 and 90/90 executed with the released `lmoffice 0.1.27`.
+- Ready to flip: NO. Still open: quiesce `lmoffice` main and its release pipeline; owner selects the first public tag, approves `lmoffice` in `~/tools/closed-source-approved.txt` and provides `RELEASE_TOKEN`; install `scripts/release-to-public.sh` and the generated private CI in `lmctlhq/lmoffice` (not run); rewrite the 26 consumer pins to the first tag.

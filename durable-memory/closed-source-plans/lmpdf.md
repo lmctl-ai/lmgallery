@@ -550,3 +550,9 @@ Reasons: the Caladea licence classification is unresolved; the release contents 
 2. Quiesce main pushes and the release pipeline (releases on every main push).
 3. Install `scripts/release-to-public.sh` and the generated `lmpdf-private-ci.yml` into `lmctlhq/lmpdf`; not run.
 4. Owner: first public tag and `RELEASE_TOKEN`; then pin rewrite (sed in the plan above).
+
+## Re-staging after the release-contents and notice fixes (2026-10-25, latest)
+
+- Source `origin/main` `60e062d` (release assembly without evidence JSON; font licence check; corrected Caladea wording). Staged 86 files; boundary `v0.1.62` (latest tag). Release `v0.1.62` contains exactly the five binaries, `SHA256SUMS`, `LICENSE` and `THIRD_PARTY_NOTICES.md`; its notice is byte-identical to the source.
+- Verified: no leaks, 76 refs; `lmscript --check` 8/8 and 8/8 executed with the released `lmpdf 0.1.62`.
+- Ready to flip: NO. Still open: quiesce `lmpdf` main (it releases on every push); owner selects the first public tag, approves `lmpdf` and provides `RELEASE_TOKEN`; install `scripts/release-to-public.sh` and the generated private CI in `lmctlhq/lmpdf` (not run); rewrite the consumer pins.
