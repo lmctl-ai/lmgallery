@@ -26,7 +26,7 @@ savedsl(render, "build/product-render.dslb");
 r = system(concat(dsl_cli(render), ["--dsl", "build/product-render.dslb"]), 600000);
 assert(r.code == 0, r.stdout + r.stderr);
 
-deck = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+deck = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.27";
 let slides = office.pptx("build/product-slide.pptx");
 let s1 = slides.slide();
 s1.title("Sensor housing SH-120: specification");

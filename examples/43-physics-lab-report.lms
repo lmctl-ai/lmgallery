@@ -56,7 +56,7 @@ The measured friction coefficient agrees with the value the model was given to w
 """;
 
 # Lab report (lmoffice): the Markdown body is built above; the limitations are a heredoc.
-report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";
+report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.27";
 let limits = <<~MD;
   ## Limitations
 

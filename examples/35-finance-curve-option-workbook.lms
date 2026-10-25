@@ -68,7 +68,7 @@ r = system(concat(dsl_cli(chart), ["--dsl", "build/rates-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Workbook: yield curve and option tables, formulas stored, native charts beside each table.
-book = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+book = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.27";
 let xl = office.xlsx("build/rates-and-options.xlsx");
 let curve_sheet = xl.sheet("Yield curve");
 curve_sheet.set(1, 1, "Tenor (years)").set(1, 2, "Zero rate").set(1, 3, "Discount factor");

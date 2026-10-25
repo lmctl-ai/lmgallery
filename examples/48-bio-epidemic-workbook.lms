@@ -42,7 +42,7 @@ assert(final_r > 0.9);
 # Workbook (lmoffice): the time series as typed values, one sheet; the summary is the second sheet.
 let series = read_file("build/sir.csv");
 let summary = "Quantity,Value\n" + sprintf("Basic reproduction number R0,%.3f\n", r0) + sprintf("Peak infected fraction,%.4f\n", peak_i) + sprintf("Day of peak,%.0f\n", peak_t) + sprintf("Final susceptible fraction,%.4f\n", final_s) + sprintf("Final recovered fraction,%.4f\n", final_r);
-workbook = _lmcode_ cli="lmoffice xlsx" install="github:lmctl-ai/lmoffice@v0.1.21";
+workbook = _lmcode_ cli="lmoffice xlsx" install="github:lmctl-ai/lmoffice@v0.1.27";
 let book = xlsx.create("build/sir-workbook.xlsx");
 book.sheet_from_csv("Time series", ${series});
 book.sheet_from_csv("Summary", ${summary});
@@ -69,7 +69,7 @@ Susceptible, infected and recovered fractions of one population. Infection is S 
 The workbook holds the 121 daily values of S, I and R (sheet Time series) and this summary (sheet Summary).
 """;
 
-report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";
+report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.27";
 let limits = <<~MD;
   ## Limits
 

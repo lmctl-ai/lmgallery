@@ -59,7 +59,7 @@ Satellite A, perigee 7000 km and apogee 15000 km from the centre of the Earth, p
 """;
 
 # Word plan (lmoffice).
-word = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";
+word = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.27";
 let doc = docx.create("build/observing-plan.docx");
 doc.markdown(${body}).save();
 end _lmcode_
@@ -97,7 +97,7 @@ Perigee 7000 km, apogee 15000 km; period about """ + sprintf("%.0f", period / 60
 
 Note: the satellite is 7000 km from the centre at perigee and 15000 km at apogee.
 """;
-deck = _lmcode_ cli="lmoffice pptx" install="github:lmctl-ai/lmoffice@v0.1.21";
+deck = _lmcode_ cli="lmoffice pptx" install="github:lmctl-ai/lmoffice@v0.1.27";
 let slides = pptx.create("build/observing-plan.pptx");
 slides.markdown(${deck_md}).save();
 end _lmcode_

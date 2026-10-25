@@ -84,7 +84,7 @@ A configuration of three terraform_data resources (api, db, cache) was applied w
 
 """ + sprintf("%d resource changed and %d resources unchanged; none was created or destroyed in the second apply.", changed, unchanged) + """
 """;
-report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.21";
+report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.27";
 let doc = docx.create("build/infra-change-report.docx");
 doc.markdown(${body}).save();
 end _lmcode_
