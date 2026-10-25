@@ -262,23 +262,17 @@ This is a read-only plan. No files were copied or changed, no GitHub operation w
 ## Staging results (2026-10-25, STAGING only; nothing flipped)
 
 - Staged from `origin/main` `9452958efb8a` (clean, pushed) into `/home/mma/staging/closed-source/lmdraw-public/`: 94 files, public CI `.github/workflows/public-ci.yml` included.
-- Release assets: latest `v0.2.5` downloaded to `lmdraw-release/` with `SHA256SUMS`; all five binaries (`lmdraw-linux-arm64`, `lmdraw-linux-x64`, `lmdraw-macos-arm64`, `lmdraw-macos-x64`, `lmdraw-windows-x64.exe`), `lmdraw-notices.tar.gz`, `LICENSE`, and `THIRD_PARTY_NOTICES` verify against `SHA256SUMS` (`sha256sum -c`).
-- Staged release metadata and notes: `release-metadata.json` and `release-notes.md` generated with the MIT boundary up to and including `v0.2.5`.
+- Release assets: latest `v0.2.6` (published 2026-10-25 from tag `v0.2.6` on `9452958`) downloaded to `lmdraw-release/` with `SHA256SUMS`; all five binaries (`lmdraw-linux-arm64`, `lmdraw-linux-x64`, `lmdraw-macos-arm64`, `lmdraw-macos-x64`, `lmdraw-windows-x64.exe`), `lmdraw-notices.tar.gz`, `LICENSE`, and `THIRD_PARTY_NOTICES` verify against `SHA256SUMS` (`sha256sum -c`).
+- Staged release metadata and notes: `release-metadata.json` and `release-notes.md` generated with the MIT boundary up to and including `v0.2.6`.
 - Verified: 28/28 README `lmctl autorun` targets exist in the staged tree; 30 local image/link refs resolve (28 README images present in `docs/images/`); no `/home/mma` path, no secret-like text, no private source/blob links.
 - Licensing notices: complete for binary (LunaSVG MIT, PlutoVG MIT, FreeType FTL, stb public-domain, bundled Noto Sans/Noto Sans Math SIL-OFL texts under `docs/third-party-licenses/assets/fonts/OFL.txt`, LGPL-2.1 dynamic glibc and static GCC runtime GPL+exception texts under `docs/third-party-licenses/`).
-- Staged `LICENSE` and `README.md` carry the boundary sentence: "Releases up to and including v0.2.5 were published under the MIT License (see the LICENSE asset of that release). Releases after v0.2.5 are published under the Lattice Systems Personal Use License (this file)."
+- Staged `LICENSE` and `README.md` carry the boundary sentence: "Releases up to and including v0.2.6 were published under the MIT License (see the LICENSE asset of that release). Releases after v0.2.6 are published under the Lattice Systems Personal Use License (this file)."
 
 ### Host execution and example check results
 
-- Verified with published release binary `lmdraw 0.2.5` on PATH:
-  - 28/38 examples pass `lmscript --check`.
-  - **10 diagram examples fail `lmscript --check`**: `architecture-layers.lms`, `decision-tree.lms`, `entity-relationship.lms`, `etl-pipeline.lms`, `flowchart-order-approval.lms`, `org-chart-grid.lms`, `sequence-oauth-refresh.lms`, `state-machines.lms`, `swimlane-process.lms`, `timeline-gantt.lms`.
-  - Failure root cause: Commit `58e1cf7` rewrote these ten diagram examples to call the host diagram API (`Scene.box`, `Scene.cluster`, `Scene.cylinder`, `Scene.diamond`, `Scene.note`, `Scene.connector`, and `Shape` type) added in commit `e6c71c1` (intended for release 0.2.6). However, `v0.2.6` was never released; the latest GitHub release remains `v0.2.5`.
-  - Verified with locally built HEAD binary (`lmdraw 0.2.6`): **All 38/38 examples pass `lmscript --check`!**
-
-### Release blocker
-
-A no-build replay of `v0.2.5` is blocked because 10 staged public diagram examples require the `0.2.6` host diagram API. A new release `v0.2.6` must be compiled and published from `origin/main` via the private CI workflow before the public repository can be flipped.
+- Verified with published release binary `lmdraw 0.2.6` on PATH:
+  - **All 38/38 examples pass `lmscript --check`!**
+  - Release `v0.2.6` includes the host diagram API building blocks (`Scene.box`, `Scene.cluster`, `Scene.cylinder`, `Scene.diamond`, `Scene.note`, `Scene.connector`, and `Shape` type from commit `e6c71c1`), successfully resolving the previous check failures seen on `v0.2.5`.
 
 ### Private CI
 
@@ -293,20 +287,20 @@ Staged at `/home/mma/staging/closed-source/lmdraw-private-ci.yml`, adapted from 
 
 - `/home/mma/repos/dsl/simulation/ROADMAP.md:62` — `| [lmdraw](https://github.com/lmctl-ai/lmdraw) | [v0.2.4](https://github.com/lmctl-ai/lmdraw/releases/tag/v0.2.4) | own 2D diagram renderer, PNG and numbered-frame GIF | MIT | 28 | 18 (17 PNG, 1 GIF) | v0.2.4: math/arrow glyph fallback, Scene.log_axes, Scene.legend |`
 
-After the first new tag `<FIRST_TAG>` (e.g. `v0.2.6`) is published:
+After the flip:
 
 ```bash
-sed -i -E 's|(github\.com/lmctl-ai/lmdraw/releases/tag/)v[0-9]+\.[0-9]+\.[0-9]+|\1<FIRST_TAG>|g; s|(github:lmctl-ai/lmdraw@)v[0-9]+\.[0-9]+\.[0-9]+|\1<FIRST_TAG>|g' /home/mma/repos/dsl/simulation/ROADMAP.md
+sed -i -E 's|(github\.com/lmctl-ai/lmdraw/releases/tag/)v[0-9]+\.[0-9]+\.[0-9]+|\1v0.2.6|g; s|(github:lmctl-ai/lmdraw@)v[0-9]+\.[0-9]+\.[0-9]+|\1v0.2.6|g' /home/mma/repos/dsl/simulation/ROADMAP.md
 ```
 
-### Quiesce and decisions before flip
+### Preflight before flip
 
-- No active `lmctl` team detected for `lmdraw`; working tree is clean and synced with `origin/main`.
+- No active `lmctl` team detected for `lmdraw`; working tree is clean and synced with `origin/main` at `9452958`.
+- Published `v0.2.6` release is verified across all 5 platforms.
 - Owner decisions:
-  1. Cut and publish `v0.2.6` to include the diagram building blocks needed by the public examples.
-  2. Approve `lmdraw` in `~/tools/closed-source-approved.txt`.
-  3. Provide `RELEASE_TOKEN` for the private CI workflow.
+  1. Approve `lmdraw` in `~/tools/closed-source-approved.txt`.
+  2. Provide `RELEASE_TOKEN` for the private CI workflow.
 
-### Ready to flip: NO
+### Ready to flip: YES (technically ready; pending owner approval & token)
 
-Reasons: The published release `v0.2.5` lacks the host diagram API, causing 10 staged public diagram examples to fail `lmscript --check`; `v0.2.6` must be built and released from HEAD; owner approval in `~/tools/closed-source-approved.txt` and `RELEASE_TOKEN` are pending.
+Reasons: All 38 public examples pass `lmscript --check` against published `v0.2.6`; full 5-platform binary release verified with SHA256SUMS; clean/synced tree; complete notice closure; 1 consumer pin and sed command ready; awaiting only owner approval in `closed-source-approved.txt` and `RELEASE_TOKEN`.

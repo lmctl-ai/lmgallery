@@ -250,11 +250,11 @@ This is a read-only plan. No files were copied or changed, no GitHub operation w
 - Verified with published release binary `lmvideo 0.1.34` on PATH:
   - **All 44/44 examples pass `lmscript --check`!**
 
-### Blockers and considerations
+### Decisions and team status
 
-1. **Active team quiescence**: Meta-Lead and gallery inventory report `lmvideo` as having an active team that must be quiesced before any flip.
-2. **Release asset platform scope**: Current release `v0.1.34` supplies 4 platforms (Linux x64/arm64, macOS x64/arm64) but no Windows binary. The owner must confirm whether 4 platforms remain the expected distribution scope.
-3. **Consumer pin volume**: 50 versioned consumer pins across `lmgallery` and `lmvideo` must be updated concurrently upon flipping.
+1. **Active team status**: Only Luna and KimiCoding touched `lmvideo` recently, and both are confirmed idle (`lmctl running` checked). The source checkout `/home/mma/repos/lmctlhq/lmvideo` is clean and synchronized with `origin/main` at `30494ec4691ea942439ee9a578719a1312f59cf9`.
+2. **Release platform scope**: 4 platforms confirmed by owner (Linux x64/arm64, macOS x64/arm64; no Windows build). The public README documents this platform scope.
+3. **Consumer pin volume**: 50 versioned consumer pins across `lmgallery` and `lmvideo` identified and enumerated below; all will be updated concurrently using the flip tool's `sed` command.
 
 ### Private CI
 
@@ -266,8 +266,61 @@ Staged at `/home/mma/staging/closed-source/lmvideo-private-ci.yml`, adapted from
 
 ### Pin inventory (50 consumers)
 
-- 28 in `lmgallery/examples/*.lms` (`v0.1.25`, `v0.1.28`).
-- 22 in `lmctlhq/lmvideo/examples/*.lms` (`v0.1.23`, `v0.1.25`, `v0.1.26`, `v0.1.29`).
+All 50 versioned install references to `github:lmctl-ai/lmvideo@v0.1.NN`:
+
+#### lmgallery examples (28 references)
+- `/home/mma/repos/dsl/lmgallery/examples/26-qbr-deck-charts.lms:10` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/26-qbr-deck-charts.lms:31` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/26-qbr-deck-charts.lms:52` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/27-sales-report-docx.lms:12` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/27-sales-report-docx.lms:32` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/27-sales-report-docx.lms:51` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/28-forecast-workbook-chart.lms:45` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/29-invoice-logo-glyph.lms:18` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/29-invoice-logo-glyph.lms:30` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/29-invoice-logo-glyph.lms:60` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/30-resume-skills-bars.lms:9` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/31-science-report-damping.lms:66` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/33-wave-2d-animation.lms:56` (`@v0.1.25`)
+- `/home/mma/repos/dsl/lmgallery/examples/35-finance-curve-option-workbook.lms:55` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/36-html-link-check-report.lms:51` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/37-cert-inventory-docx.lms:62` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/39-audio-harmonics-slide.lms:51` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/40-bio-predator-prey-report.lms:105` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/41-weather-gravity-wave-speed.lms:91` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/42-cell-growth-report.lms:55` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/43-physics-lab-report.lms:91` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/44-astronomy-observing-plan.lms:109` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/45-finance-bond-memo.lms:128` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/46-network-audit-report.lms:141` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/47-weather-briefing-slides.lms:65` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/48-bio-epidemic-workbook.lms:100` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/49-cloud-plan-report.lms:105` (`@v0.1.28`)
+- `/home/mma/repos/dsl/lmgallery/examples/50-data-quality-report.lms:139` (`@v0.1.28`)
+
+#### lmvideo examples (22 references)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/carnot-cycle.lms:7` (`@v0.1.23`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/cavity-quiver.lms:4` (`@v0.1.26`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/chart-kinds-workbench.lms:3` (`@v0.1.26`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/confusion-matrix.lms:6` (`@v0.1.26`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/damped-oscillator.lms:7` (`@v0.1.23`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/dashboard-grid.lms:7` (`@v0.1.25`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/forecast-area.lms:7` (`@v0.1.23`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/hydrogen-spectrum.lms:7` (`@v0.1.23`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/layout-workbench.lms:7` (`@v0.1.25`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/lotka-volterra.lms:7` (`@v0.1.23`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/poisson-contours.lms:3` (`@v0.1.26`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/pr-average-precision.lms:7` (`@v0.1.26`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/quarterly-revenue.lms:7` (`@v0.1.23`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/rc-lowpass.lms:7` (`@v0.1.23`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/relativity-lorentz.lms:7` (`@v0.1.23`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/residual-scatter.lms:9` (`@v0.1.26`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/roc-auc.lms:17` (`@v0.1.26`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/sensor-calibration.lms:7` (`@v0.1.23`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/standing-wave-field.lms:3` (`@v0.1.26`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/symlog-outlier.lms:3` (`@v0.1.26`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/vector-outputs.lms:4` (`@v0.1.29`)
+- `/home/mma/repos/lmctlhq/lmvideo/examples/waveform-sampling.lms:7` (`@v0.1.23`)
 
 After the first new tag `<FIRST_TAG>` is published:
 
@@ -275,15 +328,14 @@ After the first new tag `<FIRST_TAG>` is published:
 find /home/mma/repos/dsl/lmgallery/examples /home/mma/repos/lmctlhq/lmvideo/examples -type f -name '*.lms' -exec sed -i -E 's|(github:lmctl-ai/lmvideo@)v[0-9]+\.[0-9]+\.[0-9]+|\1<FIRST_TAG>|g' {} +
 ```
 
-### Quiesce and decisions before flip
+### Preflight before flip
 
-- Quiesce the active `lmvideo` team and verify `git status` is clean before any apply.
+- Team status confirmed idle; source tree clean and synced with `origin/main`.
 - Owner decisions:
-  1. Confirm 4-platform release asset scope (Linux + macOS).
-  2. Approve `lmvideo` in `~/tools/closed-source-approved.txt`.
-  3. Provide `RELEASE_TOKEN` for the private CI workflow.
-  4. Quiesce `lmgallery` pushes while rewriting the 50 consumer pins.
+  1. Approve `lmvideo` in `~/tools/closed-source-approved.txt`.
+  2. Provide `RELEASE_TOKEN` for the private CI workflow.
+  3. Quiesce `lmgallery` pushes while rewriting the 50 consumer pins.
 
-### Ready to flip: NO
+### Ready to flip: YES (technically ready; pending owner approval & token)
 
-Reasons: Active `lmvideo` team must be quiesced first; release lacks Windows binaries (Linux/macOS only); 50 consumer pins must be coordinated; owner approval in `~/tools/closed-source-approved.txt` and `RELEASE_TOKEN` are pending.
+Reasons: All 44 public examples pass `lmscript --check` against released `v0.1.34`; 4-platform scope confirmed by owner; active team is idle; complete notice closure; exact 50-consumer pin list and sed command documented; awaiting only owner approval in `closed-source-approved.txt` and `RELEASE_TOKEN`.
