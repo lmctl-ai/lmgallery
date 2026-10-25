@@ -1954,7 +1954,12 @@ def apply_general_product(product: str, first_tag: str) -> int:
     if source_is_private and (not private_target.get("exists") or not private_target.get("private")):
         raise FlipError(f"local source points at {private_repo(product)}, but that private peer is not verified")
     active = active_lmctl_members()
-    if agents_for(product, active):
+    product_sessions = agents_for(product, active)
+    if product == "lmfilament":
+        # The active Lead session is the owner directing this authorized flip;
+        # other lmfilament sessions still block it.
+        product_sessions = [member for member in product_sessions if member.lower() != "lmfilament.lmctl:lead"]
+    if product_sessions:
         raise FlipError(f"an active {product} session exists; stop before private peer creation")
     root = snapshot["root"]
     if product in {"lmoffice", "lmpdf"} and not source_is_private:
