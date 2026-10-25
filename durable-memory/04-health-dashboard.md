@@ -4,7 +4,7 @@
 
 ## Capabilities
 
-The tool audits all 33 repositories under `/home/mma/repos/dsl/` and `/home/mma/repos/lmctlhq/lmvideo`:
+The tool audits all 33 repositories under the local checkouts tree and sibling `lmvideo`:
 
 1. **Latest main CI status**:
    - Queries `gh run list` on the default `main` branch.

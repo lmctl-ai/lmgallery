@@ -85,10 +85,21 @@ def cyan(text):
   return color(text, '36')
 
 
+def get_repos_root():
+  return os.environ.get('LM_REPOS_ROOT') or os.path.dirname(
+      os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+  )
+
+
 def discover_repos(target_repo=None):
-  candidates = glob.glob('/home/mma/repos/dsl/lm*') + [
-      '/home/mma/repos/lmctlhq/lmvideo'
-  ]
+  repos_root = get_repos_root()
+  candidates = glob.glob(os.path.join(repos_root, 'lm*'))
+  for alt in [
+      os.path.join(repos_root, 'lmvideo'),
+      os.path.join(os.path.dirname(repos_root), 'lmctlhq', 'lmvideo'),
+  ]:
+    if os.path.isdir(alt) and alt not in candidates:
+      candidates.append(alt)
   repos = []
   for p in sorted(candidates):
     if not os.path.isdir(p):
@@ -404,12 +415,13 @@ def check_sdk_pin(repo_path, repo_name):
         'is_stale': False,
     }
 
+  repos_root = get_repos_root()
   if pinned_repo and 'lmcode-csharp' in pinned_repo:
-    target_repo_path = '/home/mma/repos/dsl/lmcode-csharp'
+    target_repo_path = os.path.join(repos_root, 'lmcode-csharp')
   elif pinned_repo and 'lmcode-java' in pinned_repo:
-    target_repo_path = '/home/mma/repos/dsl/lmcode-java'
+    target_repo_path = os.path.join(repos_root, 'lmcode-java')
   else:
-    target_repo_path = '/home/mma/repos/dsl/lmcode-cpp'
+    target_repo_path = os.path.join(repos_root, 'lmcode-cpp')
 
   behind = 0
   commit_exists = False
@@ -441,7 +453,7 @@ def check_sdk_pin(repo_path, repo_name):
   host_std_path = os.path.join(
       repo_path, 'cpp', 'std', 'lmcode-std.schema.json'
   )
-  cpp_std_path = '/home/mma/repos/dsl/lmcode-cpp/std/lmcode-std.schema.json'
+  cpp_std_path = os.path.join(repos_root, 'lmcode-cpp', 'std', 'lmcode-std.schema.json')
 
   if os.path.exists(host_std_path):
     if os.path.exists(cpp_std_path):
@@ -929,10 +941,13 @@ def fix_pins(results):
       )
   )
 
+  repos_root = get_repos_root()
+  cpp_dir = os.environ.get('LMCODE_CPP') or os.path.join(repos_root, 'lmcode-cpp')
+
   # Fetch origin in lmcode-cpp first
-  if os.path.exists('/home/mma/repos/dsl/lmcode-cpp'):
+  if os.path.exists(cpp_dir):
     subprocess.run(
-        ['git', '-C', '/home/mma/repos/dsl/lmcode-cpp', 'fetch', 'origin'],
+        ['git', '-C', cpp_dir, 'fetch', 'origin'],
         check=False,
     )
 
@@ -970,7 +985,7 @@ def fix_pins(results):
         ' behind)...'
     )
     env = os.environ.copy()
-    env['LMCODE_CPP'] = '/home/mma/repos/dsl/lmcode-cpp'
+    env['LMCODE_CPP'] = cpp_dir
 
     # Run sync
     p_sync = subprocess.run(

@@ -4,7 +4,7 @@ Date: 2026-10-24
 Auditor: Gemini Flash (part-time worker)
 
 ## Overview
-Comprehensive audit of demo-page health across all 31 `lmctl-ai` repositories (30 under `/home/mma/repos/dsl/lm*` and `/home/mma/repos/lmctlhq/lmvideo`).
+Comprehensive audit of demo-page health across all 31 `lmctl-ai` repositories (sibling checkouts under `.../dsl` and `.../lmvideo`).
 
 ## Audit Results
 

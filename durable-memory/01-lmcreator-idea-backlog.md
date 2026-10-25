@@ -1,13 +1,13 @@
 # lmcreator idea backlog: what to port into the lmctl-ai public hosts
 
-Survey of the private tool repo `lmcreator` (/home/mma/repos/lmctlhq/lmcreator, Bun/TS
-multi-format render + lint engine for LLM-authored visuals) mapped onto our public hosts
-(/home/mma/repos/dsl/*, org lmctl-ai). Purpose: mine its examples and design docs for
-ports. lmcreator was NOT modified; no secrets (LMCTL_KEY / lmsound) were copied.
+Survey of a private predecessor tool `lmcreator` (a multi-format render + lint engine
+for LLM-authored visuals) mapped onto our public hosts (`lmctl-ai` organization).
+Purpose: mine its examples and design docs for ports. The predecessor tool was NOT modified;
+no secrets were copied.
 
-Note on naming: lmcreator's binary/artifacts still carry the legacy name `lmvideo`;
-our public lmvideo lives at /home/mma/repos/lmctlhq/lmvideo (Skia 2D + SVG + video,
-currently growing a high-level Plot layer, "Luna") and is a different codebase.
+Note on naming: the predecessor tool's binary/artifacts carried the legacy name `lmvideo`;
+our public `lmvideo` repository (Skia 2D + SVG + video, currently growing a high-level
+Plot layer, "Luna") is a different codebase.
 
 Placement philosophy (owner refinement): NO hidden graph-layout engines (nothing like
 Graphviz/mermaid auto-placement that computes geometry the author never sees). In their
@@ -70,7 +70,7 @@ placement relative to a connector, and lifeline/message helpers that take coordi
 inside a managed container.
 
 Effort S = one example file with today's API, M = example needs one moderate feature,
-L = example needs a major feature. "Source" paths are under /home/mma/repos/lmctlhq/lmcreator.
+L = example needs a major feature. "Source" paths reference example patterns in the predecessor tool.
 
 | # | Source (lmcreator) | Target repo | What the picture shows | Missing API feature | Effort |
 |---|---|---|---|---|---|
