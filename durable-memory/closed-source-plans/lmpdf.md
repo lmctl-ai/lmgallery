@@ -494,3 +494,44 @@
 - Public-plan secret scan: PASS
 
 This is a read-only plan. No files were copied or changed, no GitHub operation was performed, and no visibility was changed.
+
+## Staging results (2026-10-25, STAGING only; nothing flipped)
+
+- Staged from `origin/main` `821ebce` (unchanged at staging time) into `/home/mma/staging/closed-source/lmpdf-public/`: 69 files, public CI included, 8 examples under `examples/`.
+- Release assets: latest `v0.1.60` downloaded to `lmpdf-release/` with `SHA256SUMS`; all five binaries verify. Three releases were published on 2026-10-25 (`v0.1.54`, `v0.1.57`, `v0.1.60`).
+- Verified: no README autorun lines (0 targets); 59 local image/link refs resolve; no `/home/` path, no secret-like text, no source/blob link.
+- Verified with the released binary `lmpdf 0.1.60` on PATH: `lmscript --check` 8/8 examples, and all 8 executed successfully.
+- Hand corrections in the staged tree (re-apply after any refresh):
+  1. `LICENSE` boundary sentence: releases up to and including `v0.1.60` are MIT; later releases use the Personal Use License (the tool hard-codes the lmaudio boundary).
+  2. `THIRD_PARTY_NOTICES.md`: the Apache-2.0 URL was rewritten by the sanitizer to `https://www.apache.org/docs/third-party-licenses/LICENSE-2.0`, which is not an Apache address; restored to `https://www.apache.org/licenses/LICENSE-2.0`. The sanitizer also replaced `scripts/generate-notices.py` with `private implementation detail`; that placeholder is harmless but should read as the generator's name or be removed.
+
+### Blockers
+
+1. **Font licence classification.** The notices classify the bundled `Caladea-*.ttf` as `SPDX-License-Identifier: Apache-2.0`, while `durable-memory/08-release.md` records that the upstream release is OFL-1.1 and that the bundled bytes declare Apache-2.0. The owner must decide the classification (or replace the bytes) before publishing. Do not infer the licence from the name.
+2. **Release contents differ.** The public release for `v0.1.60` includes build metrics, linkage reports and CI timing JSON. The closed-source template publishes only the five binaries, `SHA256SUMS`, `LICENSE` and notices. Decide which set is published.
+3. **Active pipeline.** Each `main` push creates a release (`package-release.py`). The private workflow must not publish on pushes; it publishes only on dispatch or tag.
+
+### Private CI
+
+Staged at `/home/mma/staging/closed-source/lmpdf-private-ci.yml`, adapted from the current `ci.yml` and `parity.yml`: fast Linux path on `main` (pins, notices, release regression tests, host/Markdown tests, linux-x64 musl build, signature parity, determinism, public examples on a `lmpdf` copy in a runner bin dir); five-platform build with measured budgets and linkage, replay, conformance and parity (parity reads the public release anonymously); version from the tag (`LMPDF_VERSION`), not `0.1.<run>`; publish via `RELEASE_TOKEN` and `scripts/release-to-public.sh`. Not run. It needs `scripts/release-to-public.sh` in `lmctlhq/lmpdf` (template in `scripts/closed-source/templates/release-to-public.sh`).
+
+### Pin inventory (8 consumers)
+
+- `lmgallery` examples 43, 44, 45, 46, 49, 50 (`cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54"`) and `lmgallery/durable-memory/05-document-as-code.md`.
+- `lmpdf/durable-memory/08-release.md` (a release link, historical, not a pin).
+
+After the first new tag `<FIRST>` is chosen:
+
+```sh
+cd /home/mma/repos/dsl/lmgallery && git ls-files -z | xargs -0 sed -i -E 's#(github:lmctl-ai/lmpdf)@v[0-9]+\.[0-9]+\.[0-9]+#\1@<FIRST>#g'
+```
+
+### Quiesce and decisions before flip
+
+- Stop pushes to `lmpdf` main and the release pipeline (three releases today). Re-check `origin/main` equals the staged SHA.
+- Owner: resolve the Caladea classification; choose the first public tag; approve `lmpdf` in `~/tools/closed-source-approved.txt`; provide `RELEASE_TOKEN`; choose the release contents.
+- Quiesce `lmgallery` pushes during the pin rewrite.
+
+### Ready to flip: NO
+
+Reasons: the Caladea licence classification is unresolved; the release contents are undecided; the release pipeline is active; the first tag and `RELEASE_TOKEN` are owner decisions.

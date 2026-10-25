@@ -284,3 +284,42 @@
 - Public-plan secret scan: PASS
 
 This is a read-only plan. No files were copied or changed, no GitHub operation was performed, and no visibility was changed.
+
+## Staging results (2026-10-25, STAGING only; nothing flipped)
+
+- Staged from `origin/main` `aa59d72` (unchanged at staging time) into `/home/mma/staging/closed-source/lmoffice-public/`: 186 files, public CI `.github/workflows/public-ci.yml` included.
+- Release assets: latest `v0.1.23` downloaded to `lmoffice-release/` with `SHA256SUMS`; all five binaries verify (`sha256sum -c`). `v0.1.22` and `v0.1.23` were both published on 2026-10-25, so the set moves.
+- Verified: 90/90 README `lmctl autorun` targets exist in the staged tree; 180 local image/link refs resolve; no `/home/` path, no secret-like text, no source/blob link.
+- Verified with the released binary `lmoffice 0.1.23` on PATH: `lmscript --check` 90/90 examples, and every example executed (90/90).
+- Hand corrections made in the staged tree (the tool does not generate these; re-apply after any refresh):
+  1. `LICENSE` gets the boundary sentence: releases up to and including `v0.1.23` are MIT; later releases use the Personal Use License. The tool hard-codes the lmaudio `v0.2.1` boundary, so this is not generated for lmoffice.
+  2. `THIRD_PARTY_NOTICES.md` line 3 said MIT under `LICENSE-examples`; corrected to the Personal Use License for binaries, MIT for examples/docs.
+  3. The sanitized notices still say `pinned by private build metadata` and `recorded in private implementation detail`. These are placeholders, not links; replace them with the lmoffice notice text (release asset version) before publishing.
+
+### Notices blocker
+
+lmoffice builds with `PublishAot=true` (`src/LmOffice/LmOffice.csproj`), so the .NET 8 runtime and its component licences are statically linked into the executable. The notices only link to the .NET runtime licence. Bundle the full third-party notice text for the runtime components (for example the `ThirdPartyNotices.txt` of the .NET 8.0 runtime release) under `docs/third-party-licenses/` before flip. lmoffice has no licensing notes file in `durable-memory/` to confirm the full closure.
+
+### Private CI
+
+Staged at `/home/mma/staging/closed-source/lmoffice-private-ci.yml`, adapted from the current `ci.yml`: Linux fast job on `main` pushes (build, `./test.sh`, public examples on the fresh host); five-platform NativeAOT matrix on dispatch or `v*` tag; version stamped from the tag (`scripts/stamp-version.sh <tag>`), not from the run number; publish job uses `RELEASE_TOKEN` and `scripts/release-to-public.sh`. Not run (no private push). It needs `scripts/release-to-public.sh` installed in `lmctlhq/lmoffice` (template at `scripts/closed-source/templates/release-to-public.sh`). Note the current `ci.yml` publishes a release on every main push with `GITHUB_TOKEN`; that must be removed in the flip.
+
+### Pin inventory (26 consumers)
+
+`lmgallery` examples 26–50 (`cli="lmoffice" ... @v0.1.8/@v0.1.9/@v0.1.21`). After the owner chooses the first new tag `<FIRST>`:
+
+```sh
+cd /home/mma/repos/dsl/lmgallery && git ls-files -z | xargs -0 sed -i -E 's#(github:lmctl-ai/lmoffice)@v[0-9]+\.[0-9]+\.[0-9]+#\1@<FIRST>#g'
+```
+
+Re-run `python3 scripts/closed-source/inventory-pins.py` to confirm zero old pins before the flip. Quiesce `lmgallery` pushes while this runs.
+
+### Quiesce and decisions before flip
+
+- Stop pushes to `lmoffice` main and the `v0.1.x` release pipeline (two releases today). Re-check `origin/main` equals the staged SHA.
+- Owner: choose the first public tag, approve `lmoffice` in `~/tools/closed-source-approved.txt`, provide `RELEASE_TOKEN`.
+- Decide the release contents: the five binaries, `SHA256SUMS`, `LICENSE`, `THIRD_PARTY_NOTICES.md` (template behaviour).
+
+### Ready to flip: NO
+
+Reasons: the .NET runtime notice bundle is missing; the staged notices carry placeholders; the LICENSE boundary is hand-patched and must be generated; the active release pipeline must be quiesced; the first tag and `RELEASE_TOKEN` are owner decisions.
