@@ -83,28 +83,69 @@ def sync_notices(stage, source):
 
 
 def split_fast_path(body):
-    """Clone the first job with a matrix include into a Linux-only push job; the original runs on dispatch or tag."""
+    """Keep one Linux x64 build on routine pushes and reserve the full platform set for releases/manual runs."""
     jobs = list(re.finditer(r"^  ([A-Za-z0-9_-]+):\n", body, re.M))
+    fast_gate = "github.event_name != 'workflow_dispatch' || inputs.publish_test != true"
+    full_gate = "(github.event_name == 'workflow_dispatch' && inputs.publish_test != true) || startsWith(github.ref, 'refs/tags/v')"
+    primary_name = ""
+
+    def set_condition(block, name, condition):
+        header = f"  {name}:\n"
+        found = re.search(r"^    if: (.*)$", block, re.M)
+        if found:
+            current = found.group(1).strip()
+            block = block[:found.start()] + f"    if: ({current}) && ({condition})" + block[found.end():]
+        else:
+            block = block.replace(header, header + f"    if: {condition}\n", 1)
+        return block
+
     for i, job in enumerate(jobs):
         end = jobs[i + 1].start() if i + 1 < len(jobs) else len(body)
         block = body[job.start():end]
         inc = re.search(r"^      matrix:\n        include:\n((?:          .*\n)+)", block, re.M)
-        if not inc:
-            continue
-        entries = inc.group(1).splitlines(keepends=True)
-        linux = [e for e in entries if "linux-x64" in e]
-        if not linux:
-            raise SystemExit(f"job {job.group(1)}: no linux-x64 matrix entry for the push-time fast path")
         name = job.group(1)
-        gate = "    if: (github.event_name == 'workflow_dispatch' && inputs.publish_test != true) || startsWith(github.ref, 'refs/tags/v')\n"
-        # Full matrix: explicit release dispatch or version tag only.
-        full = re.sub(r"^(  [A-Za-z0-9_-]+:\n)", lambda m: m.group(1) + gate, block, count=1, flags=re.M)
-        fast = block.replace(f"  {name}:\n", f"  {name}-fast:\n", 1)
-        fast = fast.replace(inc.group(1), "".join(linux), 1)
-        fast_gate = "    if: github.event_name == 'push' && github.ref == 'refs/heads/main'\n"
-        fast = re.sub(r"^(  [A-Za-z0-9_-]+:\n)", lambda m: m.group(1) + fast_gate, fast, count=1, flags=re.M)
-        return body[:job.start()] + fast + full + body[end:]
-    raise SystemExit("no job with a matrix include was found for the push-time fast path")
+        if inc:
+            primary_name = name
+            entries = inc.group(1).splitlines(keepends=True)
+            linux = [entry for entry in entries if "linux-x64" in entry]
+            if not linux:
+                raise SystemExit(f"job {name}: no linux-x64 matrix entry for the push-time fast path")
+            full = set_condition(block, name, full_gate)
+            fast = block.replace(f"  {name}:\n", f"  {name}-fast:\n", 1)
+            fast = fast.replace(inc.group(1), "".join(linux), 1)
+            fast = set_condition(fast, f"{name}-fast", fast_gate)
+            body = body[:job.start()] + fast + full + body[end:]
+            break
+    else:
+        linux_job = next((job for job in jobs if "linux-x64" in job.group(1).lower()), None)
+        if linux_job is None:
+            raise SystemExit("no linux-x64 matrix entry or named job was found for the push-time fast path")
+        start = linux_job.start()
+        primary_name = linux_job.group(1)
+        end = next((job.start() for job in jobs if job.start() > start), len(body))
+        block = body[start:end]
+        body = body[:start] + set_condition(block, linux_job.group(1), fast_gate) + body[end:]
+
+    # Gate every remaining runnable platform/build job. Cheap version/audit jobs
+    # may still run during publish_test; publish jobs use their own conditions.
+    jobs = list(re.finditer(r"^  ([A-Za-z0-9_-]+):\n", body, re.M))
+    changed = []
+    for i, job in enumerate(jobs):
+        name = job.group(1)
+        if name in {"version", "audit", "publish", "publish-test", primary_name} or name.endswith("-fast"):
+            continue
+        end = jobs[i + 1].start() if i + 1 < len(jobs) else len(body)
+        block = body[job.start():end]
+        if not re.search(r"^    runs-on:", block, re.M):
+            continue
+        # The primary Linux job is left available for push/PR checks.
+        if "linux-x64" in name.lower() or (name.endswith("-fast")):
+            continue
+        conditioned = set_condition(block, name, full_gate)
+        changed.append((job.start(), end, conditioned))
+    for start, end, replacement in reversed(changed):
+        body = body[:start] + replacement + body[end:]
+    return body
 
 
 def generate_private_ci(source, product, out):

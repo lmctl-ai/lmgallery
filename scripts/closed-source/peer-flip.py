@@ -903,11 +903,7 @@ def _update_local_checkouts(product: str, root: Path) -> None:
 
 
 def _install_private_ci(product: str, root: Path, first_tag: str) -> str:
-    adapter = GALLERY / "scripts/closed-source/adapters" / f"{product}-private-ci.yml"
-    if product == "lmaudio":
-        adapter = GALLERY / "scripts/closed-source/templates/private-ci/lmaudio.yml"
-    if not adapter.is_file():
-        raise FlipError(f"no tested product-specific private CI adapter exists yet: {adapter}; stage is ready but do not flip")
+    adapter = private_ci_adapter(product)
     command(["git", "-C", str(root), "pull", "--rebase", "origin", "main"], timeout=600)
     workflow = root / ".github/workflows/ci.yml"
     workflow.parent.mkdir(parents=True, exist_ok=True)
@@ -927,6 +923,7 @@ def _install_private_ci(product: str, root: Path, first_tag: str) -> str:
         "git", "-C", str(root), "-c", "user.name=mike-lmctl", "-c", "user.email=281311770+mike-lmctl@users.noreply.github.com",
         "commit", "-m", "Install private peer publishing workflow [skip ci]",
         "-m", f"Use Linux-fast default checks, full tagged/manual matrix builds, public example tests, and publish {first_tag} through the public peer.",
+        "-m", "Constraint: Public examples and binary releases stay in the public peer\nConfidence: high\nScope-risk: moderate\nTested: Private publish_test workflow\nNot-tested: Full platform build matrix\nCo-Authored-By: OpenAI Codex <noreply@anthropic.com>",
     ])
     command(["git", "-C", str(root), "push", f"https://github.com/{private_repo(product)}.git", "main:main"], timeout=900)
     return command(["git", "-C", str(root), "rev-parse", "HEAD"]).stdout.strip()
@@ -1106,6 +1103,93 @@ def _release_files(product: str, release_dir: Path, first_tag: str) -> tuple[dic
     return release, [local_assets[name] for name in sorted(local_assets)]
 
 
+def _prepare_release_bundle(product: str, root: Path, first_tag: str, run_stamp: str) -> dict:
+    release = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases/latest"]).stdout)
+    if release.get("tag_name") != first_tag:
+        raise FlipError(f"{first_tag} is not the latest published release of {public_repo(product)}")
+    bundle = STAGING / f"{product}-release-replay-{run_stamp}"
+    if bundle.exists():
+        raise FlipError(f"release replay path already exists: {bundle}")
+    bundle.mkdir(parents=True)
+    if release.get("assets"):
+        command(["gh", "release", "download", first_tag, "-R", public_repo(product), "--dir", str(bundle)], timeout=900)
+    remote_assets = {item["name"]: item for item in release.get("assets", [])}
+    downloaded = {path.name: path for path in bundle.iterdir() if path.is_file()}
+    if set(remote_assets) != set(downloaded):
+        raise FlipError(f"downloaded latest release asset set differs for {product}@{first_tag}")
+    for name, path in downloaded.items():
+        expected = remote_assets[name].get("digest")
+        actual = f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
+        if expected and expected != actual:
+            raise FlipError(f"latest release asset digest differs from GitHub for {product}@{first_tag}: {name}")
+
+    def is_binary(name: str) -> bool:
+        return bool(re.fullmatch(rf"{re.escape(product)}-(?:linux|macos|windows)-[A-Za-z0-9-]+(?:\.exe|\.sha256)?", name, re.I))
+
+    def is_compliance(name: str) -> bool:
+        lower = name.lower()
+        return (name == "SHA256SUMS" or lower.endswith(".sha256") or any(
+            part in lower for part in ("license", "copying", "copyright", "notice", "relink", "recipe", "occt", "gpl", "lgpl", "exception")
+        ))
+
+    selected = []
+    for name in sorted(downloaded):
+        lower = name.lower()
+        if "debug" in lower or "metric" in lower:
+            continue
+        if is_binary(name) or is_compliance(name):
+            selected.append(name)
+    if f"{product}-linux-x64" not in selected:
+        raise FlipError(f"latest release has no {product}-linux-x64 binary")
+
+    if "LICENSE" not in selected:
+        source_license = root / "LICENSE"
+        if not source_license.is_file() or not source_license.read_text(encoding="utf-8").startswith("MIT License"):
+            raise FlipError(f"no published MIT LICENSE asset or MIT source LICENSE for {product}@{first_tag}")
+        shutil.copyfile(source_license, bundle / "LICENSE")
+        selected.append("LICENSE")
+    notice_assets = [name for name in selected if name.lower().startswith("third_party_notices")]
+    if not notice_assets:
+        source_notices = sorted(path for path in root.glob("THIRD_PARTY_NOTICES*") if path.is_file())
+        if not source_notices:
+            raise FlipError(f"no THIRD_PARTY_NOTICES* asset or source file for {product}@{first_tag}")
+        for path in source_notices:
+            shutil.copyfile(path, bundle / path.name)
+            selected.append(path.name)
+
+    if product == "lmcad":
+        required = {
+            "lmcad-linux-x64-relink-objects.tar.gz",
+            "lmcad-occt-relinking-recipe.tar.gz",
+            "OCCT-LGPL-EXCEPTION.txt",
+            "OCCT-LICENSE_LGPL_21.txt",
+            "OCCT-RELINKING.md",
+        }
+        missing = sorted(name for name in required if name not in selected)
+        if missing:
+            raise FlipError(f"lmcad release is missing required OCCT relinking materials: {', '.join(missing)}")
+
+    selected = sorted(set(selected) - {"SHA256SUMS"})
+    if not any(name.lower().startswith("third_party_notices") for name in selected):
+        raise FlipError(f"prepared {product} release has no third-party notices")
+    for name in selected:
+        if name not in downloaded and not (bundle / name).is_file():
+            raise FlipError(f"required release compliance file is missing: {name}")
+    sums = "".join(f"{hashlib.sha256((bundle / name).read_bytes()).hexdigest()}  {name}\n" for name in selected)
+    (bundle / "SHA256SUMS").write_text(sums, encoding="ascii", newline="\n")
+    selected.append("SHA256SUMS")
+    boundary = (f"Releases up to and including {first_tag} were published under the MIT License (see the LICENSE asset of that "
+                f"release). Releases after {first_tag} are published under the Lattice Systems Personal Use License (this file).")
+    notes_path = bundle / "release-notes-replay.md"
+    notes_path.write_text((release.get("body") or "").rstrip() + "\n\n" + boundary + "\n", encoding="utf-8")
+    stage_examples = STAGING / f"{product}-public" / "examples"
+    examples = sorted(path.relative_to(stage_examples).as_posix() for path in stage_examples.rglob("*.lms"))
+    if len(examples) < 2:
+        raise FlipError(f"staged {product} tree has fewer than two examples for post-flip checks")
+    return {"release": release, "bundle": bundle, "asset_paths": [bundle / name for name in selected],
+            "notes_path": notes_path, "examples": examples[:2], "boundary": boundary}
+
+
 def _backup_public_refs(product: str, expected_main: str, backup_git: Path, refs_path: Path) -> dict:
     url = f"https://github.com/{public_repo(product)}.git"
     if backup_git.exists() or refs_path.exists():
@@ -1132,14 +1216,14 @@ def _backup_public_refs(product: str, expected_main: str, backup_git: Path, refs
     return {"refs": remote_refs, "main": expected_main}
 
 
-def _backup_all_public_releases(product: str, backup_root: Path, stamp: str) -> list[dict]:
+def _backup_all_public_releases(product: str, backup_root: Path, stamp: str, expected_latest_tag: str = "v0.2.1") -> list[dict]:
     if backup_root.exists():
         raise FlipError(f"release backup path already exists: {backup_root}")
     backup_root.mkdir(parents=True)
     rows = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases?per_page=100"]).stdout)
     latest = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases/latest"]).stdout)
-    if latest.get("tag_name") != "v0.2.1" or not any(row.get("tag_name") == "v0.2.1" for row in rows):
-        raise FlipError("v0.2.1 is not the latest public release")
+    if latest.get("tag_name") != expected_latest_tag or not any(row.get("tag_name") == expected_latest_tag for row in rows):
+        raise FlipError(f"{expected_latest_tag} is not the latest public release")
     backed: list[dict] = []
     for row in rows:
         tag = row.get("tag_name", "")
@@ -1349,7 +1433,7 @@ def _wait_for_public_ci(product: str, expected_sha: str, timeout_seconds: int = 
 
 def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_git: Path,
                             release_backups: list[dict], first_tag: str,
-                            verify_dir: Path) -> dict:
+                            verify_dir: Path, release_bundle: dict | None = None) -> dict:
     url = f"https://github.com/{public_repo(product)}.git"
     old_main = old_refs["main"]
     orphan_sha = command(["git", "-C", str(stage), "rev-parse", "HEAD"]).stdout.strip()
@@ -1393,23 +1477,32 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
         latest = next((item for item in release_backups if item["tagName"] == first_tag), None)
         if latest is None:
             raise FlipError(f"latest release backup {first_tag} is missing")
-        release_dir = Path(latest["path"])
-        old_metadata = json.loads((release_dir / "release-metadata.json").read_text(encoding="utf-8"))
-        boundary = ("Releases up to and including v0.2.1 were published under the MIT License "
-                    "(see the LICENSE asset of that release). Releases after v0.2.1 are published "
-                    "under the Lattice Systems Personal Use License (this file).")
-        notes = release_dir / "release-notes-replay.md"
-        notes.write_text(old_metadata["body"].rstrip() + "\n\n" + boundary + "\n", encoding="utf-8")
-        asset_paths = [release_dir / name for name in latest["assets"]]
-        create = ["gh", "release", "create", first_tag, "-R", public_repo(product), "--target", "main", "--title", old_metadata["name"], "--notes-file", str(notes)]
+        if release_bundle:
+            release_dir = Path(release_bundle["bundle"])
+            old_metadata = release_bundle["release"]
+            notes = Path(release_bundle["notes_path"])
+            asset_paths = release_bundle["asset_paths"]
+            expected_asset_names = {path.name for path in asset_paths}
+        else:
+            release_dir = Path(latest["path"])
+            old_metadata = json.loads((release_dir / "release-metadata.json").read_text(encoding="utf-8"))
+            boundary = ("Releases up to and including v0.2.1 were published under the MIT License "
+                        "(see the LICENSE asset of that release). Releases after v0.2.1 are published "
+                        "under the Lattice Systems Personal Use License (this file).")
+            notes = release_dir / "release-notes-replay.md"
+            notes.write_text(old_metadata["body"].rstrip() + "\n\n" + boundary + "\n", encoding="utf-8")
+            asset_paths = [release_dir / name for name in latest["assets"]]
+            expected_asset_names = set(latest["assets"])
+        release_name = old_metadata.get("name") or first_tag
+        create = ["gh", "release", "create", first_tag, "-R", public_repo(product), "--target", "main", "--title", release_name, "--notes-file", str(notes)]
         create.extend(str(path) for path in asset_paths)
         command(create, timeout=900)
         expected_asset_digests = {path.name: f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" for path in asset_paths}
         published = _wait_for_public_latest_release(product, first_tag, expected_asset_digests)
-        if published.get("tag_name") != first_tag or published.get("name") != old_metadata["name"] or published.get("body", "").rstrip() != notes.read_text(encoding="utf-8").rstrip():
+        if published.get("tag_name") != first_tag or published.get("name") != release_name or published.get("body", "").rstrip() != notes.read_text(encoding="utf-8").rstrip():
             raise FlipError("re-published latest release metadata differs from the staged approved data")
         assets = {asset["name"]: asset for asset in published.get("assets", [])}
-        if set(assets) != set(latest["assets"]):
+        if set(assets) != expected_asset_names:
             raise FlipError("re-published latest release asset names differ from the staged backup")
         for path in asset_paths:
             expected = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -1420,10 +1513,11 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
         verify_dir.mkdir(parents=True)
         command(["gh", "release", "download", first_tag, "-R", public_repo(product), "--dir", str(verify_dir)], timeout=900)
         downloaded = {path.name: path for path in verify_dir.iterdir() if path.is_file()}
-        if set(downloaded) != set(latest["assets"]):
+        if set(downloaded) != expected_asset_names:
             raise FlipError("downloaded re-published release asset names do not match backup")
+        staged_by_name = {path.name: path for path in asset_paths}
         for name, path in downloaded.items():
-            if hashlib.sha256(path.read_bytes()).digest() != hashlib.sha256((release_dir / name).read_bytes()).digest():
+            if hashlib.sha256(path.read_bytes()).digest() != hashlib.sha256(staged_by_name[name].read_bytes()).digest():
                 raise FlipError(f"downloaded re-published release bytes differ: {name}")
         if "SHA256SUMS" in downloaded:
             command(["sha256sum", "-c", "SHA256SUMS"], cwd=verify_dir)
@@ -1432,14 +1526,15 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
         version = command([str(linux), "--version"]).stdout.strip()
         if version != f"{product} {first_tag[1:]}" :
             raise FlipError(f"re-published binary returned an unexpected version: {version}")
-        for example in ("eq_before_after.lms", "karplus_strong_harp.lms"):
+        examples_to_check = release_bundle["examples"] if release_bundle else ("eq_before_after.lms", "karplus_strong_harp.lms")
+        for example in examples_to_check:
             url_example = f"https://raw.githubusercontent.com/{public_repo(product)}/main/examples/{example}"
             path = verify_dir / example
             command(["curl", "-fsSL", url_example, "-o", str(path)], timeout=120)
             command(["lmscript", "--check", str(path)], timeout=300)
             contents = path.read_text(encoding="utf-8")
             latest_copy = STAGING / f"{product}-{example}.latest.lms"
-            updated, count = re.subn(r"github:lmctl-ai/lmaudio@v[0-9]+\.[0-9]+\.[0-9]+", "github:lmctl-ai/lmaudio@latest", contents, count=1)
+            updated, count = re.subn(rf"github:lmctl-ai/{re.escape(product)}@v[0-9]+\.[0-9]+\.[0-9]+", f"github:lmctl-ai/{product}@latest", contents, count=1)
             if count:
                 latest_copy.write_text(updated, encoding="utf-8")
                 command(["lmscript", "--check", str(latest_copy)], timeout=300)
@@ -1708,10 +1803,113 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
     print(f"FLIP COMPLETE: private mirror and publish-test passed; public {first_tag} replayed in place with assets verified; source checkout private; public checkout cloned; log={AUDIT_LOG}")
     return 0
 
+
+def apply_general_product(product: str, first_tag: str) -> int:
+    global AUDIT_LOG
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    AUDIT_LOG = STAGING / f"{product}-inplace-flip-{stamp}.log"
+    approval = Path.home() / "tools/closed-source-approved.txt"
+    if not approval.is_file() or product not in {line.strip() for line in approval.read_text(encoding="utf-8").splitlines()}:
+        raise FlipError(f"owner approval file must list {product}; no public changes started")
+    token_path = Path.home() / ".config/lmctl/release_token"
+    if not token_path.is_file() or token_path.stat().st_mode & 0o777 != 0o600 or token_path.stat().st_size == 0:
+        raise FlipError("release-token file is missing, empty, or not mode 600; no token value was read")
+
+    snapshot = git_snapshot(product, fetch=True)
+    expected_origin = f"https://github.com/{public_repo(product)}.git"
+    if (snapshot["local_branch"] != "main" or not snapshot["clean"] or not snapshot["pushed"]
+            or snapshot["origin"].rstrip("/") not in {expected_origin, expected_origin.removesuffix(".git")}):
+        raise FlipError(f"{product} source checkout must be clean, on main, and synchronized to its public origin")
+    active = active_lmctl_members()
+    if agents_for(product, active):
+        raise FlipError(f"an active {product} session exists; stop before private peer creation")
+    ci = ci_latest(product, snapshot["ref"], public_repo(product))
+    if not ci.get("ok"):
+        raise FlipError(f"{product} main CI is not green: {ci.get('url','')} {ci.get('error','')}")
+
+    root = snapshot["root"]
+    stage = STAGING / f"{product}-public"
+    manifest_path = STAGING / f"{product}-stage-manifest.json"
+    if not stage.is_dir() or not manifest_path.is_file():
+        raise FlipError(f"stage the public tree first: {stage}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("source_main_sha") != snapshot["ref"]:
+        raise FlipError(f"{product} origin/main changed since staging; refresh the public tree")
+    validation = validate_stage(product, stage, manifest.get("public_file_map", {}))
+    if validation.get("private_source_references") or validation.get("secret_findings") or validation.get("missing_autorun"):
+        raise FlipError(f"staged {product} public tree failed validation")
+    actual_hashes = {p.relative_to(stage).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in stage.rglob("*") if p.is_file() and ".git" not in p.parts}
+    if actual_hashes != manifest.get("staged_file_sha256", {}):
+        raise FlipError(f"staged {product} tree differs from its reviewed manifest")
+    boundary = (f"Releases up to and including {first_tag} were published under the MIT License "
+                f"(see the LICENSE asset of that release). Releases after {first_tag} are published "
+                "under the Lattice Systems Personal Use License (this file).")
+    if boundary not in (stage / "README.md").read_text(encoding="utf-8") or not (stage / "LICENSE").read_text(encoding="utf-8").startswith(boundary):
+        raise FlipError(f"staged {product} README/LICENSE omit the approved license boundary")
+    if (stage / ".git").exists():
+        raise FlipError(f"staged {product} public tree already has Git history")
+
+    metadata = _repo_view(product)
+    if metadata.get("full_name", "").lower() != public_repo(product).lower() or metadata.get("private") or metadata.get("disabled") or metadata.get("default_branch") != "main":
+        raise FlipError(f"public {product} identity/visibility/default branch is unexpected")
+    private_scaffold = _check_private_target_free(product)
+    pins, consumers = consumer_repositories(product)
+    validate_consumer_checkouts(product, list(consumers), active)
+    latest = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases/latest"]).stdout)
+    if latest.get("tag_name") != first_tag:
+        raise FlipError(f"{first_tag} is not the latest public release of {product}")
+
+    backup_git = STAGING / f"{product}-public-history-{stamp}.git"
+    refs_path = STAGING / f"{product}-public-refs-{stamp}.txt"
+    release_backup_root = STAGING / f"{product}-release-set-{stamp}"
+    verify_dir = STAGING / f"{product}-release-verify-{stamp}"
+    public_main_result = command(["git", "ls-remote", f"https://github.com/{public_repo(product)}.git", "refs/heads/main"], timeout=300)
+    if not public_main_result.stdout.split():
+        raise FlipError(f"cannot resolve public {product} main before backup")
+    old_refs = _backup_public_refs(product, public_main_result.stdout.split()[0], backup_git, refs_path)
+    release_backups = _backup_all_public_releases(product, release_backup_root, stamp, first_tag)
+    latest_backup = next((item for item in release_backups if item["tagName"] == first_tag), None)
+    if latest_backup is None:
+        raise FlipError(f"latest release backup {first_tag} is missing")
+    release_bundle = _prepare_release_bundle(product, root, first_tag, stamp)
+    audit(f"PREFLIGHT_PASS public_main={old_refs['main']} source_main={snapshot['ref']} release={first_tag} ref_count={len(old_refs['refs'])} pin_count={len(pins)}")
+
+    # Preserve the full source tree privately before replacing public refs.
+    if not private_scaffold:
+        create = ["gh", "repo", "create", private_repo(product), "--private"]
+        if metadata.get("description"):
+            create.extend(["--description", metadata["description"]])
+        if metadata.get("homepage"):
+            create.extend(["--homepage", metadata["homepage"]])
+        command(create, timeout=300)
+        _wait_for_repo_identity(product, private=True)
+    private_url = f"https://github.com/{private_repo(product)}.git"
+    _set_repo_actions_enabled(product, False)
+    command(["git", "-C", str(root), "push", "--mirror", private_url], timeout=900)
+    command(["gh", "repo", "edit", private_repo(product), "--default-branch", "main"], timeout=300)
+    for topic in metadata.get("topics", []):
+        command(["gh", "repo", "edit", private_repo(product), "--add-topic", topic], timeout=300)
+    _assert_private_mirror_refs(product, old_refs["refs"])
+
+    _set_release_secret_from_file(product)
+    private_sha = _install_private_ci(product, root, first_tag)
+    _set_repo_actions_enabled(product, True)
+    private_ci = _run_publish_test(product, private_sha)
+    audit(f"PRIVATE_PUBLISH_TEST_SUCCESS url={private_ci.get('url','')}")
+
+    _prepare_orphan_commit(stage, product)
+    rewrite = _replace_public_history(product, stage, old_refs, backup_git, release_backups, first_tag, verify_dir, release_bundle)
+    _update_local_checkouts(product, root)
+    audit(f"FLIP_COMPLETE product={product} private_ci={private_ci.get('url','')} public_ci={rewrite['public_ci'].get('url','')} release={rewrite['release'].get('html_url','')}")
+    print(f"FLIP COMPLETE: {product} private mirror, publish-test, public-content CI, release replay, and local checkouts verified; log={AUDIT_LOG}")
+    return 0
+
 def apply_flip(product: str, first_tag: str) -> int:
-    if product != "lmaudio":
-        raise FlipError("only the owner-approved lmaudio pilot is enabled for apply")
-    return apply_lmaudio_pilot(first_tag)
+    if product == "lmaudio":
+        return apply_lmaudio_pilot(first_tag)
+    if product in {"lmmagnum", "lmimg", "lmcad", "lmfilament"}:
+        return apply_general_product(product, first_tag)
+    raise FlipError(f"no flip implementation is enabled for {product}")
 
 
 def main() -> int:

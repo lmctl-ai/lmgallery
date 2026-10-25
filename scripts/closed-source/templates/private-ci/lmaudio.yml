@@ -156,11 +156,11 @@ jobs:
           set -euo pipefail
           test -n "$GH_TOKEN"
           tag="lmctl-publish-test-${GITHUB_RUN_ID}"
-          cleanup() { gh release delete "$tag" -R lmctl-ai/lmaudio --yes --cleanup-tag >/dev/null 2>&1 || true; }
+          cleanup() { gh release delete "$tag" -R lmctl-ai/lmaudio --yes >/dev/null 2>&1 || true; }
           trap cleanup EXIT
           gh release create "$tag" -R lmctl-ai/lmaudio --draft --target main --title "$tag" --notes "Temporary release-token permission check."
           test "$(gh release view "$tag" -R lmctl-ai/lmaudio --json isDraft --jq .isDraft)" = true
-          gh release delete "$tag" -R lmctl-ai/lmaudio --yes --cleanup-tag
+          gh release delete "$tag" -R lmctl-ai/lmaudio --yes
           trap - EXIT
           if gh release view "$tag" -R lmctl-ai/lmaudio >/dev/null 2>&1; then
             echo "publish-test draft release still exists" >&2
