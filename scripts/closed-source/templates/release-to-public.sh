@@ -27,8 +27,15 @@ actual="$("$WORK/release/$PRODUCT-linux-x64" --version)"
 test "$actual" = "$PRODUCT ${TAG#v}" || { echo "tag $TAG does not match $actual" >&2; exit 1; }
 (cd "$WORK/release" && sha256sum "$PRODUCT"-* > SHA256SUMS)
 
+cat > "$WORK/release-notes.md" <<EOF
+Release $TAG for $PRODUCT.
+
+Binaries are licensed under the Lattice Systems Personal Use License in the public repository's LICENSE file. Examples and documentation are MIT-licensed under LICENSE-examples. Third-party components retain their own licenses and notices.
+EOF
+
 if gh release view "$TAG" -R "$PUBLIC_REPO" >/dev/null 2>&1; then
-  echo "release $TAG already exists in $PUBLIC_REPO; refusing to overwrite" >&2
-  exit 1
+  gh release edit "$TAG" -R "$PUBLIC_REPO" --title "$TAG" --notes-file "$WORK/release-notes.md"
+  gh release upload "$TAG" -R "$PUBLIC_REPO" "$WORK/release"/* --clobber
+else
+  gh release create "$TAG" -R "$PUBLIC_REPO" --target main --title "$TAG" --notes-file "$WORK/release-notes.md" "$WORK/release"/*
 fi
-gh release create "$TAG" -R "$PUBLIC_REPO" --target main --title "$TAG" --generate-notes "$WORK/release"/*

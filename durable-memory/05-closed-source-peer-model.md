@@ -191,6 +191,12 @@ for now. The examples/docs MIT license template is `templates/LICENSE-examples-M
 `lmblender` stays open source and is excluded because its Blender/Cycles-derived
 binary is GPL-3.0-or-later and requires corresponding source.
 
+For lmaudio, releases through `v0.2.1` remain MIT under the `LICENSE` asset
+published with that release. The fresh public repo's root `LICENSE` is the
+Lattice Systems Personal Use License for releases after `v0.2.1`; both the
+public README and the `v0.2.1` release notes state this boundary. The old release
+assets are republished byte-for-byte.
+
 `lmplot` remains open source and is excluded. Its existing gnuplot patch and
 runtime notices are unchanged by this plan.
 

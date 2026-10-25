@@ -11,6 +11,11 @@ on:
         description: First/new public tag, for example v0.3.0
         required: false
         type: string
+      publish_test:
+        description: Create and delete a draft public release to verify the publishing token, without building
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -61,7 +66,7 @@ jobs:
           fi
 
   full-matrix:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    if: (github.event_name == 'workflow_dispatch' && inputs.publish_test != true) || startsWith(github.ref, 'refs/tags/v')
     strategy:
       fail-fast: false
       matrix:
@@ -138,8 +143,24 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  publish-test:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_test == true
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Verify public release write permission without a build
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN"
+          tag="lmctl-publish-test-${GITHUB_RUN_ID}"
+          gh release create "$tag" -R lmctl-ai/lmaudio --draft --target main --title "$tag" --notes "Temporary release-token permission check."
+          gh release delete "$tag" -R lmctl-ai/lmaudio --yes --cleanup-tag
+
   publish:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    if: (github.event_name == 'workflow_dispatch' && inputs.publish_test != true) || startsWith(github.ref, 'refs/tags/v')
     needs: [full-matrix]
     runs-on: ubuntu-24.04
     permissions:
@@ -163,19 +184,7 @@ jobs:
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then tag="$GITHUB_REF_NAME"; fi
           test -n "$tag" || { echo "Set release_tag for workflow_dispatch" >&2; exit 1; }
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-      - name: Check release token presence
-        id: release_token
-        env:
-          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-        run: |
-          if [ -n "$RELEASE_TOKEN" ]; then echo "available=true" >> "$GITHUB_OUTPUT"; else echo "available=false" >> "$GITHUB_OUTPUT"; fi
-      - name: Require the cross-repo token for the coordinated flip
-        if: steps.release_token.outputs.available != 'true'
-        run: |
-          echo "RELEASE_TOKEN must be configured before the public flip." >&2
-          exit 1
       - name: Publish the first/new release to the public peer
-        if: steps.release_token.outputs.available == 'true'
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
