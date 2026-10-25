@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           for ((attempt = 0; attempt < 60; attempt++)); do
-            if gh release view latest -R "$REPOSITORY" >/dev/null 2>&1; then exit 0; fi
+            if gh release view -R "$REPOSITORY" >/dev/null 2>&1; then exit 0; fi
             sleep 10
           done
           echo "No public release appeared within ten minutes; lmscript cannot resolve host schemas." >&2

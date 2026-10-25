@@ -990,6 +990,35 @@ def _publish_unchanged_release(product: str, first_tag: str, release: dict, asse
     return published
 
 
+def _untracked_consumer_docs(product: str, pins: list[str]) -> dict[Path, str]:
+    if product != "lmaudio":
+        return {}
+    known_local_doc = Path("/home/mma/repos/dsl/simulation/ROADMAP.md").resolve()
+    result: dict[Path, str] = {}
+    for line in pins:
+        match = re.match(r"(.+?):[0-9]+:", line)
+        if not match:
+            continue
+        path = Path(match.group(1)).resolve()
+        probe = command(["git", "-C", str(path.parent), "rev-parse", "--show-toplevel"], check=False)
+        if probe.returncode == 0:
+            continue
+        if path != known_local_doc or not path.is_file():
+            raise FlipError(f"versioned consumer is outside a Git checkout and is not an approved local doc: {path}")
+        result[path] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return result
+
+
+def _update_untracked_consumer_docs(product: str, first_tag: str, expected_hashes: dict[Path, str]) -> list[str]:
+    updated: list[str] = []
+    for path, expected_hash in expected_hashes.items():
+        if hashlib.sha256(path.read_bytes()).hexdigest() != expected_hash:
+            raise FlipError(f"untracked consumer doc changed after preflight; pin update needs review: {path}")
+        if rewrite_consumer_file(path, product, first_tag):
+            updated.append(str(path))
+    return updated
+
+
 def apply_lmaudio_pilot(first_tag: str) -> int:
     product = "lmaudio"
     if first_tag != "v0.2.1":
@@ -1037,6 +1066,7 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
         raise FlipError("public stage, verification path, or public checkout already exists")
 
     pins, consumer_files = consumer_repositories(product)
+    untracked_docs = _untracked_consumer_docs(product, pins)
     validate_consumer_checkouts(product, list(consumer_files), active_lmctl_members())
     metadata = _repo_view(product)
     _check_private_target_free(product)
@@ -1083,7 +1113,8 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
         published_release = _publish_unchanged_release(product, first_tag, old_release, assets, notes, verify_dir)
         _update_local_checkouts(product, root)
         update_consumer_pins(product, first_tag, consumer_files, root)
-        print(f"FLIP COMPLETE: {product} source is private; fresh public peer and unchanged {first_tag} assets verified; private publish-test succeeded at {private_ci.get('url','')}; release={published_release.get('html_url','')}")
+        updated_docs = _update_untracked_consumer_docs(product, first_tag, untracked_docs)
+        print(f"FLIP COMPLETE: {product} source is private; fresh public peer and unchanged {first_tag} assets verified; private publish-test succeeded at {private_ci.get('url','')}; release={published_release.get('html_url','')}; local consumer docs updated={len(updated_docs)}")
         return 0
     except Exception as exc:
         if transferred and not public_created:
