@@ -48,6 +48,23 @@ and a specific build or release is needed. Public example/content CI remains
 enabled. The lmfilament publish-token test already passed as run
 `40234775880`; its retry reuses that result without starting private Actions.
 
+### lmfilament retry outcome (2026-10-25)
+
+The release version validator accepts `v0.3.20` anywhere in the binary's
+`--version` output; the actual banner is `lmfilament 0.3.20 (filament 1.78.1)`.
+On the retry, public-content run `40242296521` passed for orphan commit
+`57c8fa8c6ae5c6a9dbec8e30c34350a5b119e584`, and the republished release's
+binary and `SHA256SUMS` verified. The local post-release `lmscript --check`
+then failed on `ball-stick.lms` because
+`install="github:lmctl-ai/lmfilament@latest"` was not in the local tool cache.
+The runner restored the prior public main, refs, and release. A preceding
+attempt exposed that bare `git push origin --delete` used the source checkout's
+private remote; tag deletion now targets the public staging checkout explicitly.
+The private tags deleted by that attempt were restored from the source clone.
+Before retrying, make the local check resolve/install the just-published
+`@latest` host without weakening the check. All nine private repositories still
+have Actions disabled.
+
 On each main push, private CI runs a Linux-only fast job. The full platform
 build/package matrix runs only on `workflow_dispatch` or a version tag: five
 platforms where supported and four for lmvideo. Do not expose `RELEASE_TOKEN` to
