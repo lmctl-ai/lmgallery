@@ -194,7 +194,7 @@ Staged at `/home/mma/staging/closed-source/lmmagnum-private-ci.yml`, adapted fro
 
 ### Pin inventory (1 consumer)
 
-- `/home/mma/repos/dsl/lmgallery/examples/38-product-render-slide.lms:10` — `render = _lmcode_ cli="lmmagnum" install="github:lmctl-ai/lmmagnum@v0.2.11";`
+- `/home/mma/repos/dsl/lmgallery/examples/38-product-render-slide.lms:10` — `render = _lmcode_ cli="lmmagnum" install="github:lmctl-ai/lmmagnum@v0.2.14";`
 
 After the first new tag `<FIRST_TAG>` is published:
 
