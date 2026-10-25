@@ -2,8 +2,8 @@
 
 - Source repo: `/home/mma/repos/dsl/lmoffice`
 - Source revision: `ddc6bf070eddbf95968e00709cbc5a7715deba4b`
-- Private peer target: `lmctlhq/lmoffice` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmoffice` (preserve the existing public URL)
+- Private peer target: `lmctlhq/lmoffice` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmoffice` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 

@@ -2,8 +2,8 @@
 
 - Source repo: `/home/mma/repos/dsl/lmimg`
 - Source revision: `1b386318f028bc7f94ca26af75bf6def34f5a334`
-- Private peer target: `lmctlhq/lmimg` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmimg` (preserve the existing public URL)
+- Private peer target: `lmctlhq/lmimg` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmimg` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 

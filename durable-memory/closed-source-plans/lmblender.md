@@ -2,8 +2,8 @@
 
 - Source repo: `/home/mma/repos/dsl/lmblender`
 - Source revision: `0ed644a7573eb123b0d476d88ec60b7d0b21c9fe`
-- Private peer target: `lmctlhq/lmblender` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmblender` (preserve the existing public URL)
+- Private peer target: `lmctlhq/lmblender` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmblender` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 

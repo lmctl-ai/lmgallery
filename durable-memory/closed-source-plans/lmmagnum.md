@@ -2,8 +2,8 @@
 
 - Source repo: `/home/mma/repos/dsl/lmmagnum`
 - Source revision: `a821053d15c394021b67f979159fc0d1263d9f83`
-- Private peer target: `lmctlhq/lmmagnum` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmmagnum` (preserve the existing public URL)
+- Private peer target: `lmctlhq/lmmagnum` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmmagnum` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 

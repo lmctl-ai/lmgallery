@@ -2,8 +2,8 @@
 
 - Source repo: `/home/mma/repos/lmctlhq/lmvideo`
 - Source revision: `30494ec4691ea942439ee9a578719a1312f59cf9`
-- Private peer target: `lmctlhq/lmvideo` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmvideo` (preserve the existing public URL)
+- Private peer target: `lmctlhq/lmvideo` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmvideo` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 

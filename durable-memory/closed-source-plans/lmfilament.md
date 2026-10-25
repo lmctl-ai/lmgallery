@@ -2,8 +2,8 @@
 
 - Source repo: `/home/mma/repos/dsl/lmfilament`
 - Source revision: `8bd8b35cedd07ab376e6bc0054749b2386864187`
-- Private peer target: `lmctlhq/lmfilament` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmfilament` (preserve the existing public URL)
+- Private peer target: `lmctlhq/lmfilament` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmfilament` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 

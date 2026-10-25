@@ -2,8 +2,8 @@
 
 - Source repo: `/home/mma/repos/dsl/lmplot`
 - Source revision: `995e3674e7dc2d2fd25f7db9671fb59156d6f1e9`
-- Private peer target: `lmctlhq/lmplot` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmplot` (preserve the existing public URL)
+- Private peer target: `lmctlhq/lmplot` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmplot` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 

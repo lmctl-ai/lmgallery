@@ -1,9 +1,9 @@
 # Closed-source split dry-run: lmpdf
 
 - Source repo: `/home/mma/repos/dsl/lmpdf`
-- Source revision: `1c2be5d95e395019bf03ae13b32800fe01f462d6`
-- Private peer target: `lmctlhq/lmpdf` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmpdf` (preserve the existing public URL)
+- Source revision: `f47aea24f8833c33bd2cc18605f8dd540fc88337`
+- Private peer target: `lmctlhq/lmpdf` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmpdf` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 

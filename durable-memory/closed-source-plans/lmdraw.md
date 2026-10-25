@@ -2,8 +2,8 @@
 
 - Source repo: `/home/mma/repos/dsl/lmdraw`
 - Source revision: `4b63140046ba2a28a5693a9dfed0f7beb9783c71`
-- Private peer target: `lmctlhq/lmdraw` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmdraw` (preserve the existing public URL)
+- Private peer target: `lmctlhq/lmdraw` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmdraw` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 

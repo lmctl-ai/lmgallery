@@ -1,9 +1,10 @@
 # Closed-source peer repository model
 
-**Status: planning only.** The owner has not confirmed the product list or
-authorized any repository creation, transfer, visibility change, secret
-creation, or release publication. No product repository or GitHub setting was
-changed while preparing this plan.
+**Status: pilot tooling and approval-gated migration.** The owner has directed
+the lmaudio pilot to use the transfer/recreate sequence below. Other candidate
+products remain out of scope until the Meta-Lead gives the next go. At this
+point the approval file is absent and no product repository or GitHub setting
+has been changed.
 
 ## Repository roles
 
@@ -82,32 +83,39 @@ same files in `lmctlhq` should be forwarded into the public repository because
 the public copy is authoritative. Triage source-revealing reports into the
 private tracker without making private implementation details public.
 
-## History, tags, redirects, and the recommended repository choice
+## History, tags, redirects, and the selected pilot transition
 
-Old MIT releases and tags remain public indefinitely. Do not rewrite or delete
-their history. New releases are proprietary and use new tags; their public tag
-points at the public docs/examples tree while the release assets come from the
-private CI build. A source commit hash in the release notes connects that
-binary to the private source history. Existing `@TAG` installs continue to use
-the old public release assets; `@latest` continues to resolve at
-`lmctl-ai/<name>` when new releases are published there.
+**Owner addendum (2026-10-25) supersedes the earlier copy-peer recommendation.**
+For the approved pilot sequence, transfer the existing public repository to
+`lmctlhq/<name>`, make it private immediately, then create a fresh public repo
+at the original `lmctl-ai/<name>` slug and restore the public demo/release tree.
+The owner states there are no outsider users yet and accepts the transfer
+consequences. The script still requires the product name in
+`~/tools/closed-source-approved.txt` before `--apply`.
 
-Two transition choices have different consequences:
+This means old source commits, issues, pull requests, tags, releases, stars,
+and watchers move with the repository into `lmctlhq`. The new public repo starts
+with one orphan commit and the latest release re-published under its same tag,
+name, notes, and asset names. Older releases/tags are not automatically public
+in the new repository; inventory and update any consumer pins to tags that will
+not be re-published. The pilot inventory found only lmgallery's
+`lmaudio@v0.2.1` pin, and that exact latest tag is re-published. Raw README
+URLs remain valid because the fresh public repo reuses the same owner/name and
+the same example paths.
 
-| Choice | Consequences |
-| --- | --- |
-| Transfer the existing public repository to `lmctlhq/<name>` and make it private | GitHub transfers commit history, issues, pull requests, releases, stars, and watchers. But old repository URLs redirect to the private peer; that breaks public raw README URLs and public `@TAG` installation until a public peer is restored. If a new repository is created at the old `lmctl-ai/<name>` location, GitHub permanently deletes the transfer redirect. A new public repo does not automatically recreate its prior issue state, tags, or release assets. |
-| Keep `lmctl-ai/<name>` public and create a private peer | Public stars, watchers, issues, releases, tags, raw URLs, and the canonical installer path stay with the public repo. A private peer can be initialized from a source-history copy, but GitHub does not automatically transfer issue/PR metadata or stars to that copy. Old source commits remain visible in the public repository's history, as required for historical MIT releases; new proprietary source commits stay private. |
+GitHub transfers carry commit history, issues, pull requests, releases, stars,
+and watchers, and redirect links to the new location. Creating a new repo at
+the old location permanently deletes the transfer redirect. Here that redirect
+is intentionally replaced by the new public peer. Before the new public repo
+exists, a transfer can still be rolled back by transferring the private repo
+back and restoring visibility. After the public repo reuses the old slug, the
+redirect is gone; with the login's lack of `delete_repo`, rollback is forward
+recovery rather than restoring the prior repository object. The owner accepted
+this boundary for the pilot.
 
-**Recommendation:** keep the existing public repository at the existing
-`lmctl-ai/<name>` path as the public demo/release peer, trim only its new
-`main` tree to public content in an owner-approved migration, and create a
-separate private peer by copying the source history into `lmctlhq/<name>`.
-This preserves raw URLs, issue continuity, stars/watchers, old releases, and
-`@TAG` pins without transferring a public repository into private visibility.
-It does not make already-public MIT source history secret; old history and tags
-remain public by design.
-
+The earlier alternative—keep `lmctl-ai/<name>` in place and create a private
+source-history copy—would preserve public history, issue continuity, stars,
+watchers, old tags, and releases. It is no longer the selected pilot plan.
 GitHub documents that transfers carry issues, pull requests, releases, stars,
 and watchers, and that links redirect to the new location; it also warns that
 creating a repo at the prior location permanently removes that redirect:
@@ -115,18 +123,20 @@ creating a repo at the prior location permanently removes that redirect:
 
 ## Migration sequence and rollback
 
-Every live step is owner-gated. The sequence below is a runbook, not an
-authorization to perform any step in this task.
+Every live step is gated by the product name in
+`~/tools/closed-source-approved.txt` and an explicit `--apply
+--i-have-owner-approval`. The lmaudio dry-run must pass first.
 
 | Step | Action after approval | Rollback |
 | --- | --- | --- |
-| 1. Confirm scope and license | Confirm exact products, binary license text, public support/PR policy, release version series, and each row in the licensing review below. Record the source commit and current tags/releases. | Stop before repository changes; retain the inventory and do not publish. |
-| 2. Prepare private peer | Create `lmctlhq/<name>` privately and copy source history/branches/tags. Keep the source of truth explicitly named. | Delete/disable only the newly created empty or copied private peer after preserving any wanted work; the existing public repo remains untouched. |
-| 3. Prepare public peer content | In a reviewed change, retain README/docs/images/examples/notices/licenses at their current public paths; remove new source/build/CI content from the public `main` tree. Preserve all prior commits and MIT tags. | Revert the public content commit; never force-push or delete old MIT tags/releases. |
-| 4. Add support and CI policy | Keep public Issues enabled, prohibit source PRs, add public link/example CI, and install the private workflow without a release secret first. | Revert the workflow/policy files. Restore the prior public CI if needed. |
-| 5. Add release credential | Create and scope `RELEASE_TOKEN` only after a successful no-secret dry-run; limit it to one public repo and release permissions. | Revoke the PAT/App installation immediately, delete the secret, and inspect audit logs if exposure is suspected. |
-| 6. Prove a candidate release | Run the five builds, public examples against the fresh host, notice/license staging, hashes, asset names, `@TAG` and `@latest` install checks. Use a draft or nonproduction release if the owner chooses. | Stop publication; remove or mark the candidate release unavailable. Preserve old tags and do not overwrite a release. Revoke the token if needed. |
-| 7. Cut over and announce | Publish the first approved proprietary version and document support/install changes. Confirm every README image/raw URL and public example works. | Disable the private publish workflow/secret; restore the last known-good public README/docs commit. Keep already-published historical MIT tags intact and communicate any withdrawn new release. |
+| 1. Confirm scope and license | Confirm the product, draft binary-license placement, public support/PR policy, and product-specific notice row. Record the source commit and current tags/releases. | Stop before repository changes; retain the inventory and do not publish. |
+| 2. Stage and verify before transfer | Download the latest release and all assets/notes to `/home/mma/staging/closed-source/<name>-release/`; build the public-only tree; verify file links, notices, secret scan, release digests, and tag-pin inventory. | Delete only the newly-created staging directories after preserving logs; no GitHub state has changed. |
+| 3. Transfer and privatize | POST the repository transfer to `lmctlhq`, wait until visible there, then immediately set visibility private and verify it. | Before reusing the old public slug, transfer back to `lmctl-ai` and restore public visibility. |
+| 4. Recreate the public peer | Create a new public `lmctl-ai/<name>` with matching description/topics/homepage, Issues on, Wiki/Projects off; push one orphan public-content commit; re-publish the latest downloaded release under the same tag. | After the old slug is reused, the transfer redirect is gone. With no `delete_repo`, do not attempt repository deletion; use forward recovery (repair the public peer and re-publish assets). |
+| 5. Verify immediate public continuity | Download the re-published Linux x64 asset, compare digest and run `--version`; fetch two raw example URLs and run `lmscript --check`. | Repair the public README/release while preserving the recreated public slug; do not transfer it away. |
+| 6. Repoint local checkout | Point `~/repos/dsl/<name>` at `lmctlhq/<name>` and clone the public peer as `~/repos/dsl/<name>-public`. | Restore the prior local remote URL and remove only a newly-created public clone after preserving work. |
+| 7. Install private CI and manual publisher | Run Linux-fast on every main push; run five platforms on manual/tag; test the public examples; publish with `RELEASE_TOKEN` only when present, otherwise keep `scripts/publish-release.sh` for the Meta-Lead. | Revert the private workflow/script commit and disable the secret; source history remains private. |
+| 8. Update pins and durable memory | Update consumer tags that were not re-published, and record the migration in private durable memory and the public README. | Revert consumer/docs changes; keep tag pins pointed at a release that exists publicly. |
 
 ## Product licensing review
 
@@ -160,7 +170,10 @@ It generates exact tracked-file plans under
 public docs for source links, and scans public text for high-confidence secret
 patterns. It is not a migration tool: `--apply` checks for both
 `--i-have-owner-approval` and `~/tools/closed-source-approved.txt`, then still
-refuses because mutation is intentionally not implemented here.
+refuses because mutation is intentionally not implemented here. The pilot
+orchestrator is [`scripts/closed-source/flip.lms`](../scripts/closed-source/flip.lms);
+it is lmaudio-only, dry-run by default, and transfer/publication are behind the
+same owner approval file.
 
 The current candidate list is provisional: lmdraw, lmvideo, lmaudio, lmoffice,
 lmcad, lmblender, lmmagnum, lmfilament, lmplot, lmimg, and lmpdf. An OR-tools
@@ -182,18 +195,16 @@ asset names):
 - [lmimg](closed-source-plans/lmimg.md)
 - [lmpdf](closed-source-plans/lmpdf.md)
 
-Owner decisions still required:
+Owner decisions still required for later products:
 
 1. Confirm the exact product list; in particular, decide whether GPL-bound
    lmblender is excluded or gets a redesigned license-compatible build.
-2. Approve the public binary license text and the scope/license for public
-   docs/examples; decide whether documentation/example PRs are accepted.
-3. Approve keeping existing `lmctl-ai/<name>` public and creating private peers
-   by source-history copy, rather than transferring repositories.
-4. Set each product's `MAJOR.MINOR` series, publication cadence, and the policy
-   for withdrawing a bad new release without touching old MIT tags.
-5. Validate per-product licensing/staging requirements against the actual
+2. Supply final binary-license text and decide whether documentation/example
+   pull requests are accepted; `LICENSE-binaries` is currently only a draft.
+3. Set each product's `MAJOR.MINOR` series, publication cadence, and policy
+   for withdrawing a bad newly published release.
+4. Validate per-product licensing/staging requirements against the actual
    release artifact, especially lmcad OCCT relinking assets, lmvideo's Skia
    notices, lmblender corresponding source, and static glibc products.
-6. Decide issue routing/triage ownership, and who may create `RELEASE_TOKEN`
-   secrets and approve first publication.
+5. Decide issue routing/triage ownership for later peers and who may add
+   `RELEASE_TOKEN` after the Meta-Lead review.

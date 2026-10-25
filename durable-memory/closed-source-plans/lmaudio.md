@@ -2,8 +2,8 @@
 
 - Source repo: `/home/mma/repos/dsl/lmaudio`
 - Source revision: `56b7a1952ac55e76ffa5b1ed3227e6986f891a33`
-- Private peer target: `lmctlhq/lmaudio` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmaudio` (preserve the existing public URL)
+- Private peer target: `lmctlhq/lmaudio` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmaudio` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 

@@ -2,8 +2,8 @@
 
 - Source repo: `/home/mma/repos/dsl/lmcad`
 - Source revision: `1af37f8d00ba2ee9275e5919773dd3b4d00e2b2a`
-- Private peer target: `lmctlhq/lmcad` (create/copy only after owner approval)
-- Public peer target: `lmctl-ai/lmcad` (preserve the existing public URL)
+- Private peer target: `lmctlhq/lmcad` (transfer this repository, then set it private, only after owner approval)
+- Public peer target: `lmctl-ai/lmcad` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 
