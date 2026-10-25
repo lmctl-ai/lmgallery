@@ -71,7 +71,7 @@ assert(r.code == 0, r.stdout + r.stderr);
 # Deck: title, highlights, and one slide per chart with bullets and speaker notes.
 let total = 46.6 + 52.1 + 58.4 + 63.0;
 assert(abs(total - 220.1) < 0.0001);
-deck_program = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.27";
+deck_program = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.29";
 let deck = office.pptx("build/qbr-deck.pptx");
 deck.theme("#1F4E78", "#2E75B6", "Segoe UI", "Calibri");
 let d1 = deck.slide();

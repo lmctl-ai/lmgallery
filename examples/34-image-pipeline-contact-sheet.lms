@@ -45,7 +45,7 @@ for (line in split(r.stdout, "\n")) {
 cp = system cp build/pipeline-sheet.png images/showcase-34-image-pipeline.png;
 assert(cp.code == 0);
 
-deck = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.27";
+deck = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.29";
 let slides = office.pptx("build/image-pipeline.pptx");
 let s1 = slides.slide();
 s1.title("Image pipeline: levels, sharpen, grade");

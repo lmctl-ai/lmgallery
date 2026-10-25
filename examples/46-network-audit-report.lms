@@ -99,7 +99,7 @@ let findings = """# Network audit: two services and one site
 - Fix the two broken links, then rerun the check.
 """;
 
-audit = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.27";
+audit = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.29";
 let scope = <<~MD;
   ## Scope
 

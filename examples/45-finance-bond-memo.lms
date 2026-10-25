@@ -83,7 +83,7 @@ The price is the sum of the 4 % coupons and the 100 redemption, discounted with 
 A one-year at-the-money call on a 100 spot, 5 % rate and 20 % volatility is worth """ + sprintf("%.4f", call) + """ (Black-Scholes; textbook value 10.4506).
 """;
 
-memo = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.27";
+memo = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.29";
 let limits = <<~MD;
   ## Limits
 
@@ -114,7 +114,7 @@ assert(r.code == 0, r.stdout + r.stderr);
 
 let curve_csv = "Tenor (years),Zero rate,Discount factor\n" + sprintf("1,%.6f,%.6f\n", z1, df1) + sprintf("2,%.6f,%.6f\n", z2, df2) + sprintf("5,%.6f,%.6f\n", z5, df5) + sprintf("10,%.6f,%.6f\n", z10, df10);
 let book_csv = "Year,Cash flow,Present value\n" + sprintf("1,4,%.4f\n", pv1) + sprintf("2,4,%.4f\n", pv2) + sprintf("3,4,%.4f\n", pv3) + sprintf("4,4,%.4f\n", pv4) + sprintf("5,104,%.4f\n", pv5);
-workbook = _lmcode_ cli="lmoffice xlsx" install="github:lmctl-ai/lmoffice@v0.1.27";
+workbook = _lmcode_ cli="lmoffice xlsx" install="github:lmctl-ai/lmoffice@v0.1.29";
 let book = xlsx.create("build/desk-workbook.xlsx");
 book.sheet_from_csv("Curve", ${curve_csv});
 book.sheet_from_csv("Bond cash flows", ${book_csv});

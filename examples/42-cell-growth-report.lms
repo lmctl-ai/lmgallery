@@ -73,7 +73,7 @@ r = system(concat(dsl_cli(figure), ["--dsl", "build/cell-figure.dslb"]), 300000)
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Lab report (lmoffice).
-report = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.27";
+report = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.29";
 let doc = office.docx("build/cell-growth-report.docx");
 doc.title("Cell growth lab report").author("Multicellular systems group");
 doc.heading("Cell growth lab report", 1).bold(true);

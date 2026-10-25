@@ -106,7 +106,7 @@ let body = """# Data-quality report: logger export
 - Confirm the 95 C reading at minute 25 against the sensor log.
 """;
 
-report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.27";
+report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.29";
 let limits = <<~MD;
   ## Scope
 
