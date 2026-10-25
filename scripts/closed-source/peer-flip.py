@@ -198,6 +198,26 @@ def ci_latest(product: str, sha: str, repository: str | None = None) -> dict:
     return row
 
 
+def _reuse_lmfilament_publish_test(current_sha: str, root: Path) -> dict:
+    run_id = "40234775880"
+    details = json.loads(command(["gh", "run", "view", run_id, "-R", "lmctlhq/lmfilament",
+                                  "--json", "status,conclusion,headSha,jobs,url"]).stdout)
+    jobs = {job.get("name"): job for job in details.get("jobs", [])}
+    if (details.get("status") != "completed" or details.get("conclusion") != "success"
+            or jobs.get("publish-test", {}).get("conclusion") != "success"):
+        raise FlipError(f"recorded lmfilament publish-test {run_id} is not successful: {details.get('url', '')}")
+    tested_sha = details.get("headSha", "")
+    if not tested_sha or command(["git", "-C", str(root), "merge-base", "--is-ancestor", tested_sha, current_sha], check=False).returncode:
+        raise FlipError(f"recorded lmfilament publish-test {run_id} does not apply to current private main")
+    workflows_unchanged = command(["git", "-C", str(root), "diff", "--quiet", f"{tested_sha}..{current_sha}",
+                                  "--", ".github/workflows/ci.yml", "scripts/release-to-public.sh"], check=False)
+    if workflows_unchanged.returncode:
+        raise FlipError(f"lmfilament private publisher changed since publish-test {run_id}")
+    details["ok"] = True
+    audit(f"PRIVATE_PUBLISH_TEST_REUSED run={run_id} tested_sha={tested_sha} current_sha={current_sha}")
+    return details
+
+
 def pin_inventory(product: str) -> list[str]:
     pattern = rf"github:lmctl-ai/{re.escape(product)}@v[0-9]+\.[0-9]+\.[0-9]+|github\.com/lmctl-ai/{re.escape(product)}/releases/(download|tag)/v[0-9]+\.[0-9]+\.[0-9]+"
     result = command([
@@ -1976,6 +1996,8 @@ def apply_general_product(product: str, first_tag: str) -> int:
         if recent:
             raise FlipError(f"{product} origin/main has a commit from the last 30 minutes; defer this product")
     ci = ci_latest(product, snapshot["ref"], private_repo(product) if source_is_private else public_repo(product))
+    if product == "lmfilament" and source_is_private and not ci.get("ok"):
+        ci = _reuse_lmfilament_publish_test(snapshot["ref"], snapshot["root"])
     current_private_workflow = root / ".github/workflows/ci.yml"
     current_private_text = current_private_workflow.read_text(encoding="utf-8") if current_private_workflow.is_file() else ""
     private_ci_ready = "  publish-test:" in current_private_text and "RELEASE_TOKEN" in current_private_text and (root / "scripts/release-to-public.sh").is_file()
