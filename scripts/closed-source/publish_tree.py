@@ -82,8 +82,8 @@ def split_fast_path(body):
         if not linux:
             raise SystemExit(f"job {job.group(1)}: no linux-x64 matrix entry for the push-time fast path")
         name = job.group(1)
-        gate = "    if: github.event_name != 'push' || github.ref != 'refs/heads/main'\n"
-        # Full matrix (dispatch or tag): add the gate to the original job.
+        gate = "    if: (github.event_name == 'workflow_dispatch' && inputs.publish_test != true) || startsWith(github.ref, 'refs/tags/v')\n"
+        # Full matrix: explicit release dispatch or version tag only.
         full = re.sub(r"^(  [A-Za-z0-9_-]+:\n)", lambda m: m.group(1) + gate, block, count=1, flags=re.M)
         fast = block.replace(f"  {name}:\n", f"  {name}-fast:\n", 1)
         fast = fast.replace(inc.group(1), "".join(linux), 1)
@@ -124,12 +124,18 @@ def generate_private_ci(source, product, out):
     job = re.search(r"^  release:\n(?:    .*\n|\n)*?(?=^  \S|\Z)", body, re.M)
     if not job:
         raise SystemExit(f"{product}: no release job found in ci.yml; add a transform before generating")
-    needs_match = re.search(r"^    needs: \[(.*)\]", job.group(0), re.M)
+    needs_match = re.search(r"^    needs:\s*(?:\[(.*)\]|([A-Za-z0-9_-]+))\s*$", job.group(0), re.M)
     if not needs_match:
-        raise SystemExit(f"{product}: the release job has no needs list to carry over")
+        raise SystemExit(f"{product}: the release job has no supported needs list/scalar to carry over")
     # The publish job waits for the same matrix jobs the public release waited for (never version or audit).
-    publish_needs = [n.strip() for n in needs_match.group(1).split(",") if n.strip() not in ("version", "audit")]
+    needs_value = needs_match.group(1) if needs_match.group(1) is not None else needs_match.group(2)
+    publish_needs = [n.strip() for n in needs_value.split(",") if n.strip() not in ("version", "audit")]
+    if not publish_needs:
+        raise SystemExit(f"{product}: no build job remains in the release job's needs list")
     body = body[:job.start()] + body[job.end():]
+    # The source workflow's `only` selector is removed; every real release
+    # dispatch builds the complete matrix. publish_test remains build-free.
+    body = re.sub(r"^(\s+)ONLY_OK:\s*\$\{\{[^\n]*inputs\.only[^\n]*\}\}\s*$", r'\1ONLY_OK: "true"', body, flags=re.M)
     # 3. Append the publish jobs from the reviewed template (RELEASE_TOKEN only).
     template = TEMPLATE.read_text(encoding="utf-8")
     publish = template[template.index("  publish-test:"):]

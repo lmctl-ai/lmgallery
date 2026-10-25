@@ -206,9 +206,35 @@ def pin_inventory(product: str) -> list[str]:
 
 
 def private_ci_adapter(product: str) -> Path:
-    if product == "lmaudio":
-        return GALLERY / "scripts/closed-source/templates/private-ci/lmaudio.yml"
-    return GALLERY / "scripts/closed-source/adapters" / f"{product}-private-ci.yml"
+    manifest_path = STAGING / f"{product}-stage-manifest.json"
+    if not manifest_path.is_file():
+        raise FlipError(f"stage manifest missing for generated private CI: {manifest_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    generated = Path(manifest.get("generated_private_ci_path", ""))
+    if not generated.is_file():
+        raise FlipError(f"generated product private CI is missing: {generated}")
+    digest = hashlib.sha256(generated.read_bytes()).hexdigest()
+    if digest != manifest.get("generated_private_ci_sha256"):
+        raise FlipError(f"generated private CI differs from the reviewed stage manifest: {generated}")
+    return generated
+
+
+def postprocess_stage(product: str, snapshot: dict, stage: Path, manifest: dict) -> tuple[Path, str]:
+    private_ci = STAGING / f"{product}-private-ci-{snapshot['ref'][:12]}.yml"
+    script = GALLERY / "scripts/closed-source/publish_tree.py"
+    command(["python3", str(script), str(stage), str(snapshot["root"]), product,
+             "--boundary", "--notices", "--private-ci", str(private_ci)], timeout=300)
+    if not private_ci.is_file():
+        raise FlipError(f"publish_tree.py did not generate private CI: {private_ci}")
+    actionlint = shutil.which("actionlint")
+    fallback = Path("/tmp/claude-1000/scratch-workers/bin/actionlint")
+    if not actionlint and fallback.is_file():
+        actionlint = str(fallback)
+    if actionlint:
+        command([actionlint, str(private_ci)], timeout=120)
+    manifest["generated_private_ci_path"] = str(private_ci)
+    manifest["generated_private_ci_sha256"] = hashlib.sha256(private_ci.read_bytes()).hexdigest()
+    return private_ci, manifest["generated_private_ci_sha256"]
 
 
 def rewrite_product_tags(text: str, product: str, first_tag: str) -> str:
@@ -506,7 +532,12 @@ def validate_stage(product: str, stage: Path, mapping: dict[str, str]) -> dict:
             missing_autorun.append(target)
     private_refs: list[str] = []
     for path in files:
-        if path.suffix.lower() not in {".md", ".html", ".svg"} and not path.name.startswith("THIRD_PARTY_NOTICES"):
+        # Notices are copied byte-for-byte from the source by publish_tree.py;
+        # upstream component paths inside them are compliance citations, not
+        # links to private host implementation files.
+        if path.name.startswith("THIRD_PARTY_NOTICES"):
+            continue
+        if path.suffix.lower() not in {".md", ".html", ".svg"}:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         scan_text = re.sub(r"https?://[^\s<>]+", "", text)
@@ -554,6 +585,9 @@ def stage_product(product: str, snapshot: dict, *, refresh: bool = False,
         actual_hashes = {p.relative_to(stage).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in stage.rglob("*") if p.is_file()}
         if actual_hashes != expected_hashes:
             raise FlipError(f"staged files were changed since the manifest; inspect before refresh: {stage}")
+        previous_ci = Path(previous.get("generated_private_ci_path", ""))
+        if previous_ci.is_file() and hashlib.sha256(previous_ci.read_bytes()).hexdigest() != previous.get("generated_private_ci_sha256"):
+            raise FlipError(f"generated private CI changed since the manifest; inspect before refresh: {previous_ci}")
         shutil.rmtree(stage)
         manifest_path.unlink()
     STAGING.mkdir(parents=True, exist_ok=True)
@@ -561,6 +595,7 @@ def stage_product(product: str, snapshot: dict, *, refresh: bool = False,
     inputs = discover_inputs(product, snapshot["ref"], set(snapshot["files"]), mapping)
     mapping.update(inputs)
     selected = sorted(mapping)
+    generated_private_ci = STAGING / f"{product}-private-ci-{snapshot['ref'][:12]}.yml"
     stage.mkdir()
     try:
         with tempfile.TemporaryDirectory(prefix=f"{product}-archive-") as tmp:
@@ -647,10 +682,18 @@ def stage_product(product: str, snapshot: dict, *, refresh: bool = False,
                 for p in stage.rglob("*") if p.is_file()
             },
         }
+        postprocess_stage(product, snapshot, stage, manifest)
+        report = validate_stage(product, stage, mapping)
+        manifest["validation"] = report
+        manifest["staged_file_sha256"] = {
+            p.relative_to(stage).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in stage.rglob("*") if p.is_file()
+        }
         manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         return manifest
     except Exception:
         shutil.rmtree(stage, ignore_errors=True)
+        generated_private_ci.unlink(missing_ok=True)
         raise
 
 
@@ -779,10 +822,46 @@ def _repo_view(product: str) -> dict:
     return json.loads(command(["gh", "api", f"repos/{public_repo(product)}"]).stdout)
 
 
-def _check_private_target_free(product: str) -> None:
+def _wait_for_repo_identity(product: str, *, private: bool | None = None, attempts: int = 30) -> dict:
+    last = "repo not visible yet"
+    for attempt in range(1, attempts + 1):
+        result = command(["gh", "api", f"repos/{private_repo(product)}"], check=False, timeout=60)
+        if result.returncode == 0:
+            try:
+                data = json.loads(result.stdout)
+                if data.get("full_name", "").lower() == private_repo(product).lower() and (private is None or data.get("private") is private):
+                    audit(f"PRIVATE_REPO_VISIBLE attempt={attempt} private={data.get('private')} default_branch={data.get('default_branch')}")
+                    return data
+                last = f"resolved full_name={data.get('full_name')} private={data.get('private')}"
+            except json.JSONDecodeError:
+                last = "invalid repo JSON"
+        else:
+            last = result.stderr.strip()
+        audit(f"PRIVATE_REPO_VISIBILITY_WAIT attempt={attempt}/{attempts} state={_redact_for_log(last)}")
+        time.sleep(2)
+    raise FlipError(f"{private_repo(product)} did not reach the expected private repo state: {last}")
+
+
+def _check_private_target_free(product: str) -> bool:
     repos = json.loads(command(["gh", "repo", "list", "lmctlhq", "--limit", "1000", "--json", "name"]).stdout)
-    if any(repo.get("name", "").lower() == product.lower() for repo in repos):
-        raise FlipError(f"private target {private_repo(product)} already exists; stop for owner review")
+    if not any(repo.get("name", "").lower() == product.lower() for repo in repos):
+        return False
+    data = _wait_for_repo_identity(product, private=True)
+    if data.get("disabled") or data.get("default_branch") not in (None, "main"):
+        raise FlipError(f"existing private target {private_repo(product)} has unexpected repo settings")
+    branches = json.loads(command(["gh", "api", f"repos/{private_repo(product)}/branches"]).stdout)
+    releases = json.loads(command(["gh", "api", f"repos/{private_repo(product)}/releases?per_page=100"]).stdout)
+    secrets = json.loads(command(["gh", "secret", "list", "-R", private_repo(product), "--json", "name,updatedAt"]).stdout)
+    git_refs = command(["git", "ls-remote", "--heads", "--tags", f"https://github.com/{private_repo(product)}.git"], check=False)
+    if branches or releases or secrets or (git_refs.returncode == 0 and git_refs.stdout.strip()):
+        raise FlipError(f"existing private target {private_repo(product)} is not the reviewed empty scaffold")
+    if git_refs.returncode != 0:
+        raise FlipError(f"cannot verify the existing private scaffold refs: {git_refs.stderr.strip()}")
+    actions = json.loads(command(["gh", "api", f"repos/{private_repo(product)}/actions/permissions"]).stdout)
+    if actions.get("enabled") is not False:
+        _set_repo_actions_enabled(product, False)
+    audit(f"PRIVATE_EMPTY_SCAFFOLD_REUSED repo={private_repo(product)}")
+    return True
 
 
 def _update_local_checkouts(product: str, root: Path) -> None:
@@ -825,7 +904,28 @@ def _install_private_ci(product: str, root: Path, first_tag: str) -> str:
     return command(["git", "-C", str(root), "rev-parse", "HEAD"]).stdout.strip()
 
 
+def _wait_for_private_workflow(product: str, attempts: int = 30) -> None:
+    for attempt in range(1, attempts + 1):
+        result = command(["gh", "api", f"repos/{private_repo(product)}/actions/workflows"], check=False, timeout=60)
+        if result.returncode == 0:
+            try:
+                workflows = json.loads(result.stdout).get("workflows", [])
+            except json.JSONDecodeError:
+                workflows = []
+            workflow = next((item for item in workflows if item.get("path") == ".github/workflows/ci.yml"), None)
+            if workflow and workflow.get("state") == "active":
+                audit(f"PRIVATE_WORKFLOW_ACTIVE attempt={attempt} id={workflow.get('id')}")
+                return
+            state = workflow.get("state") if workflow else "not-listed"
+        else:
+            state = result.stderr.strip()
+        audit(f"PRIVATE_WORKFLOW_WAIT attempt={attempt}/{attempts} state={_redact_for_log(state)}")
+        time.sleep(2)
+    raise FlipError("private ci.yml workflow did not become active after enabling Actions")
+
+
 def _run_publish_test(product: str, private_sha: str) -> dict:
+    _wait_for_private_workflow(product)
     before = command(["gh", "run", "list", "-R", private_repo(product), "-L", "5", "--json", "databaseId,event,headSha"], timeout=120)
     previous_ids = {str(row.get("databaseId")) for row in json.loads(before.stdout)}
     command(["gh", "workflow", "run", "ci.yml", "-R", private_repo(product), "--ref", "main", "-f", "publish_test=true"], timeout=300)
@@ -919,6 +1019,14 @@ def _set_release_secret_from_file(product: str) -> None:
     audit(f"SECRET_SET exit={result.returncode} stdout={_redact_for_log(result.stdout.strip())} stderr={_redact_for_log(result.stderr.strip())}")
     if result.returncode:
         raise FlipError(f"could not set the private release secret: {result.stderr.strip()}")
+    for attempt in range(1, 31):
+        rows = json.loads(command(["gh", "secret", "list", "-R", private_repo(product), "--json", "name,updatedAt"]).stdout)
+        if any(row.get("name") == "RELEASE_TOKEN" for row in rows):
+            audit(f"PRIVATE_SECRET_VISIBLE attempt={attempt} name=RELEASE_TOKEN")
+            return
+        audit(f"PRIVATE_SECRET_WAIT attempt={attempt}/30 name=RELEASE_TOKEN")
+        time.sleep(2)
+    raise FlipError("RELEASE_TOKEN did not appear in the private repo secret list")
 
 
 def _prepare_orphan_commit(stage: Path, product: str) -> None:
@@ -1040,26 +1148,50 @@ def _backup_all_public_releases(product: str, backup_root: Path, stamp: str) -> 
 
 
 def _assert_private_mirror_refs(product: str, expected_refs: dict[str, str]) -> None:
+    _wait_for_repo_identity(product, private=True)
     data = json.loads(command(["gh", "api", f"repos/{private_repo(product)}"]).stdout)
-    if data.get("full_name", "").lower() != private_repo(product).lower() or not data.get("private") or data.get("disabled"):
-        raise FlipError("new private source repo identity/visibility is unexpected")
+    if data.get("disabled"):
+        raise FlipError("private source repo is disabled")
     if data.get("default_branch") != "main":
         command(["gh", "repo", "edit", private_repo(product), "--default-branch", "main"], timeout=300)
-    remote_lines = command(["git", "ls-remote", "--heads", "--tags", f"https://github.com/{private_repo(product)}.git"], timeout=300).stdout.splitlines()
-    actual = {parts[1]: parts[0] for line in remote_lines if len(parts := line.split()) == 2 and not parts[1].endswith("^{}")}
-    if actual != expected_refs:
-        raise FlipError("private Git mirror refs do not exactly match the reviewed public history")
-    private_main = command(["git", "ls-remote", f"https://github.com/{private_repo(product)}.git", "refs/heads/main"]).stdout.split()[0]
-    if private_main != expected_refs.get("refs/heads/main"):
-        raise FlipError("private repo default-branch HEAD does not match the reviewed local main SHA")
+        for attempt in range(1, 31):
+            data = json.loads(command(["gh", "api", f"repos/{private_repo(product)}"]).stdout)
+            if data.get("default_branch") == "main":
+                audit(f"PRIVATE_DEFAULT_BRANCH_CONVERGED attempt={attempt} branch=main")
+                break
+            audit(f"PRIVATE_DEFAULT_BRANCH_WAIT attempt={attempt}/30 observed={data.get('default_branch')}")
+            time.sleep(2)
+        else:
+            raise FlipError("private repo default branch did not converge to main")
+    for attempt in range(1, 31):
+        remote_lines = command(["git", "ls-remote", "--heads", "--tags", f"https://github.com/{private_repo(product)}.git"], timeout=300).stdout.splitlines()
+        actual = {parts[1]: parts[0] for line in remote_lines if len(parts := line.split()) == 2 and not parts[1].endswith("^{}")}
+        if actual == expected_refs:
+            private_main = command(["git", "ls-remote", f"https://github.com/{private_repo(product)}.git", "refs/heads/main"]).stdout.split()[0]
+            if private_main == expected_refs.get("refs/heads/main"):
+                audit(f"PRIVATE_MIRROR_VERIFIED attempt={attempt} refs={len(actual)} main={private_main}")
+                return
+        audit(f"PRIVATE_MIRROR_WAIT attempt={attempt}/30 refs_seen={len(actual)} expected={len(expected_refs)}")
+        time.sleep(2)
+    raise FlipError("private Git mirror refs/default-branch SHA did not converge to the reviewed public history")
 
 
 def _set_repo_actions_enabled(product: str, enabled: bool) -> None:
     value = "true" if enabled else "false"
+    state = json.loads(command(["gh", "api", f"repos/{private_repo(product)}/actions/permissions"]).stdout)
+    if state.get("enabled") is enabled:
+        audit(f"PRIVATE_ACTIONS_ALREADY value={value}")
+        return
     command(["gh", "api", "--method", "PUT", f"repos/{private_repo(product)}/actions/permissions", "-F", f"enabled={value}"], timeout=300)
-    data = json.loads(command(["gh", "api", f"repos/{private_repo(product)}/actions/permissions"]).stdout)
-    if data.get("enabled") is not enabled:
-        raise FlipError(f"private repo Actions enabled state did not become {value}")
+    for attempt in range(1, 31):
+        data = json.loads(command(["gh", "api", f"repos/{private_repo(product)}/actions/permissions"]).stdout)
+        if data.get("enabled") is enabled:
+            audit(f"PRIVATE_ACTIONS_CONVERGED attempt={attempt} value={value}")
+            break
+        audit(f"PRIVATE_ACTIONS_WAIT attempt={attempt}/30 expected={value} observed={data.get('enabled')}")
+        time.sleep(2)
+    else:
+        raise FlipError(f"private repo Actions enabled state did not converge to {value}")
     audit(f"PRIVATE_ACTIONS_ENABLED value={value}")
 
 
@@ -1083,6 +1215,68 @@ def _verify_public_release_snapshot(product: str, release_backups: list[dict]) -
     audit(f"PUBLIC_RELEASE_BACKUP_RECONFIRMED count={len(release_backups)}")
 
 
+def _wait_for_no_public_releases(product: str, attempts: int = 30) -> None:
+    for attempt in range(1, attempts + 1):
+        releases = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases?per_page=100"]).stdout)
+        if not releases:
+            audit(f"PUBLIC_RELEASE_LIST_EMPTY attempt={attempt}")
+            return
+        audit(f"PUBLIC_RELEASE_DELETE_WAIT attempt={attempt}/{attempts} remaining={len(releases)}")
+        time.sleep(2)
+    raise FlipError("old public releases remained after deletion; public refs will be rolled back")
+
+
+def _wait_for_public_latest_release(product: str, tag: str, expected_assets: dict[str, str], attempts: int = 30) -> dict:
+    for attempt in range(1, attempts + 1):
+        result = command(["gh", "api", f"repos/{public_repo(product)}/releases/tags/{tag}"], check=False, timeout=60)
+        if result.returncode == 0:
+            try:
+                release = json.loads(result.stdout)
+            except json.JSONDecodeError:
+                release = {}
+            assets = {item.get("name"): item.get("digest") for item in release.get("assets", [])}
+            if release.get("tag_name") == tag and assets == expected_assets:
+                audit(f"PUBLIC_RELEASE_ASSETS_CONVERGED attempt={attempt} tag={tag} assets={len(assets)}")
+                return release
+            state = f"tag={release.get('tag_name')} assets={len(assets)}/{len(expected_assets)}"
+        else:
+            state = _redact_for_log(result.stderr.strip())
+        audit(f"PUBLIC_RELEASE_WAIT attempt={attempt}/{attempts} tag={tag} state={state}")
+        time.sleep(2)
+    raise FlipError(f"public release {tag} did not appear after upload")
+
+
+def _wait_for_latest_release_tag(product: str, expected_tag: str, attempts: int = 30) -> None:
+    for attempt in range(1, attempts + 1):
+        result = command(["gh", "release", "view", "-R", public_repo(product), "--json", "tagName"], check=False, timeout=60)
+        if result.returncode == 0:
+            try:
+                tag = json.loads(result.stdout).get("tagName")
+            except json.JSONDecodeError:
+                tag = None
+            if tag == expected_tag:
+                audit(f"PUBLIC_LATEST_RELEASE_CONVERGED attempt={attempt} tag={tag}")
+                return
+        else:
+            tag = result.stderr.strip()
+        audit(f"PUBLIC_LATEST_RELEASE_WAIT attempt={attempt}/{attempts} observed={_redact_for_log(tag)}")
+        time.sleep(2)
+    raise FlipError(f"public latest release did not converge to {expected_tag}")
+
+
+def _wait_for_public_main(product: str, expected_sha: str, attempts: int = 30) -> None:
+    url = f"https://github.com/{public_repo(product)}.git"
+    for attempt in range(1, attempts + 1):
+        result = command(["git", "ls-remote", url, "refs/heads/main"], check=False, timeout=60)
+        observed = result.stdout.split()[0] if result.returncode == 0 and result.stdout.split() else ""
+        if observed == expected_sha:
+            audit(f"PUBLIC_MAIN_CONVERGED attempt={attempt} sha={observed}")
+            return
+        audit(f"PUBLIC_MAIN_WAIT attempt={attempt}/{attempts} expected={expected_sha} observed={observed or '[none]'}")
+        time.sleep(2)
+    raise FlipError(f"public main did not converge to expected SHA {expected_sha}")
+
+
 def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_git: Path,
                             release_backups: list[dict], first_tag: str,
                             verify_dir: Path) -> dict:
@@ -1100,9 +1294,7 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
         command(["git", "-C", str(stage), "remote", "add", "origin", url])
         command(["git", "-C", str(stage), "push", f"--force-with-lease=refs/heads/main:{old_main}", "origin", f"{orphan_sha}:refs/heads/main"], timeout=900)
         public_mutated = True
-        observed = command(["git", "ls-remote", url, "refs/heads/main"]).stdout.split()[0]
-        if observed != orphan_sha:
-            raise FlipError(f"public main did not advance to the staged orphan commit: expected {orphan_sha}, got {observed}")
+        _wait_for_public_main(product, orphan_sha)
 
         for ref in sorted(r for r in old_refs["refs"] if r.startswith("refs/heads/") and r != "refs/heads/main"):
             branch = ref.removeprefix("refs/heads/")
@@ -1115,10 +1307,17 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
         for ref in sorted(r for r in old_refs["refs"] if r.startswith("refs/tags/") and r.removeprefix("refs/tags/") not in released_tags):
             command(["git", "push", "origin", "--delete", ref.removeprefix("refs/tags/")], timeout=300)
             audit(f"PUBLIC_TAG_DELETED {ref.removeprefix('refs/tags/')}")
-        residual = command(["git", "ls-remote", "--heads", "--tags", url], timeout=300).stdout.splitlines()
-        residual_refs = [line for line in residual if "refs/heads/main" not in line and not line.endswith("^{}")]
-        if residual_refs:
-            raise FlipError("public branches or tags remain after cleanup: " + "; ".join(residual_refs))
+        _wait_for_no_public_releases(product)
+        for attempt in range(1, 31):
+            residual = command(["git", "ls-remote", "--heads", "--tags", url], timeout=300).stdout.splitlines()
+            residual_refs = [line for line in residual if "refs/heads/main" not in line and not line.endswith("^{}")]
+            if not residual_refs:
+                audit(f"PUBLIC_OLD_REFS_CLEARED attempt={attempt}")
+                break
+            audit(f"PUBLIC_OLD_REFS_WAIT attempt={attempt}/30 residual={';'.join(residual_refs)}")
+            time.sleep(2)
+        else:
+            raise FlipError("public branches or tags remained after deletion")
 
         latest = next((item for item in release_backups if item["tagName"] == first_tag), None)
         if latest is None:
@@ -1134,7 +1333,8 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
         create = ["gh", "release", "create", first_tag, "-R", public_repo(product), "--target", "main", "--title", old_metadata["name"], "--notes-file", str(notes)]
         create.extend(str(path) for path in asset_paths)
         command(create, timeout=900)
-        published = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases/tags/{first_tag}"]).stdout)
+        expected_asset_digests = {path.name: f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" for path in asset_paths}
+        published = _wait_for_public_latest_release(product, first_tag, expected_asset_digests)
         if published.get("tag_name") != first_tag or published.get("name") != old_metadata["name"] or published.get("body", "").rstrip() != notes.read_text(encoding="utf-8").rstrip():
             raise FlipError("re-published latest release metadata differs from the staged approved data")
         assets = {asset["name"]: asset for asset in published.get("assets", [])}
@@ -1172,9 +1372,7 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
             if count:
                 latest_copy.write_text(updated, encoding="utf-8")
                 command(["lmscript", "--check", str(latest_copy)], timeout=300)
-        latest_view = json.loads(command(["gh", "release", "view", "-R", public_repo(product), "--json", "tagName"]).stdout)
-        if latest_view.get("tagName") != first_tag:
-            raise FlipError(f"latest release selection did not resolve to {first_tag}")
+        _wait_for_latest_release_tag(product, first_tag)
         audit(f"PUBLIC_RELEASE_REPUBLISHED tag={first_tag} url={published.get('html_url','')}")
         return {"release": published, "orphan_sha": orphan_sha}
     except Exception as exc:
@@ -1341,7 +1539,7 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
     metadata = _repo_view(product)
     if metadata.get("full_name", "").lower() != public_repo(product).lower() or metadata.get("private") or metadata.get("disabled") or metadata.get("default_branch") != "main":
         raise FlipError("public lmaudio identity/visibility/default branch is unexpected")
-    _check_private_target_free(product)
+    private_scaffold = _check_private_target_free(product)
     pins, all_consumer_files = consumer_repositories(product)
     lmgallery_pin = GALLERY / "examples/39-audio-harmonics-slide.lms"
     if "github:lmctl-ai/lmaudio@v0.2.1" not in lmgallery_pin.read_text(encoding="utf-8"):
@@ -1369,15 +1567,14 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
     audit(f"PREFLIGHT_PASS public_main={snapshot['ref']} ref_count={len(old_refs['refs'])} release_count={len(release_backups)} refs_backup={refs_path} release_backup={release_backup_root}")
 
     # Step 1: private source peer, with the existing history and tags mirrored in place.
-    create = ["gh", "repo", "create", private_repo(product), "--private"]
-    if metadata.get("description"):
-        create.extend(["--description", metadata["description"]])
-    if metadata.get("homepage"):
-        create.extend(["--homepage", metadata["homepage"]])
-    command(create, timeout=300)
-    private_meta = json.loads(command(["gh", "api", f"repos/{private_repo(product)}"]).stdout)
-    if private_meta.get("full_name", "").lower() != private_repo(product).lower() or not private_meta.get("private"):
-        raise FlipError("new private repo identity or visibility is unexpected; public repo remains unchanged")
+    if not private_scaffold:
+        create = ["gh", "repo", "create", private_repo(product), "--private"]
+        if metadata.get("description"):
+            create.extend(["--description", metadata["description"]])
+        if metadata.get("homepage"):
+            create.extend(["--homepage", metadata["homepage"]])
+        command(create, timeout=300)
+        _wait_for_repo_identity(product, private=True)
     private_url = f"https://github.com/{private_repo(product)}.git"
     # The mirrored source contains push-triggered build workflows. Keep Actions
     # disabled until the private workflow is replaced and the test-only input exists.

@@ -1,6 +1,6 @@
 # Closed-source peer repository model
 
-**Status: in-place lmaudio pilot approved; nine-product scope.** No in-place public reset has run yet. Final owner scope is lmdraw,
+**Status: in-place lmaudio pilot approved; nine-product scope.** No in-place public reset has run yet. An empty private `lmctlhq/lmaudio` scaffold exists with Actions disabled; its history, secrets, and workflows are empty. Final owner scope is lmdraw,
 lmvideo, lmaudio, lmoffice, lmcad, lmmagnum, lmfilament, lmimg, and lmpdf.
 The generated public-only trees are under `/home/mma/staging/closed-source/`.
 `lmplot`, `lmphysics`, all other hosts, `lmcode-*`, and `lmgallery` remain open
