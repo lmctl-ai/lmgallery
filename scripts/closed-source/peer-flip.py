@@ -504,6 +504,10 @@ def validate_stage(product: str, stage: Path, mapping: dict[str, str]) -> dict:
     public_paths = {p.relative_to(stage).as_posix() for p in files}
     link_findings: list[str] = []
     for path in files:
+        # Notices preserve upstream source citations byte-for-byte; their
+        # relative paths are citations, not links in the public documentation.
+        if path.name.startswith("THIRD_PARTY_NOTICES"):
+            continue
         if path.suffix.lower() not in {".md", ".html", ".svg"}:
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
@@ -915,7 +919,7 @@ def _install_private_ci(product: str, root: Path, first_tag: str) -> str:
     publisher.chmod(0o755)
     durable = root / "durable-memory/20-public-private-peers.md"
     durable.write_text(
-        f"# Public/private peer deployment\n\nThe source repository is private at `{private_repo(product)}`. The public peer `{public_repo(product)}` owns README, docs/images, examples/inputs, notices, and binary releases. The first public release tag is `{first_tag}`. Public source history was replaced by one orphan docs/examples commit; old source history remains private. CI checks public examples against this source build. Releases through `v0.2.1` remain MIT under that release's LICENSE asset; later releases use the Personal Use License in the public root LICENSE.\n",
+        f"# Public/private peer deployment\n\nThe source repository is private at `{private_repo(product)}`. The public peer `{public_repo(product)}` owns README, docs/images, examples/inputs, notices, and binary releases. The first public release tag is `{first_tag}`. Public source history was replaced by one orphan docs/examples commit; old source history remains private. CI checks public examples against this source build. Private CI runs the Linux x64 fast job on pushes; the full platform matrix and publisher run only on workflow_dispatch or version tags (four platforms for lmvideo, five for other products). Releases through `{first_tag}` remain MIT under that release's LICENSE asset; later releases use the Personal Use License in the public root LICENSE.\n",
         encoding="utf-8",
     )
     command(["git", "-C", str(root), "add", ".github/workflows/ci.yml", "scripts/release-to-public.sh", "durable-memory/20-public-private-peers.md"])
@@ -1221,6 +1225,7 @@ def _snapshot_public_releases(product: str, backup_root: Path, stamp: str, lates
         assets = row.get("assets", [])
         metadata = {
             "tagName": tag,
+            "id": row.get("id"),
             "name": row.get("name") or tag,
             "body": row.get("body") or "",
             "isDraft": row.get("draft", False),
@@ -1477,7 +1482,8 @@ def _wait_for_public_ci(product: str, expected_sha: str, timeout_seconds: int = 
 
 def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_git: Path,
                             release_backups: list[dict], first_tag: str,
-                            verify_dir: Path, release_bundle: dict | None = None) -> dict:
+                            verify_dir: Path, release_bundle: dict | None = None,
+                            preserve_release_tags: bool = False) -> dict:
     url = f"https://github.com/{public_repo(product)}.git"
     old_main = old_refs["main"]
     orphan_sha = command(["git", "-C", str(stage), "rev-parse", "HEAD"]).stdout.strip()
@@ -1499,17 +1505,22 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
             branch = ref.removeprefix("refs/heads/")
             command(["git", "push", "origin", "--delete", branch], timeout=300)
             audit(f"PUBLIC_BRANCH_DELETED {branch}")
-        for item in release_backups:
-            command(["gh", "release", "delete", item["tagName"], "-R", public_repo(product), "--cleanup-tag", "--yes"], timeout=300)
-            audit(f"PUBLIC_RELEASE_DELETED tag={item['tagName']}")
+        if not preserve_release_tags:
+            for item in release_backups:
+                command(["gh", "release", "delete", item["tagName"], "-R", public_repo(product), "--cleanup-tag", "--yes"], timeout=300)
+                audit(f"PUBLIC_RELEASE_DELETED tag={item['tagName']}")
         released_tags = {item["tagName"] for item in release_backups}
-        for ref in sorted(r for r in old_refs["refs"] if r.startswith("refs/tags/") and r.removeprefix("refs/tags/") not in released_tags):
-            command(["git", "push", "origin", "--delete", ref.removeprefix("refs/tags/")], timeout=300)
-            audit(f"PUBLIC_TAG_DELETED {ref.removeprefix('refs/tags/')}")
-        _wait_for_no_public_releases(product)
+        if not preserve_release_tags:
+            for ref in sorted(r for r in old_refs["refs"] if r.startswith("refs/tags/") and r.removeprefix("refs/tags/") not in released_tags):
+                command(["git", "push", "origin", "--delete", ref.removeprefix("refs/tags/")], timeout=300)
+                audit(f"PUBLIC_TAG_DELETED {ref.removeprefix('refs/tags/')}")
+            _wait_for_no_public_releases(product)
         for attempt in range(1, 31):
             residual = command(["git", "ls-remote", "--heads", "--tags", url], timeout=300).stdout.splitlines()
-            residual_refs = [line for line in residual if "refs/heads/main" not in line and not line.endswith("^{}")]
+            residual_refs = [line for line in residual if not line.endswith("^{}") and (
+                ("refs/heads/" in line and "refs/heads/main" not in line)
+                or (not preserve_release_tags and "refs/tags/" in line)
+            )]
             if not residual_refs:
                 audit(f"PUBLIC_OLD_REFS_CLEARED attempt={attempt}")
                 break
@@ -1538,9 +1549,27 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
             asset_paths = [release_dir / name for name in latest["assets"]]
             expected_asset_names = set(latest["assets"])
         release_name = old_metadata.get("name") or first_tag
-        create = ["gh", "release", "create", first_tag, "-R", public_repo(product), "--target", "main", "--title", release_name, "--notes-file", str(notes)]
-        create.extend(str(path) for path in asset_paths)
-        command(create, timeout=900)
+        if preserve_release_tags:
+            current_asset_names = {item.get("name") for item in old_metadata.get("assets", [])}
+            replay_asset_names = {path.name for path in asset_paths}
+            extra = sorted(replay_asset_names - current_asset_names)
+            expected_extra = [] if "SHA256SUMS" in current_asset_names else ["SHA256SUMS"]
+            if extra != expected_extra:
+                raise FlipError(f"lmvideo replay is expected to add only a missing SHA256SUMS, got: {extra}")
+            original_digests = {item.get("name"): item.get("digest") for item in old_metadata.get("assets", [])}
+            replay_digests = {path.name: f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" for path in asset_paths}
+            for path in asset_paths:
+                if path.name == "SHA256SUMS":
+                    continue
+                if original_digests.get(path.name) != replay_digests[path.name]:
+                    raise FlipError(f"lmvideo existing tag asset changed during replay preparation: {path.name}")
+            sums_asset = next(path for path in asset_paths if path.name == "SHA256SUMS")
+            command(["gh", "release", "upload", first_tag, "-R", public_repo(product), "--clobber", str(sums_asset)], timeout=900)
+            command(["gh", "release", "edit", first_tag, "-R", public_repo(product), "--title", release_name, "--notes-file", str(notes), "--latest"], timeout=300)
+        else:
+            create = ["gh", "release", "create", first_tag, "-R", public_repo(product), "--target", "main", "--title", release_name, "--notes-file", str(notes)]
+            create.extend(str(path) for path in asset_paths)
+            command(create, timeout=900)
         expected_asset_digests = {path.name: f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}" for path in asset_paths}
         published = _wait_for_public_latest_release(product, first_tag, expected_asset_digests)
         if published.get("tag_name") != first_tag or published.get("name") != release_name or published.get("body", "").rstrip() != notes.read_text(encoding="utf-8").rstrip():
@@ -1592,7 +1621,10 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
             public_mutated = observed == orphan_sha
         if public_mutated:
             try:
-                _rollback_public_in_place(product, backup_git, old_refs, release_backups, orphan_sha)
+                if preserve_release_tags:
+                    _rollback_public_tags_preserving_releases(product, backup_git, old_refs, release_backups, orphan_sha, first_tag, release_bundle)
+                else:
+                    _rollback_public_in_place(product, backup_git, old_refs, release_backups, orphan_sha)
                 shutil.rmtree(stage / ".git", ignore_errors=True)
                 audit("PUBLIC_ROLLBACK_COMPLETE public main/refs/releases restored")
             except Exception as rollback_error:
@@ -1612,6 +1644,40 @@ def _rollback_public_in_place(product: str, backup_git: Path, old_refs: dict, re
     if actual != old_refs["refs"] or actual.get("refs/heads/main") != old_main:
         raise FlipError("rollback refs do not match the saved public history")
     _restore_public_releases(product, release_backups)
+
+
+def _rollback_public_tags_preserving_releases(product: str, backup_git: Path, old_refs: dict,
+                                              release_backups: list[dict], orphan_sha: str,
+                                              latest_tag: str, release_bundle: dict) -> None:
+    url = f"https://github.com/{public_repo(product)}.git"
+    latest = next((item for item in release_backups if item["tagName"] == latest_tag), None)
+    if latest is None:
+        raise FlipError("cannot roll back lmvideo without its latest release snapshot")
+    directory = Path(latest["path"])
+    saved = json.loads((directory / "release-metadata.json").read_text(encoding="utf-8"))
+    original_assets = {item.get("name"): item for item in saved.get("assets", [])}
+    current = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases/tags/{latest_tag}"]).stdout)
+    for asset in current.get("assets", []):
+        old = original_assets.get(asset.get("name"))
+        if old is None or old.get("digest") != asset.get("digest"):
+            command(["gh", "api", "-X", "DELETE", f"repos/{public_repo(product)}/releases/assets/{asset['id']}"], timeout=300)
+            if old is not None:
+                original = directory / asset["name"]
+                command(["gh", "release", "upload", latest_tag, "-R", public_repo(product), str(original)], timeout=900)
+    command([
+        "gh", "release", "edit", latest_tag, "-R", public_repo(product),
+        "--title", saved.get("name") or latest_tag,
+        "--notes-file", str(directory / "release-notes.md"),
+        "--latest",
+    ], timeout=300)
+    command(["git", "--git-dir", str(backup_git), "push", f"--force-with-lease=refs/heads/main:{orphan_sha}", url,
+             f"refs/heads/main:refs/heads/main"], timeout=900)
+    command(["git", "--git-dir", str(backup_git), "push", "--mirror", url], timeout=900)
+    restored = command(["git", "ls-remote", "--heads", "--tags", url], timeout=300).stdout.splitlines()
+    actual = {parts[1]: parts[0] for line in restored if len(parts := line.split()) == 2 and not parts[1].endswith("^{}")}
+    if actual != old_refs["refs"] or actual.get("refs/heads/main") != old_refs["main"]:
+        raise FlipError("rollback refs do not match the saved lmvideo public history")
+    audit("PUBLIC_ROLLBACK_COMPLETE lmvideo main/tags restored; existing releases retained")
 
 def _restore_public_releases(product: str, release_backups: list[dict]) -> None:
     for item in release_backups:
@@ -1877,6 +1943,10 @@ def apply_general_product(product: str, first_tag: str) -> int:
     active = active_lmctl_members()
     if agents_for(product, active):
         raise FlipError(f"an active {product} session exists; stop before private peer creation")
+    if product in {"lmoffice", "lmpdf"}:
+        recent = command(["git", "-C", str(snapshot["root"]), "log", "--since=30 minutes ago", "--format=%H", "origin/main"], timeout=120).stdout.strip()
+        if recent:
+            raise FlipError(f"{product} origin/main has a commit from the last 30 minutes; defer this product")
     ci = ci_latest(product, snapshot["ref"], private_repo(product) if source_is_private else public_repo(product))
     if not ci.get("ok"):
         raise FlipError(f"{product} main CI is not green: {ci.get('url','')} {ci.get('error','')}")
@@ -1926,6 +1996,21 @@ def apply_general_product(product: str, first_tag: str) -> int:
     latest_backup = next((item for item in release_backups if item["tagName"] == first_tag), None)
     if latest_backup is None or not latest_backup.get("assets_complete"):
         raise FlipError(f"latest release backup {first_tag} is missing")
+    if product == "lmvideo":
+        release_tags = {item["tagName"] for item in release_backups}
+        tag_refs = {ref.removeprefix("refs/tags/") for ref in old_refs["refs"] if ref.startswith("refs/tags/")}
+        checked_pins = set()
+        for line in pins:
+            for pattern in (
+                r"github:lmctl-ai/lmvideo@(v\d+\.\d+\.\d+)",
+                r"github\.com/lmctl-ai/lmvideo/releases/download/(v\d+\.\d+\.\d+)",
+            ):
+                checked_pins.update(re.findall(pattern, line))
+            checked_pins.update(re.findall(r"github\.com/lmctl-ai/lmvideo/releases/tag/(v\d+\.\d+\.\d+)", line))
+        missing_pins = sorted(tag for tag in checked_pins if tag not in tag_refs or tag not in release_tags)
+        if missing_pins:
+            raise FlipError(f"lmvideo consumer pins reference missing release tags: {', '.join(missing_pins)}")
+        audit(f"LMVIDEO_PIN_INVENTORY_VERIFIED pins={len(checked_pins)} preserved_tags={len(release_tags)}")
     audit(f"PREFLIGHT_PASS public_main={old_refs['main']} source_main={snapshot['ref']} release={first_tag} ref_count={len(old_refs['refs'])} pin_count={len(pins)}")
 
     # Preserve the full source tree privately before replacing public refs.
@@ -1962,12 +2047,15 @@ def apply_general_product(product: str, first_tag: str) -> int:
         private_ci = _run_publish_test(product, private_sha)
     audit(f"PRIVATE_PUBLISH_TEST_SUCCESS url={private_ci.get('url','')}")
 
-    updated_consumers = _update_consumer_pins(product, first_tag, pins, root)
+    updated_consumers = [] if product == "lmvideo" else _update_consumer_pins(product, first_tag, pins, root)
     if updated_consumers:
         audit(f"CONSUMER_PINS_UPDATED repos={','.join(updated_consumers)}")
 
     _prepare_orphan_commit(stage, product)
-    rewrite = _replace_public_history(product, stage, old_refs, backup_git, release_backups, first_tag, verify_dir, release_bundle)
+    rewrite = _replace_public_history(
+        product, stage, old_refs, backup_git, release_backups, first_tag, verify_dir, release_bundle,
+        preserve_release_tags=product == "lmvideo",
+    )
     _update_local_checkouts(product, root)
     audit(f"FLIP_COMPLETE product={product} private_ci={private_ci.get('url','')} public_ci={rewrite['public_ci'].get('url','')} release={rewrite['release'].get('html_url','')} consumer_repos_updated={len(updated_consumers)}")
     print(f"FLIP COMPLETE: {product} private mirror, publish-test, public-content CI, release replay, and local checkouts verified; log={AUDIT_LOG}")
@@ -1976,7 +2064,7 @@ def apply_general_product(product: str, first_tag: str) -> int:
 def apply_flip(product: str, first_tag: str) -> int:
     if product == "lmaudio":
         return apply_lmaudio_pilot(first_tag)
-    if product in {"lmmagnum", "lmimg", "lmcad", "lmfilament"}:
+    if product in {"lmdraw", "lmvideo", "lmoffice", "lmpdf", "lmmagnum", "lmimg", "lmcad", "lmfilament"}:
         return apply_general_product(product, first_tag)
     raise FlipError(f"no flip implementation is enabled for {product}")
 

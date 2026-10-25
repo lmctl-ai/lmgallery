@@ -1,6 +1,6 @@
 # Closed-source peer repository model
 
-**Status: lmaudio pilot paused before the public reset; nine-product scope.** The private source peer now contains the mirrored source refs and generated CI, but its publish-test failed; public refs and releases are unchanged. Final owner scope is lmdraw,
+**Status: lmaudio, lmmagnum, lmimg, and lmcad flips completed; lmfilament, lmdraw, lmvideo, lmoffice, and lmpdf remain.** Final owner scope is lmdraw,
 lmvideo, lmaudio, lmoffice, lmcad, lmmagnum, lmfilament, lmimg, and lmpdf.
 The generated public-only trees are under `/home/mma/staging/closed-source/`.
 `lmplot`, `lmphysics`, all other hosts, `lmcode-*`, and `lmgallery` remain open
@@ -14,7 +14,7 @@ Each included product uses two repositories with the same name:
 | Repository | Visibility and role | Contents |
 | --- | --- | --- |
 | `lmctlhq/<name>` | Private source/build repository | Implementation source, schemas, tests, build scripts, CI, dependency pins, private development history, and the release publisher workflow. |
-| `lmctl-ai/<name>` | Existing public demo, docs, and release repository with its public history reset | One orphan `main` commit containing README, docs/images, examples plus required inputs, `THIRD_PARTY_NOTICES*`, root `LICENSE` (binary terms), `LICENSE-examples` (MIT), and minimal public CI. The repository identity, URL, settings, issues, and stars remain in place. Private CI publishes five release assets and `SHA256SUMS` here. |
+| `lmctl-ai/<name>` | Existing public demo, docs, and release repository with its public history reset | One orphan `main` commit containing README, docs/images, examples plus required inputs, `THIRD_PARTY_NOTICES*`, root `LICENSE` (binary terms), `LICENSE-examples` (MIT), and minimal public CI. The repository identity, URL, settings, issues, and stars remain in place. Private CI publishes platform binaries and `SHA256SUMS` here. |
 
 The public repository is the source of truth for README, docs, example scripts,
 and their images. Preserve README links and example repository-relative paths.
@@ -36,9 +36,9 @@ material.
 
 ## Private CI and release publication
 
-On each main push, private CI runs a Linux-only fast job. The full five-platform
-build/package matrix runs only on `workflow_dispatch` or a version tag: Linux
-x64/arm64, macOS x64/arm64, and Windows x64. Do not expose `RELEASE_TOKEN` to
+On each main push, private CI runs a Linux-only fast job. The full platform
+build/package matrix runs only on `workflow_dispatch` or a version tag: five
+platforms where supported and four for lmvideo. Do not expose `RELEASE_TOKEN` to
 pull-request jobs. The product adapter stages exactly:
 
 ```text
@@ -99,13 +99,14 @@ before changing the public refs.
 
 Keep the existing public `lmctl-ai/<name>` repository in place. Its URL,
 settings, issues, and stars remain. Before rewriting it, save the old main SHA,
-all public branches and tags, and every release asset, note, tag, and name under
+all public branches/tags, release metadata, and the latest release assets under
 `/home/mma/staging/closed-source/`. Then force-with-lease the public `main` to
-one orphan commit containing the reviewed public tree, remove old public
-branches/tags/releases, and re-publish the latest release from the saved assets.
-Earlier releases remain in the local backup and source tags remain in the
-private mirror. The public `@latest` identity and raw README autorun paths stay
-unchanged.
+one orphan commit containing the reviewed public tree. For products except
+lmvideo, remove old public branches/tags/releases and re-publish the latest
+release from the staged assets. Lmvideo retains its existing release tags and
+release records because current compositions pin five distinct historical
+tags; its latest release receives a regenerated `SHA256SUMS`. The public
+`@latest` identity and raw README autorun paths stay unchanged.
 
 The lmaudio transition boundary is explicit: v0.2.1's five binaries,
 `LICENSE` asset, `SHA256SUMS`, and notices are re-published byte-for-byte; the
@@ -114,9 +115,9 @@ v0.2.1 remain MIT and later releases use the Personal Use License. The public
 root `LICENSE-examples` continues to cover examples and docs under MIT.
 
 Versioned consumer pins must refer to a release that will still exist publicly.
-The lmgallery example already pins lmaudio v0.2.1; the local simulation roadmap
-pin at v0.2.0 needs to move to v0.2.1 because older public tags/releases are
-removed. See [`closed-source-pin-inventory.md`](closed-source-pin-inventory.md).
+The lmgallery lmmagnum example pin was moved from v0.2.11 to v0.2.14 before
+older release tags were removed. Lmvideo's five historical pinned tags are
+preserved. See [`closed-source-pin-inventory.md`](closed-source-pin-inventory.md).
 
 Before the public reset, rollback is simply to stop; the private mirror may
 remain. After the reset starts, restore the saved public `main` with
