@@ -1027,6 +1027,8 @@ def _update_consumer_pins(product: str, first_tag: str, inventory: list[str], so
             command([
                 "git", "-C", str(root), "-c", "user.name=mike-lmctl", "-c", "user.email=281311770+mike-lmctl@users.noreply.github.com",
                 "commit", "-m", f"Point {product} consumers at {first_tag}",
+                "-m", f"Update versioned public install and release references after the history reset for {product}.",
+                "-m", "Constraint: Only the surviving first public release tag remains available\nConfidence: high\nScope-risk: narrow\nTested: Updated consumer references and pushed main\nNot-tested: Consumer-specific runtime behavior\nCo-Authored-By: OpenAI Codex <noreply@anthropic.com>",
             ])
             command(["git", "-C", str(root), "pull", "--rebase"], timeout=600)
             command(["git", "-C", str(root), "push", "origin", "main"], timeout=900)
@@ -1916,10 +1918,14 @@ def apply_general_product(product: str, first_tag: str) -> int:
         private_ci = _run_publish_test(product, private_sha)
     audit(f"PRIVATE_PUBLISH_TEST_SUCCESS url={private_ci.get('url','')}")
 
+    updated_consumers = _update_consumer_pins(product, first_tag, pins, root)
+    if updated_consumers:
+        audit(f"CONSUMER_PINS_UPDATED repos={','.join(updated_consumers)}")
+
     _prepare_orphan_commit(stage, product)
     rewrite = _replace_public_history(product, stage, old_refs, backup_git, release_backups, first_tag, verify_dir, release_bundle)
     _update_local_checkouts(product, root)
-    audit(f"FLIP_COMPLETE product={product} private_ci={private_ci.get('url','')} public_ci={rewrite['public_ci'].get('url','')} release={rewrite['release'].get('html_url','')}")
+    audit(f"FLIP_COMPLETE product={product} private_ci={private_ci.get('url','')} public_ci={rewrite['public_ci'].get('url','')} release={rewrite['release'].get('html_url','')} consumer_repos_updated={len(updated_consumers)}")
     print(f"FLIP COMPLETE: {product} private mirror, publish-test, public-content CI, release replay, and local checkouts verified; log={AUDIT_LOG}")
     return 0
 
