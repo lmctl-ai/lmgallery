@@ -438,5 +438,17 @@
     ],
     "output": "images/showcase-39-audio-harmonics.png",
     "image": "docs/images/showcase-39-audio-harmonics.png"
+  },
+  {
+    "file": "examples/40-bio-predator-prey-report.lms",
+    "title": "Predator-prey lab report with an lmvideo figure",
+    "description": "lmbio builds the coupled prey and predator model from its mass-action reactions, simulates it for 20 time units, and reports the peaks and final populations, asserting positive populations and predators peaking after prey; lmvideo draws the trajectories from twelve samples as a PNG; lmoffice writes the Word lab report with the method, results table, figure and conclusion. The picture is a LibreOffice render of the report.",
+    "hosts": [
+      "lmbio",
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-40-predator-prey.png",
+    "image": "docs/images/showcase-40-predator-prey-report.png"
   }
 ]
