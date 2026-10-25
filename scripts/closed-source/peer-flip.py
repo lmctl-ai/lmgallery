@@ -976,7 +976,7 @@ def _run_publish_test(product: str, private_sha: str) -> dict:
     if jobs.get("publish-test", {}).get("conclusion") != "success":
         raise FlipError(f"private publish-test job did not succeed: {details.get('url','')}")
     for name, job in jobs.items():
-        if name != "publish-test" and job.get("conclusion") != "skipped":
+        if name not in {"publish-test", "version"} and job.get("conclusion") != "skipped":
             raise FlipError(f"publish-test unexpectedly ran non-test job {name}: {details.get('url','')}")
     return details
 
@@ -1817,13 +1817,21 @@ def apply_general_product(product: str, first_tag: str) -> int:
 
     snapshot = git_snapshot(product, fetch=True)
     expected_origin = f"https://github.com/{public_repo(product)}.git"
+    private_target = _repo_view_private(product)
+    private_origin = f"https://github.com/{private_repo(product)}.git"
+    source_is_private = snapshot["origin"].rstrip("/") in {private_origin, private_origin.removesuffix(".git")}
+    valid_origins = {expected_origin, expected_origin.removesuffix(".git")}
+    if source_is_private:
+        valid_origins.update({private_origin, private_origin.removesuffix(".git")})
     if (snapshot["local_branch"] != "main" or not snapshot["clean"] or not snapshot["pushed"]
-            or snapshot["origin"].rstrip("/") not in {expected_origin, expected_origin.removesuffix(".git")}):
-        raise FlipError(f"{product} source checkout must be clean, on main, and synchronized to its public origin")
+            or snapshot["origin"].rstrip("/") not in valid_origins):
+        raise FlipError(f"{product} source checkout must be clean, on main, synchronized, and point at a known peer")
+    if source_is_private and (not private_target.get("exists") or not private_target.get("private")):
+        raise FlipError(f"local source points at {private_repo(product)}, but that private peer is not verified")
     active = active_lmctl_members()
     if agents_for(product, active):
         raise FlipError(f"an active {product} session exists; stop before private peer creation")
-    ci = ci_latest(product, snapshot["ref"], public_repo(product))
+    ci = ci_latest(product, snapshot["ref"], private_repo(product) if source_is_private else public_repo(product))
     if not ci.get("ok"):
         raise FlipError(f"{product} main CI is not green: {ci.get('url','')} {ci.get('error','')}")
 
@@ -1852,7 +1860,7 @@ def apply_general_product(product: str, first_tag: str) -> int:
     metadata = _repo_view(product)
     if metadata.get("full_name", "").lower() != public_repo(product).lower() or metadata.get("private") or metadata.get("disabled") or metadata.get("default_branch") != "main":
         raise FlipError(f"public {product} identity/visibility/default branch is unexpected")
-    private_scaffold = _check_private_target_free(product)
+    private_scaffold = False if source_is_private else _check_private_target_free(product)
     pins, consumers = consumer_repositories(product)
     validate_consumer_checkouts(product, list(consumers), active)
     latest = json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases/latest"]).stdout)
@@ -1875,7 +1883,7 @@ def apply_general_product(product: str, first_tag: str) -> int:
     audit(f"PREFLIGHT_PASS public_main={old_refs['main']} source_main={snapshot['ref']} release={first_tag} ref_count={len(old_refs['refs'])} pin_count={len(pins)}")
 
     # Preserve the full source tree privately before replacing public refs.
-    if not private_scaffold:
+    if not source_is_private and not private_scaffold:
         create = ["gh", "repo", "create", private_repo(product), "--private"]
         if metadata.get("description"):
             create.extend(["--description", metadata["description"]])
@@ -1884,17 +1892,28 @@ def apply_general_product(product: str, first_tag: str) -> int:
         command(create, timeout=300)
         _wait_for_repo_identity(product, private=True)
     private_url = f"https://github.com/{private_repo(product)}.git"
-    _set_repo_actions_enabled(product, False)
-    command(["git", "-C", str(root), "push", "--mirror", private_url], timeout=900)
-    command(["gh", "repo", "edit", private_repo(product), "--default-branch", "main"], timeout=300)
-    for topic in metadata.get("topics", []):
-        command(["gh", "repo", "edit", private_repo(product), "--add-topic", topic], timeout=300)
-    _assert_private_mirror_refs(product, old_refs["refs"])
-
-    _set_release_secret_from_file(product)
-    private_sha = _install_private_ci(product, root, first_tag)
-    _set_repo_actions_enabled(product, True)
-    private_ci = _run_publish_test(product, private_sha)
+    if source_is_private:
+        private_main = command(["git", "ls-remote", private_url, "refs/heads/main"], timeout=300).stdout.split()[0]
+        if private_main != snapshot["ref"]:
+            raise FlipError(f"existing private {product} main no longer matches the clean local source checkout")
+        secrets = json.loads(command(["gh", "secret", "list", "-R", private_repo(product), "--json", "name"]).stdout)
+        actions = json.loads(command(["gh", "api", f"repos/{private_repo(product)}/actions/permissions"]).stdout)
+        if not any(item.get("name") == "RELEASE_TOKEN" for item in secrets) or actions.get("enabled") is not True:
+            raise FlipError(f"existing private {product} peer is missing its release secret or enabled Actions")
+        private_sha = snapshot["ref"]
+        private_ci = ci
+        audit(f"PRIVATE_RESUME_VERIFIED repo={private_repo(product)} main={private_main}")
+    else:
+        _set_repo_actions_enabled(product, False)
+        command(["git", "-C", str(root), "push", "--mirror", private_url], timeout=900)
+        command(["gh", "repo", "edit", private_repo(product), "--default-branch", "main"], timeout=300)
+        for topic in metadata.get("topics", []):
+            command(["gh", "repo", "edit", private_repo(product), "--add-topic", topic], timeout=300)
+        _assert_private_mirror_refs(product, old_refs["refs"])
+        _set_release_secret_from_file(product)
+        private_sha = _install_private_ci(product, root, first_tag)
+        _set_repo_actions_enabled(product, True)
+        private_ci = _run_publish_test(product, private_sha)
     audit(f"PRIVATE_PUBLISH_TEST_SUCCESS url={private_ci.get('url','')}")
 
     _prepare_orphan_commit(stage, product)
