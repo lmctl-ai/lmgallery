@@ -782,6 +782,11 @@ def _update_local_checkouts(product: str, root: Path) -> None:
     command(["git", "clone", f"https://github.com/{public_repo(product)}.git", str(public_checkout)], timeout=900)
 
 
+def _point_source_checkout_private(product: str, root: Path) -> None:
+    command(["git", "-C", str(root), "remote", "set-url", "origin", f"https://github.com/{private_repo(product)}.git"])
+    command(["git", "-C", str(root), "pull", "--rebase"], timeout=600)
+
+
 def _install_private_ci(product: str, root: Path, first_tag: str) -> str:
     adapter = GALLERY / "scripts/closed-source/adapters" / f"{product}-private-ci.yml"
     if product == "lmaudio":
@@ -1089,6 +1094,7 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
             raise FlipError("source repo did not become private")
         _set_release_secret_from_file(product)
         private_secret_set = True
+        _point_source_checkout_private(product, root)
 
         create = ["gh", "repo", "create", public_repo(product), "--public"]
         if metadata.get("description"):
@@ -1125,6 +1131,7 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
                 restored = _wait_for_transfer_back(product)
                 if restored:
                     command(["gh", "repo", "edit", public_repo(product), "--visibility", "public", "--accept-visibility-change-consequences"], timeout=300)
+                    command(["git", "-C", str(root), "remote", "set-url", "origin", f"https://github.com/{public_repo(product)}.git"])
                 else:
                     raise FlipError("transferred repository did not return to lmctl-ai")
             except Exception as rollback_error:
