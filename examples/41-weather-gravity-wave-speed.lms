@@ -1,0 +1,128 @@
+# SPDX-License-Identifier: MIT
+# Gravity-wave speed from a shallow-water pulse. lmweather releases a Gaussian height bump (1 m on a
+# 1000 m deep channel, no rotation) and runs the plane in 2000 s steps. At each step the script finds the
+# crest of the right-going half of the pulse, and the program checks that its distance from the centre
+# grows at the wave speed the host reports, sqrt(g H), to 3 %. lmvideo draws the measured crest distance
+# against time with the predicted line (the gallery output); lmoffice writes the report.
+mkdir("images");
+mkdir("build");
+
+sim = _dsl_ cli="lmweather" install="github:lmctl-ai/lmweather@v0.1.3";
+let ly = 4000000.0;
+let m = wx.plane(8, 200, 40000.0, ly).depth(1000.0).coriolis(0.0, 0.0).linear();
+m.fields("pow(2.718281828459045, -(y - ly / 2) * (y - ly / 2) / 5000000000.0)", "0", "0");
+wx.print("c=" + str(m.wave_speed()));
+let peak0 = 0.0;
+let at0 = 0.0;
+for (j in range(103, 200)) {
+  let yy = (float(j) + 0.5) * ly / 200.0;
+  let hh = m.h_at(20000.0, yy);
+  if (hh > at0) { at0 = hh; peak0 = yy - ly / 2.0; }
+}
+wx.print("p0=" + str(peak0));
+m.run(2000.0);
+let peak1 = 0.0;
+let at1 = 0.0;
+for (j in range(103, 200)) {
+  let yy = (float(j) + 0.5) * ly / 200.0;
+  let hh = m.h_at(20000.0, yy);
+  if (hh > at1) { at1 = hh; peak1 = yy - ly / 2.0; }
+}
+wx.print("p1=" + str(peak1));
+m.run(2000.0);
+let peak2 = 0.0;
+let at2 = 0.0;
+for (j in range(103, 200)) {
+  let yy = (float(j) + 0.5) * ly / 200.0;
+  let hh = m.h_at(20000.0, yy);
+  if (hh > at2) { at2 = hh; peak2 = yy - ly / 2.0; }
+}
+wx.print("p2=" + str(peak2));
+m.run(2000.0);
+let peak3 = 0.0;
+let at3 = 0.0;
+for (j in range(103, 200)) {
+  let yy = (float(j) + 0.5) * ly / 200.0;
+  let hh = m.h_at(20000.0, yy);
+  if (hh > at3) { at3 = hh; peak3 = yy - ly / 2.0; }
+}
+wx.print("p3=" + str(peak3));
+m.run(2000.0);
+let peak4 = 0.0;
+let at4 = 0.0;
+for (j in range(103, 200)) {
+  let yy = (float(j) + 0.5) * ly / 200.0;
+  let hh = m.h_at(20000.0, yy);
+  if (hh > at4) { at4 = hh; peak4 = yy - ly / 2.0; }
+}
+wx.print("p4=" + str(peak4));
+m.run(2000.0);
+let peak5 = 0.0;
+let at5 = 0.0;
+for (j in range(103, 200)) {
+  let yy = (float(j) + 0.5) * ly / 200.0;
+  let hh = m.h_at(20000.0, yy);
+  if (hh > at5) { at5 = hh; peak5 = yy - ly / 2.0; }
+}
+wx.print("p5=" + str(peak5));
+m.run(2000.0);
+
+end _dsl_
+savedsl(sim, "build/gravity-wave-sim.dslb");
+r = system(concat(dsl_cli(sim), ["--dsl", "build/gravity-wave-sim.dslb"]), 900000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+let c = 0.0;
+let p0 = 0.0; let p1 = 0.0; let p2 = 0.0; let p3 = 0.0; let p4 = 0.0; let p5 = 0.0;
+for (line in split(r.stdout, "\n")) {
+  let parts = split(line, "=");
+  if (starts_with(line, "c=")) { c = num(parts[1]); }
+  if (starts_with(line, "p0=")) { p0 = num(parts[1]); }
+  if (starts_with(line, "p1=")) { p1 = num(parts[1]); }
+  if (starts_with(line, "p2=")) { p2 = num(parts[1]); }
+  if (starts_with(line, "p3=")) { p3 = num(parts[1]); }
+  if (starts_with(line, "p4=")) { p4 = num(parts[1]); }
+  if (starts_with(line, "p5=")) { p5 = num(parts[1]); }
+}
+let measured = (p5 - p1) / 8000.0;
+assert(abs(measured - c) / c < 0.03);
+
+# Figure (lmvideo): crest distance against time, measured points and the predicted line.
+figure = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 480); video.frames(1); video.output("images/showcase-41-gravity-wave-speed.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("Gravity pulse: crest distance from the centre (lmweather)").xlabel("time (hours)").ylabel("distance (km)").x_range(0.0, 3.0).y_range(0.0, 1200.0).legend("top_left").background("#ffffff");
+let predicted = plot.series("predicted, c = " + ${str(round(c * 10.0) / 10.0)} + " m/s", "line", "#94a3b8").width(2.0);
+predicted.add(0.0, 0.0); predicted.add(3.0, ${3.0 * 3600.0 * c / 1000.0 + 0.000000001});
+let measured_line = plot.series("lmweather crest", "scatter", "#1F4E78").marker("circle");
+measured_line.add(0.555556, ${p1 / 1000.0 + 0.000000001}); measured_line.add(1.111111, ${p2 / 1000.0 + 0.000000001}); measured_line.add(1.666667, ${p3 / 1000.0 + 0.000000001}); measured_line.add(2.222222, ${p4 / 1000.0 + 0.000000001}); measured_line.add(2.777778, ${p5 / 1000.0 + 0.000000001});
+fig.draw();
+video.end();
+end _dsl_
+savedsl(figure, "build/gravity-wave-figure.dslb");
+r = system(concat(dsl_cli(figure), ["--dsl", "build/gravity-wave-figure.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Report (lmoffice).
+report = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+let doc = office.docx("build/gravity-wave-report.docx");
+doc.title("Gravity-wave speed from a shallow-water pulse").author("Atmospheric dynamics group");
+doc.heading("Gravity-wave speed from a shallow-water pulse", 1).bold(true);
+doc.heading("Method", 2);
+doc.paragraph("A 1 m Gaussian height bump on a 1000 m deep channel was integrated with lmweather without rotation. The crest of the right-going half was located every 2000 s for 10000 s.");
+doc.heading("Result", 2);
+let t = doc.table(2, 3);
+t.cell(1, 1, "Quantity").cell(1, 2, "Value").cell(1, 3, "Note");
+t.cell(2, 1, "Wave speed reported by lmweather").cell(2, 2, ${str(round(c * 10.0) / 10.0)} + " m/s").cell(2, 3, "sqrt(g H), host-computed");
+doc.paragraph("Measured crest speed: " + ${str(round(measured * 10.0) / 10.0)} + " m/s, within 3 % of the reported speed.");
+doc.image("images/showcase-41-gravity-wave-speed.png", 600, 320);
+doc.heading("Conclusion", 2);
+doc.paragraph("The pulse splits and its crest moves at the gravity-wave speed, as linear shallow-water theory predicts.");
+doc.save();
+end _dsl_
+savedsl(report, "build/gravity-wave-report.dslb");
+r = system(concat(dsl_cli(report), ["--dsl", "build/gravity-wave-report.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/gravity-wave-report.docx and images/showcase-41-gravity-wave-speed.png");

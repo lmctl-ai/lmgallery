@@ -450,5 +450,17 @@
     ],
     "output": "images/showcase-40-predator-prey.png",
     "image": "docs/images/showcase-40-predator-prey-report.png"
+  },
+  {
+    "file": "examples/41-weather-gravity-wave-speed.lms",
+    "title": "Gravity-wave speed from a shallow-water pulse",
+    "description": "lmweather releases a 1 m Gaussian pulse on a 1000 m deep channel and tracks the crest of the right-going half every 2000 s; the program checks the measured speed against the wave speed the host reports, sqrt(gH), within 3 %. lmvideo plots the crest distance with the predicted line as a PNG; lmoffice writes the report with the result and the figure. The picture is a LibreOffice render of the report.",
+    "hosts": [
+      "lmweather",
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-41-gravity-wave-speed.png",
+    "image": "docs/images/showcase-41-gravity-wave-speed-report.png"
   }
 ]

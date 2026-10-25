@@ -24,6 +24,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#rates-and-options-desk-pack-curve-option-table-and-memo"><img src="../docs/images/showcase-35-rates-options.png" width="400" alt="Rates and options desk pack: curve, option table and memo"></a><br>Rates and options desk pack: curve, option table and memo | <a href="#html-link-check-report-with-a-terminal-picture"><img src="../docs/images/showcase-36-link-check.png" width="400" alt="HTML link-check report with a terminal picture"></a><br>HTML link-check report with a terminal picture |
 | <a href="#certificate-inventory-from-lmssl"><img src="../docs/images/showcase-37-cert-inventory.png" width="400" alt="Certificate inventory from lmssl"></a><br>Certificate inventory from lmssl | <a href="#product-slide-with-a-lmmagnum-3d-render"><img src="../docs/images/showcase-38-product-render.png" width="400" alt="Product slide with a lmmagnum 3D render"></a><br>Product slide with a lmmagnum 3D render |
 | <a href="#audio-harmonics-slide-with-a-wav-file"><img src="../docs/images/showcase-39-audio-harmonics.png" width="400" alt="Audio harmonics slide with a WAV file"></a><br>Audio harmonics slide with a WAV file | <a href="#predator-prey-lab-report-with-an-lmvideo-figure"><img src="../docs/images/showcase-40-predator-prey-report.png" width="400" alt="Predator-prey lab report with an lmvideo figure"></a><br>Predator-prey lab report with an lmvideo figure |
+| <a href="#gravity-wave-speed-from-a-shallow-water-pulse"><img src="../docs/images/showcase-41-gravity-wave-speed-report.png" width="400" alt="Gravity-wave speed from a shallow-water pulse"></a><br>Gravity-wave speed from a shallow-water pulse | |
 
 ## Damped oscillator dashboard
 
@@ -423,4 +424,14 @@ Hosts: lmbio → lmvideo → lmoffice. Output: `images/showcase-40-predator-prey
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/40-bio-predator-prey-report.lms
+```
+
+## Gravity-wave speed from a shallow-water pulse
+
+lmweather releases a 1 m Gaussian pulse on a 1000 m deep channel and tracks the crest of the right-going half every 2000 s; the program checks the measured speed against the wave speed the host reports, sqrt(gH), within 3 %. lmvideo plots the crest distance with the predicted line as a PNG; lmoffice writes the report with the result and the figure. The picture is a LibreOffice render of the report.
+
+Hosts: lmweather → lmvideo → lmoffice. Output: `images/showcase-41-gravity-wave-speed.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/41-weather-gravity-wave-speed.lms
 ```
