@@ -1077,7 +1077,11 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
     _check_private_target_free(product)
     if metadata.get("private") or not metadata.get("default_branch") == "main":
         raise FlipError("public lmaudio repo metadata differs from the reviewed preflight")
-    _prepare_orphan_commit(stage, product)
+    try:
+        _prepare_orphan_commit(stage, product)
+    except Exception:
+        shutil.rmtree(stage / ".git", ignore_errors=True)
+        raise
 
     transferred = False
     private_secret_set = False
@@ -1123,6 +1127,18 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
         print(f"FLIP COMPLETE: {product} source is private; fresh public peer and unchanged {first_tag} assets verified; private publish-test succeeded at {private_ci.get('url','')}; release={published_release.get('html_url','')}; local consumer docs updated={len(updated_docs)}")
         return 0
     except Exception as exc:
+        if not transferred:
+            probe = command(["gh", "api", f"repos/{private_repo(product)}"], check=False)
+            transferred = probe.returncode == 0
+        if transferred and not public_created:
+            public_probe = command(["gh", "api", f"repos/{public_repo(product)}"], check=False)
+            if public_probe.returncode == 0:
+                try:
+                    public_created = json.loads(public_probe.stdout).get("full_name", "").lower() == public_repo(product).lower()
+                except json.JSONDecodeError:
+                    pass
+        if not transferred:
+            shutil.rmtree(stage / ".git", ignore_errors=True)
         if transferred and not public_created:
             try:
                 if private_secret_set:
