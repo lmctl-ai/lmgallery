@@ -990,14 +990,17 @@ def _update_consumer_pins(product: str, first_tag: str, inventory: list[str], so
         path = Path(match.group(1))
         if not path.is_file():
             continue
-        root = Path(command(["git", "-C", str(path.parent), "rev-parse", "--show-toplevel"]).stdout.strip()).resolve()
+        repo_result = command(["git", "-C", str(path.parent), "rev-parse", "--show-toplevel"], check=False)
+        if repo_result.returncode:
+            continue
+        root = Path(repo_result.stdout.strip()).resolve()
         if root == source_root.resolve():
             continue
         file_map.setdefault(root, set()).add(path.resolve().relative_to(root).as_posix())
     updated: list[str] = []
     version = first_tag
     install_re = re.compile(rf"(github:lmctl-ai/{re.escape(product)}@)v[0-9]+\.[0-9]+\.[0-9]+")
-    release_re = re.compile(rf"(github\.com/lmctl-ai/{re.escape(product)}/releases/(?:download|tag)/)v[0-9]+\.[0-9]+\.[0-9]+")
+    release_download_re = re.compile(rf"(github\.com/lmctl-ai/{re.escape(product)}/releases/download/)v[0-9]+\.[0-9]+\.[0-9]+")
     for root, files in file_map.items():
         status = command(["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all"]).stdout.strip()
         if status:
@@ -1012,11 +1015,8 @@ def _update_consumer_pins(product: str, first_tag: str, inventory: list[str], so
             text = path.read_text(encoding="utf-8")
             out_lines = []
             for line in text.splitlines(keepends=True):
-                original = line
                 line = install_re.sub(rf"\g<1>{version}", line)
-                if release_re.search(line):
-                    line = release_re.sub(rf"\g<1>{version}", line)
-                    line = re.sub(r"\bv[0-9]+\.[0-9]+\.[0-9]+\b", version, line)
+                line = release_download_re.sub(rf"\g<1>{version}", line)
                 out_lines.append(line)
             updated_text = "".join(out_lines)
             if updated_text != text:
