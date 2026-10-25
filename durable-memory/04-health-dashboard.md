@@ -4,39 +4,43 @@
 
 ## Capabilities
 
-The tool audits all 33 repositories under the local checkouts tree and sibling `lmvideo`:
+The tool audits all repositories under the local checkouts tree and sibling `lmvideo` across both open-source and closed-source peer models:
 
-1. **Latest main CI status**:
-   - Queries `gh run list` on the default `main` branch.
-   - For failed runs, extracts and lists specific failed job names (e.g. `FAIL [linux-x64, macos-arm64]`).
-   - Reports in-progress or queued states during active runs.
+1. **Closed-Source Peer Model Support**:
+   - **Top PRODUCTS Table**: Displays a dedicated status section at the top of the output for closed products (`lmaudio`, `lmcad`, `lmdraw`, `lmfilament`, `lmimg`, `lmmagnum`, `lmoffice`, `lmpdf`, `lmvideo`), tracking:
+     * Private repository URL (`https://github.com/lmctlhq/<name>`)
+     * Public repository URL (`https://github.com/lmctl-ai/<name>`)
+     * Latest release tag and age
+     * Platform binary asset count and verification mark
+     * Public-content CI status (`public-content` workflow on `lmctl-ai`)
+     * Private source CI status (Linux fast CI on `lmctlhq`)
+   - **Row Merging**: Merges `<name>` and `<name>-public` checkouts into a single canonical row in the main table.
+   - **Public Repository Audits**:
+     * Verifies release tag, platform binary assets (4 for `lmvideo`/`lmfilament`/`lmssh`, 5 for others), `SHA256SUMS`, `LICENSE`, and `THIRD_PARTY_NOTICES`.
+     * Rejects debug/metrics extras (`*metrics*.json`, `*linkage*.json`, `*timings*.json`, `*minutes*.json`, `.pdb`, `.dSYM`).
+     * Verifies platform binary naming adheres to `<name>-<os>-<arch>`.
+     * Validates example syntax against installed released hosts with `lmscript --check`.
+     * Audits README demo pictures, broken images, and broken autorun links.
+     * Public side never flags missing durable-memory (`no dm/` is suppressed).
+   - **Private Repository Audits**:
+     * Monitors private push CI via `gh run list -R lmctlhq/<name>` (missing recent runs are allowed; failures flagged).
+     * Confirms presence of `RELEASE_TOKEN` secret via `gh secret list -R lmctlhq/<name>`.
+     * Confirms private/public repository visibility (`lmctlhq/<name>` is PRIVATE, `lmctl-ai/<name>` is PUBLIC).
+     * Verifies latest private main HEAD matches commit SHA referenced in public release notes (if present).
+     * Validates canonical `durable-memory/index.md` integrity.
 
-2. **Release status**:
-   - Queries latest published GitHub release tag, age, and assets.
-   - Verifies 4–5 platform binary assets (`linux-x64`, `linux-arm64`, `macos-x64`, `macos-arm64`, `windows-x64`).
-   - Verifies presence of `SHA256SUMS`.
-   - Categorizes SDK and composition repositories (`lmcode-*`, `lmgallery`) where binary releases are not applicable.
+2. **Open-Source Repository Audits**:
+   - **Latest main CI status**: Queries default `main` branch CI; identifies failing job names (e.g. `FAIL [linux-x64, macos-arm64]`).
+   - **Release status**: Queries latest published release tag, age, binary count, and `SHA256SUMS`. Recognizes SDK/composition repos where binary releases are not applicable.
+   - **SDK pin freshness (`sdk.lock`)**: Measures commit distance behind SDK upstream (`lmcode-cpp`, `lmcode-csharp`, `lmcode-java`) and std catalog synchronization (`synced` vs `differs`).
+   - **Compiler pin**: Audits workflows and scripts for `@lmctl-ai/lmctl` >= 0.2.420.
+   - **README demo page health**: Counts images, detects broken image paths and broken `lmctl autorun` command targets, flags missing `alt` attributes and oversized assets (> 600 KB).
+   - **Working tree and git state**: Identifies dirty trees and ahead/behind commit counts vs upstream remote branches.
+   - **Durable memory integrity**: Confirms `durable-memory/index.md` exists and lists all notes.
+   - **Stale names**: Scans for legacy identifiers (legacy SDK and tool names).
 
-3. **SDK pin freshness (`sdk.lock`)**:
-   - Checks pinned commit vs `origin/main` of the upstream SDK repo (`lmcode-cpp`, `lmcode-csharp`, or `lmcode-java`).
-   - Reports exact commit distance behind HEAD.
-   - Audits whether vendored `lmcode-std.schema.json` matches the upstream SDK standard catalog (`synced` vs `differs`).
-
-4. **README demo page health**:
-   - Counts embedded screenshots and diagram pictures.
-   - Detects broken local image paths and broken `lmctl autorun` command targets.
-   - Flags missing `alt` attributes and oversized assets (> 600 KB).
-
-5. **Working tree and git state**:
-   - Detects dirty working trees (modified and untracked files).
-   - Tracks ahead/behind commit counts vs upstream remote branches.
-
-6. **Durable memory integrity**:
-   - Checks presence of canonical `durable-memory/index.md`.
-   - Verifies that all files in `durable-memory/` are fully indexed.
-
-7. **Stale names**:
-   - Scans for legacy identifiers (legacy SDK and tool names).
+3. **Rate Limiting and Performance**:
+   - Implements thread-safe in-memory caching of all GitHub CLI (`gh`) responses, eliminating duplicate queries across checks.
 
 ## Usage
 
@@ -44,7 +48,7 @@ The tool audits all 33 repositories under the local checkouts tree and sibling `
 # Run full human-readable table
 scripts/health.sh
 
-# Run for a specific repository
+# Run for a specific repository or closed product
 scripts/health.sh --repo lmdraw
 
 # Output machine-readable JSON

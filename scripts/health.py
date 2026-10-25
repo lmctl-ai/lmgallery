@@ -2,13 +2,26 @@
 """health.py: Cross-repository health dashboard for lmctl-ai ecosystem.
 
 Audits:
-- Latest main CI status (per-job failures listed)
-- Latest release tag, age, platform asset count (4-5), SHA256SUMS presence
-- sdk.lock commit vs SDK origin/main (commits behind, std fragment status)
-- README pictures, broken images, broken autorun links, missing alt text, oversized images
-- Git working-tree status (clean/dirty, ahead/behind counts)
-- durable-memory/index.md presence and complete indexing
-- Stale SDK names (cpp-dsl-sdk, rust-dsl-sdk, lmterraform)
+- Closed-source peer model products:
+  * Top PRODUCTS table: private URL, public URL, latest release tag, release age,
+    asset count, public-content CI state, private CI state
+  * Public repo: release tag, platform asset count (4-5), SHA256SUMS presence,
+    LICENSE + THIRD_PARTY_NOTICES presence, no debug/metrics extras,
+    asset naming (<name>-<os>-<arch>), public-content CI, README pictures & links,
+    and example syntax via installed released hosts with `lmscript --check`
+  * Private repo: Linux push CI (missing recent run is OK; failed is not),
+    RELEASE_TOKEN secret presence, private main sha vs public release notes sha,
+    private/public visibility (lmctlhq is PRIVATE, lmctl-ai is PUBLIC),
+    durable-memory/index.md integrity, sdk.lock freshness, compiler pin
+- Open-source repositories:
+  * Latest main CI status (per-job failures listed)
+  * Latest release tag, age, platform asset count (4-5), SHA256SUMS presence
+  * sdk.lock commit vs SDK origin/main (commits behind, std fragment status)
+  * Compiler pin (@lmctl-ai/lmctl >= 0.2.420)
+  * README pictures, broken images, broken autorun links, missing alt text, oversized images
+  * Git working-tree status (clean/dirty, ahead/behind counts)
+  * durable-memory/index.md presence and complete indexing
+  * Stale SDK names (cpp-dsl-sdk, rust-dsl-sdk, lmterraform)
 
 Options:
   --json        Output results as machine-readable JSON
@@ -24,10 +37,35 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import threading
 import urllib.parse
 import urllib.request
+
+# Ensure user local bin is on PATH for host binaries
+local_bin = os.path.expanduser('~/.local/bin')
+if local_bin not in os.environ.get('PATH', ''):
+  os.environ['PATH'] = f"{local_bin}:{os.environ.get('PATH', '')}"
+
+CLOSED_SOURCE_PRODUCTS = [
+    'lmaudio',
+    'lmcad',
+    'lmdraw',
+    'lmfilament',
+    'lmimg',
+    'lmmagnum',
+    'lmoffice',
+    'lmpdf',
+    'lmvideo',
+]
+
+FOUR_PLATFORM_HOSTS = {
+    'lmvideo',
+    'lmfilament',
+    'lmssh',
+}
 
 NON_BINARY_REPOS = {
     'lmgallery',
@@ -61,6 +99,20 @@ STALE_WORDS = ['cpp-dsl-sdk', 'rust-dsl-sdk', 'lmterraform']
 MIN_COMPILER_PIN = (0, 2, 420)
 
 USE_COLOR = sys.stdout.isatty()
+
+_GH_CACHE = {}
+_GH_LOCK = threading.Lock()
+
+
+def gh_cmd(args):
+  key = tuple(args)
+  with _GH_LOCK:
+    if key in _GH_CACHE:
+      return _GH_CACHE[key]
+  res = subprocess.run(['gh'] + list(args), capture_output=True, text=True)
+  with _GH_LOCK:
+    _GH_CACHE[key] = res
+  return res
 
 
 def color(text, code):
@@ -104,24 +156,70 @@ def discover_repos(target_repo=None):
   ]:
     if os.path.isdir(alt) and alt not in candidates:
       candidates.append(alt)
-  repos = []
-  for p in sorted(candidates):
-    if not os.path.isdir(p):
+
+  # Map available directories
+  dirs_by_name = {}
+  for p in candidates:
+    if not os.path.isdir(p) or not os.path.isdir(os.path.join(p, '.git')):
       continue
-    if not os.path.isdir(os.path.join(p, '.git')):
+    bname = os.path.basename(p)
+    if bname == 'lmctl-mono':
       continue
-    name = os.path.basename(p)
-    if name == 'lmctl-mono':
+    dirs_by_name[bname] = os.path.abspath(p)
+
+  # Collect base product / repo names
+  base_names = set()
+  for bname in dirs_by_name:
+    if bname.endswith('-public'):
+      base_names.add(bname[:-7])
+    else:
+      base_names.add(bname)
+
+  # Normalize target_repo if specified (e.g. lmaudio-public -> lmaudio)
+  target_norm = None
+  if target_repo:
+    target_norm = (
+        target_repo[:-7] if target_repo.endswith('-public') else target_repo
+    )
+
+  repo_targets = []
+  for name in sorted(base_names):
+    if target_norm and name != target_norm:
       continue
-    if target_repo and name != target_repo:
-      continue
-    repos.append((name, os.path.abspath(p)))
-  return repos
+
+    priv_path = dirs_by_name.get(name)
+    pub_path = dirs_by_name.get(f'{name}-public')
+
+    origin_url = ''
+    if priv_path:
+      p_rem = subprocess.run(
+          ['git', '-C', priv_path, 'config', '--get', 'remote.origin.url'],
+          capture_output=True,
+          text=True,
+      )
+      origin_url = p_rem.stdout.strip()
+
+    is_closed = False
+    if name in CLOSED_SOURCE_PRODUCTS:
+      if pub_path or 'lmctlhq' in origin_url:
+        is_closed = True
+      elif target_repo and target_repo in (name, f'{name}-public'):
+        is_closed = True
+
+    repo_targets.append({
+        'name': name,
+        'path': priv_path or pub_path,
+        'private_path': priv_path,
+        'public_path': pub_path,
+        'is_closed': is_closed,
+        'origin_url': origin_url,
+    })
+
+  return repo_targets
 
 
 def check_ci(repo_name):
-  cmd = [
-      'gh',
+  res = gh_cmd([
       'run',
       'list',
       '-R',
@@ -132,11 +230,9 @@ def check_ci(repo_name):
       '1',
       '--json',
       'databaseId,status,conclusion,url,headSha',
-  ]
-  res = subprocess.run(cmd, capture_output=True, text=True)
+  ])
   if res.returncode != 0 or not res.stdout.strip():
-    cmd_fallback = [
-        'gh',
+    res = gh_cmd([
         'run',
         'list',
         '-R',
@@ -145,8 +241,7 @@ def check_ci(repo_name):
         '1',
         '--json',
         'databaseId,status,conclusion,url,headSha',
-    ]
-    res = subprocess.run(cmd_fallback, capture_output=True, text=True)
+    ])
     if res.returncode != 0 or not res.stdout.strip():
       return {
           'status': 'no_runs',
@@ -195,20 +290,15 @@ def check_ci(repo_name):
   elif conclusion in ('failure', 'startup_failure', 'timed_out', 'cancelled'):
     is_red = conclusion != 'cancelled'
     if run_id:
-      job_res = subprocess.run(
-          [
-              'gh',
-              'run',
-              'view',
-              str(run_id),
-              '-R',
-              f'lmctl-ai/{repo_name}',
-              '--json',
-              'jobs',
-          ],
-          capture_output=True,
-          text=True,
-      )
+      job_res = gh_cmd([
+          'run',
+          'view',
+          str(run_id),
+          '-R',
+          f'lmctl-ai/{repo_name}',
+          '--json',
+          'jobs',
+      ])
       if job_res.returncode == 0:
         try:
           job_data = json.loads(job_res.stdout)
@@ -238,9 +328,295 @@ def check_ci(repo_name):
   }
 
 
-def check_release(repo_name):
-  cmd = [
-      'gh',
+def check_private_ci(product_name):
+  res = gh_cmd([
+      'run',
+      'list',
+      '-R',
+      f'lmctlhq/{product_name}',
+      '--branch',
+      'main',
+      '-L',
+      '1',
+      '--json',
+      'databaseId,status,conclusion,url,headSha',
+  ])
+  if res.returncode != 0 or not res.stdout.strip():
+    res = gh_cmd([
+        'run',
+        'list',
+        '-R',
+        f'lmctlhq/{product_name}',
+        '-L',
+        '1',
+        '--json',
+        'databaseId,status,conclusion,url,headSha',
+    ])
+    if res.returncode != 0 or not res.stdout.strip():
+      return {
+          'status': 'no_runs',
+          'conclusion': 'none',
+          'display': 'no runs (OK)',
+          'failed_jobs': [],
+          'run_url': '',
+          'is_red': False,
+      }
+
+  try:
+    runs = json.loads(res.stdout)
+  except Exception:
+    return {
+        'status': 'error',
+        'conclusion': 'unknown',
+        'display': 'error',
+        'failed_jobs': [],
+        'run_url': '',
+        'is_red': False,
+    }
+
+  if not runs:
+    return {
+        'status': 'no_runs',
+        'conclusion': 'none',
+        'display': 'no runs (OK)',
+        'failed_jobs': [],
+        'run_url': '',
+        'is_red': False,
+    }
+
+  run = runs[0]
+  status = run.get('status', '')
+  conclusion = run.get('conclusion', '')
+  run_id = run.get('databaseId')
+  run_url = run.get('url', '')
+
+  failed_jobs = []
+  is_red = False
+
+  if conclusion == 'success':
+    display = 'PASS'
+  elif status in ('queued', 'in_progress', 'waiting', 'requested'):
+    display = status
+  elif conclusion in ('failure', 'startup_failure', 'timed_out', 'cancelled'):
+    is_red = conclusion != 'cancelled'
+    if run_id:
+      job_res = gh_cmd([
+          'run',
+          'view',
+          str(run_id),
+          '-R',
+          f'lmctlhq/{product_name}',
+          '--json',
+          'jobs',
+      ])
+      if job_res.returncode == 0:
+        try:
+          job_data = json.loads(job_res.stdout)
+          failed_jobs = [
+              j.get('name', 'job')
+              for j in job_data.get('jobs', [])
+              if j.get('conclusion') in ('failure', 'startup_failure')
+          ]
+        except Exception:
+          pass
+    job_str = (
+        f"[{', '.join(failed_jobs)}]"
+        if failed_jobs
+        else f'[{conclusion or status}]'
+    )
+    display = f'FAIL {job_str}'
+  else:
+    display = conclusion or status or 'unknown'
+
+  return {
+      'status': status,
+      'conclusion': conclusion,
+      'display': display,
+      'failed_jobs': failed_jobs,
+      'run_url': run_url,
+      'is_red': is_red,
+  }
+
+
+def check_public_ci(product_name):
+  res = gh_cmd([
+      'run',
+      'list',
+      '-R',
+      f'lmctl-ai/{product_name}',
+      '--branch',
+      'main',
+      '-L',
+      '1',
+      '--json',
+      'databaseId,status,conclusion,url,headSha,workflowName',
+  ])
+  if res.returncode != 0 or not res.stdout.strip():
+    res = gh_cmd([
+        'run',
+        'list',
+        '-R',
+        f'lmctl-ai/{product_name}',
+        '-L',
+        '1',
+        '--json',
+        'databaseId,status,conclusion,url,headSha,workflowName',
+    ])
+    if res.returncode != 0 or not res.stdout.strip():
+      return {
+          'status': 'no_runs',
+          'conclusion': 'unknown',
+          'display': 'no runs',
+          'failed_jobs': [],
+          'run_url': '',
+          'is_red': False,
+      }
+
+  try:
+    runs = json.loads(res.stdout)
+  except Exception:
+    return {
+        'status': 'error',
+        'conclusion': 'unknown',
+        'display': 'error',
+        'failed_jobs': [],
+        'run_url': '',
+        'is_red': False,
+    }
+
+  if not runs:
+    return {
+        'status': 'no_runs',
+        'conclusion': 'none',
+        'display': 'no runs',
+        'failed_jobs': [],
+        'run_url': '',
+        'is_red': False,
+    }
+
+  run = runs[0]
+  status = run.get('status', '')
+  conclusion = run.get('conclusion', '')
+  run_id = run.get('databaseId')
+  run_url = run.get('url', '')
+
+  failed_jobs = []
+  is_red = False
+
+  if conclusion == 'success':
+    display = 'PASS'
+  elif status in ('queued', 'in_progress', 'waiting', 'requested'):
+    display = status
+  elif conclusion in ('failure', 'startup_failure', 'timed_out', 'cancelled'):
+    is_red = conclusion != 'cancelled'
+    if run_id:
+      job_res = gh_cmd([
+          'run',
+          'view',
+          str(run_id),
+          '-R',
+          f'lmctl-ai/{product_name}',
+          '--json',
+          'jobs',
+      ])
+      if job_res.returncode == 0:
+        try:
+          job_data = json.loads(job_res.stdout)
+          failed_jobs = [
+              j.get('name', 'job')
+              for j in job_data.get('jobs', [])
+              if j.get('conclusion') in ('failure', 'startup_failure')
+          ]
+        except Exception:
+          pass
+    job_str = (
+        f"[{', '.join(failed_jobs)}]"
+        if failed_jobs
+        else f'[{conclusion or status}]'
+    )
+    display = f'FAIL {job_str}'
+  else:
+    display = conclusion or status or 'unknown'
+
+  return {
+      'status': status,
+      'conclusion': conclusion,
+      'display': display,
+      'failed_jobs': failed_jobs,
+      'run_url': run_url,
+      'is_red': is_red,
+  }
+
+
+def check_visibility(product_name):
+  priv_res = gh_cmd(
+      ['repo', 'view', f'lmctlhq/{product_name}', '--json', 'isPrivate']
+  )
+  pub_res = gh_cmd(
+      ['repo', 'view', f'lmctl-ai/{product_name}', '--json', 'isPrivate']
+  )
+
+  priv_is_private = None
+  if priv_res.returncode == 0:
+    try:
+      priv_is_private = json.loads(priv_res.stdout).get('isPrivate')
+    except Exception:
+      pass
+
+  pub_is_private = None
+  if pub_res.returncode == 0:
+    try:
+      pub_is_private = json.loads(pub_res.stdout).get('isPrivate')
+    except Exception:
+      pass
+
+  issues = []
+  if priv_is_private is False:
+    issues.append(f'lmctlhq/{product_name} is PUBLIC (expected PRIVATE)')
+  elif priv_is_private is None:
+    issues.append(f'could not verify lmctlhq/{product_name} visibility')
+
+  if pub_is_private is True:
+    issues.append(f'lmctl-ai/{product_name} is PRIVATE (expected PUBLIC)')
+  elif pub_is_private is None:
+    issues.append(f'could not verify lmctl-ai/{product_name} visibility')
+
+  return {
+      'is_ok': len(issues) == 0,
+      'issues': issues,
+      'priv_is_private': priv_is_private,
+      'pub_is_private': pub_is_private,
+  }
+
+
+def check_release_token(product_name):
+  sec_res = gh_cmd(['secret', 'list', '-R', f'lmctlhq/{product_name}'])
+  has_token = False
+  if sec_res.returncode == 0:
+    has_token = bool(re.search(r'\bRELEASE_TOKEN\b', sec_res.stdout))
+  return has_token
+
+
+def format_age(published_at):
+  if not published_at:
+    return ''
+  try:
+    dt = datetime.datetime.fromisoformat(published_at.replace('Z', '+00:00'))
+    now = datetime.datetime.now(datetime.timezone.utc)
+    diff = now - dt
+    secs = int(diff.total_seconds())
+    if secs < 3600:
+      return f'{secs // 60}m'
+    elif secs < 86400:
+      return f'{secs // 3600}h'
+    else:
+      return f'{secs // 86400}d'
+  except Exception:
+    return ''
+
+
+def check_release(repo_name, is_closed=False, private_path=None):
+  res = gh_cmd([
       'release',
       'list',
       '-R',
@@ -249,10 +625,9 @@ def check_release(repo_name):
       '1',
       '--json',
       'tagName,publishedAt,name',
-  ]
-  res = subprocess.run(cmd, capture_output=True, text=True)
+  ])
   if res.returncode != 0 or not res.stdout.strip():
-    is_red = repo_name not in NON_BINARY_REPOS
+    is_red = repo_name not in NON_BINARY_REPOS and repo_name not in UNRELEASED_HOSTS
     return {
         'tag': None,
         'display': 'n/a (SDK/gallery)'
@@ -261,8 +636,14 @@ def check_release(repo_name):
         'is_red': is_red,
         'assets': [],
         'has_sha256': False,
+        'has_license': False,
+        'has_notices': False,
+        'extras': [],
+        'misnamed': [],
         'platform_count': 0,
+        'expected_platforms': 4 if repo_name in FOUR_PLATFORM_HOSTS else 5,
         'age_str': '',
+        'issues': ['No release found'] if is_red else [],
     }
 
   try:
@@ -274,12 +655,18 @@ def check_release(repo_name):
         'is_red': False,
         'assets': [],
         'has_sha256': False,
+        'has_license': False,
+        'has_notices': False,
+        'extras': [],
+        'misnamed': [],
         'platform_count': 0,
+        'expected_platforms': 4 if repo_name in FOUR_PLATFORM_HOSTS else 5,
         'age_str': '',
+        'issues': ['Failed to parse release list'],
     }
 
   if not rels:
-    is_red = (repo_name not in NON_BINARY_REPOS and repo_name not in UNRELEASED_HOSTS)
+    is_red = repo_name not in NON_BINARY_REPOS and repo_name not in UNRELEASED_HOSTS
     return {
         'tag': None,
         'display': 'n/a (SDK/gallery)'
@@ -288,87 +675,146 @@ def check_release(repo_name):
         'is_red': is_red,
         'assets': [],
         'has_sha256': False,
+        'has_license': False,
+        'has_notices': False,
+        'extras': [],
+        'misnamed': [],
         'platform_count': 0,
+        'expected_platforms': 4 if repo_name in FOUR_PLATFORM_HOSTS else 5,
         'age_str': '',
+        'issues': ['No release found'] if is_red else [],
     }
 
   rel = rels[0]
   tag = rel.get('tagName', '')
   published_at = rel.get('publishedAt', '')
 
-  view_cmd = [
-      'gh',
+  v_res = gh_cmd([
       'release',
       'view',
       tag,
       '-R',
       f'lmctl-ai/{repo_name}',
       '--json',
-      'assets',
-  ]
-  v_res = subprocess.run(view_cmd, capture_output=True, text=True)
+      'assets,body',
+  ])
   assets = []
+  body = ''
   if v_res.returncode == 0:
     try:
       v_data = json.loads(v_res.stdout)
       assets = [a.get('name', '') for a in v_data.get('assets', [])]
+      body = v_data.get('body', '')
     except Exception:
       pass
 
-  age_str = ''
-  if published_at:
-    try:
-      dt = datetime.datetime.fromisoformat(published_at.replace('Z', '+00:00'))
-      now = datetime.datetime.now(datetime.timezone.utc)
-      diff = now - dt
-      secs = int(diff.total_seconds())
-      if secs < 3600:
-        age_str = f'{secs // 60}m'
-      elif secs < 86400:
-        age_str = f'{secs // 3600}h'
-      else:
-        age_str = f'{secs // 86400}d'
-    except Exception:
-      pass
+  age_str = format_age(published_at)
 
+  expected_platforms = 4 if repo_name in FOUR_PLATFORM_HOSTS else 5
   plat_targets = [
       'linux-x64',
       'linux-arm64',
       'macos-x64',
       'macos-arm64',
-      'windows-x64',
   ]
+  if expected_platforms == 5:
+    plat_targets.append('windows-x64')
+
   platform_count = 0
+  misnamed = []
   for p in plat_targets:
-    if any(
-        p in a
+    matching = [
+        a
+        for a in assets
+        if p in a
         or (
             p == 'windows-x64'
             and (a.endswith('.exe') or 'windows' in a or 'win-x64' in a)
         )
-        for a in assets
-    ):
+    ]
+    if matching:
       platform_count += 1
+      if is_closed:
+        for m in matching:
+          if not m.startswith(f'{repo_name}-'):
+            misnamed.append(m)
 
   has_sha256 = any('SHA256' in a.upper() for a in assets)
+  has_license = any(a == 'LICENSE' or a.startswith('LICENSE.') for a in assets)
+  has_notices = any('NOTICE' in a.upper() for a in assets)
 
+  extras = []
+  if is_closed:
+    for a in assets:
+      al = a.lower()
+      if any(
+          x in al
+          for x in ['metrics', 'linkage', 'timings', 'minutes', '.pdb', '.dsym']
+      ):
+        extras.append(a)
+
+  issues = []
   is_red = False
-  if repo_name not in NON_BINARY_REPOS and repo_name not in UNRELEASED_HOSTS:
-    if platform_count < 4:
-      is_red = True
 
-  display = (
-      f"{tag} ({age_str}, {platform_count}/5, {'✓' if has_sha256 else '✗'})"
-  )
+  if repo_name not in NON_BINARY_REPOS and repo_name not in UNRELEASED_HOSTS:
+    if platform_count < expected_platforms:
+      is_red = True
+      issues.append(
+          f'incomplete platform binaries ({platform_count}/{expected_platforms})'
+      )
+    if not has_sha256:
+      is_red = True
+      issues.append('missing SHA256SUMS')
+
+    if is_closed:
+      if not has_license:
+        is_red = True
+        issues.append('missing LICENSE asset')
+      if not has_notices:
+        is_red = True
+        issues.append('missing THIRD_PARTY_NOTICES asset')
+      if extras:
+        is_red = True
+        issues.append(f"debug/metrics extras present: {', '.join(extras)}")
+      if misnamed:
+        is_red = True
+        issues.append(f"misnamed binary assets: {', '.join(misnamed)}")
+
+      # Verify release notes commit SHA if present
+      sha_match = re.search(r'\b(?:commit|sha)[:\s/]+([0-9a-f]{7,40})\b', body, re.I)
+      if sha_match and private_path and os.path.isdir(private_path):
+        rel_sha = sha_match.group(1).lower()
+        p_head = subprocess.run(
+            ['git', '-C', private_path, 'rev-parse', 'HEAD'],
+            capture_output=True,
+            text=True,
+        )
+        priv_head = p_head.stdout.strip().lower()
+        if not priv_head.startswith(rel_sha) and not rel_sha.startswith(priv_head):
+          is_red = True
+          issues.append(
+              f'release notes SHA {rel_sha[:7]} does not match private HEAD'
+              f' {priv_head[:7]}'
+          )
+
+  check_mark = '✓' if (has_sha256 and (not is_closed or (has_license and has_notices and not extras))) else '✗'
+  display = f'{tag} ({age_str}, {platform_count}/{expected_platforms}, {check_mark})'
+
   return {
       'tag': tag,
       'published_at': published_at,
       'age_str': age_str,
       'assets': assets,
       'platform_count': platform_count,
+      'expected_platforms': expected_platforms,
       'has_sha256': has_sha256,
+      'has_license': has_license,
+      'has_notices': has_notices,
+      'extras': extras,
+      'misnamed': misnamed,
       'display': display,
       'is_red': is_red,
+      'issues': issues,
   }
 
 
@@ -439,9 +885,15 @@ def check_sdk_pin(repo_path, repo_name):
     for line in text.splitlines():
       line = line.strip()
       line_lower = line.lower()
-      if line_lower.startswith('repo=') or line_lower.startswith('repository=') or line_lower.startswith('sdk_repo='):
+      if (
+          line_lower.startswith('repo=')
+          or line_lower.startswith('repository=')
+          or line_lower.startswith('sdk_repo=')
+      ):
         pinned_repo = line.split('=', 1)[1].strip()
-      elif line_lower.startswith('commit=') or line_lower.startswith('sdk_commit='):
+      elif line_lower.startswith('commit=') or line_lower.startswith(
+          'sdk_commit='
+      ):
         commit = line.split('=', 1)[1].strip()
       elif line and not line.startswith('#') and ' ' in line and '=' not in line:
         parts = line.split()
@@ -501,10 +953,10 @@ def check_sdk_pin(repo_path, repo_name):
       behind = 999
 
   std_status = '-'
-  host_std_path = os.path.join(
-      repo_path, 'cpp', 'std', 'lmcode-std.schema.json'
+  host_std_path = os.path.join(repo_path, 'cpp', 'std', 'lmcode-std.schema.json')
+  cpp_std_path = os.path.join(
+      repos_root, 'lmcode-cpp', 'std', 'lmcode-std.schema.json'
   )
-  cpp_std_path = os.path.join(repos_root, 'lmcode-cpp', 'std', 'lmcode-std.schema.json')
 
   if os.path.exists(host_std_path):
     if os.path.exists(cpp_std_path):
@@ -571,7 +1023,9 @@ def check_compiler_pin(repo_path, repo_name):
     try:
       with open(t, 'r', errors='ignore') as fh:
         content = fh.read()
-      for m in re.finditer(r'@lmctl-ai/lmctl@([0-9]+)\.([0-9]+)\.([0-9]+)', content):
+      for m in re.finditer(
+          r'@lmctl-ai/lmctl@([0-9]+)\.([0-9]+)\.([0-9]+)', content
+      ):
         ver_tuple = (int(m.group(1)), int(m.group(2)), int(m.group(3)))
         ver_str = f'{m.group(1)}.{m.group(2)}.{m.group(3)}'
         found_versions.append((ver_tuple, ver_str))
@@ -600,7 +1054,7 @@ def check_compiler_pin(repo_path, repo_name):
   }
 
 
-def check_examples(repo_path, repo_name):
+def check_examples(repo_path, repo_name, is_closed=False):
   examples_dir = os.path.join(repo_path, 'examples')
   if not os.path.isdir(examples_dir):
     return {
@@ -608,6 +1062,7 @@ def check_examples(repo_path, repo_name):
         'lmcode_count': 0,
         'dsl_count': 0,
         'dsl_files': [],
+        'syntax_failures': [],
         'display': '-',
         'is_red': False,
     }
@@ -634,14 +1089,43 @@ def check_examples(repo_path, repo_name):
     except Exception:
       pass
 
-  display = f'{len(dsl_files)} _dsl_ (info)' if dsl_files else ('OK' if total > 0 else '-')
+  # If closed-source, test syntax with lmscript --check using installed host
+  syntax_failures = []
+  if is_closed and lms_files:
+    host_bin = shutil.which(repo_name)
+    if host_bin:
+      # Batch run syntax check
+      cmd = ['lmscript', '--check'] + lms_files
+      res = subprocess.run(cmd, cwd=repo_path, capture_output=True, text=True)
+      if res.returncode != 0:
+        # One or more failed; pinpoint failing files individually
+        for fp in lms_files:
+          c_res = subprocess.run(
+              ['lmscript', '--check', fp],
+              cwd=repo_path,
+              capture_output=True,
+              text=True,
+          )
+          if c_res.returncode != 0:
+            syntax_failures.append(os.path.relpath(fp, repo_path))
+
+  is_red = bool(syntax_failures)
+  display = (
+      f'{len(dsl_files)} _dsl_ (info)'
+      if dsl_files
+      else ('OK' if total > 0 else '-')
+  )
+  if syntax_failures:
+    display = f'FAIL ({len(syntax_failures)} syntax)'
+
   return {
       'total': total,
       'lmcode_count': lmcode_count,
       'dsl_count': len(dsl_files),
       'dsl_files': dsl_files,
+      'syntax_failures': syntax_failures,
       'display': display,
-      'is_red': False,
+      'is_red': is_red,
   }
 
 
@@ -746,7 +1230,7 @@ def check_readme(repo_path, repo_name):
   }
 
 
-def check_git(repo_path):
+def check_git(repo_path, public_path=None):
   p_status = subprocess.run(
       ['git', '-C', repo_path, 'status', '--porcelain'],
       capture_output=True,
@@ -787,13 +1271,34 @@ def check_git(repo_path):
         ahead = int(parts[0])
         behind = int(parts[1])
 
-  status_str = f'dirty({len(dirty_lines)})' if is_dirty else 'clean'
+  pub_dirty = 0
+  if public_path and os.path.isdir(public_path):
+    p_pub = subprocess.run(
+        ['git', '-C', public_path, 'status', '--porcelain'],
+        capture_output=True,
+        text=True,
+    )
+    pub_lines = [l for l in p_pub.stdout.splitlines() if l.strip()]
+    pub_dirty = len(pub_lines)
+    if pub_dirty > 0:
+      is_dirty = True
+
+  if is_dirty:
+    if pub_dirty > 0 and len(dirty_lines) > 0:
+      status_str = f'dirty(priv:{len(dirty_lines)},pub:{pub_dirty})'
+    elif pub_dirty > 0:
+      status_str = f'dirty(pub:{pub_dirty})'
+    else:
+      status_str = f'dirty({len(dirty_lines)})'
+  else:
+    status_str = 'clean'
+
   ab_str = f'{ahead}↑ {behind}↓'
   display = f'{status_str}, {ab_str}'
 
   return {
       'is_dirty': is_dirty,
-      'dirty_count': len(dirty_lines),
+      'dirty_count': len(dirty_lines) + pub_dirty,
       'ahead': ahead,
       'behind': behind,
       'display': display,
@@ -801,7 +1306,8 @@ def check_git(repo_path):
   }
 
 
-def check_durable_memory(repo_path):
+def check_durable_memory(repo_path, is_closed=False):
+  # In closed-source peer model, durable-memory is in private repo only
   dm = os.path.join(repo_path, 'durable-memory')
   if not os.path.exists(dm):
     return {
@@ -846,7 +1352,7 @@ def check_durable_memory(repo_path):
   }
 
 
-def check_stale_names(repo_path):
+def check_stale_names(repo_path, public_path=None):
   stale_hits = []
   targets = [os.path.join(repo_path, 'README.md')]
   dm = os.path.join(repo_path, 'durable-memory')
@@ -855,6 +1361,11 @@ def check_stale_names(repo_path):
       fp = os.path.join(dm, f)
       if os.path.isfile(fp):
         targets.append(fp)
+
+  if public_path and os.path.isdir(public_path):
+    pub_readme = os.path.join(public_path, 'README.md')
+    if os.path.exists(pub_readme) and pub_readme not in targets:
+      targets.append(pub_readme)
 
   for t in targets:
     if os.path.exists(t):
@@ -877,32 +1388,173 @@ def check_stale_names(repo_path):
   }
 
 
-def audit_repo(repo_info):
-  name, path = repo_info
-  ci = check_ci(name)
-  rel = check_release(name)
-  sdk = check_sdk_pin(path, name)
-  compiler = check_compiler_pin(path, name)
-  examples = check_examples(path, name)
-  readme = check_readme(path, name)
-  git_info = check_git(path)
-  dm = check_durable_memory(path)
-  stale = check_stale_names(path)
+def audit_repo(target):
+  name = target['name']
+  is_closed = target['is_closed']
+  path = target['path']
+  priv_path = target.get('private_path')
+  pub_path = target.get('public_path')
 
-  is_red = (
-      ci['is_red']
-      or rel['is_red']
-      or sdk['is_red']
-      or compiler['is_stale']
-      or readme['is_red']
-      or dm['is_red']
-      or stale['is_red']
-  )
+  if not is_closed:
+    ci = check_ci(name)
+    rel = check_release(name)
+    sdk = check_sdk_pin(path, name)
+    compiler = check_compiler_pin(path, name)
+    examples = check_examples(path, name)
+    readme = check_readme(path, name)
+    git_info = check_git(path)
+    dm = check_durable_memory(path)
+    stale = check_stale_names(path)
+
+    is_red = (
+        ci['is_red']
+        or rel['is_red']
+        or sdk['is_red']
+        or compiler['is_stale']
+        or readme['is_red']
+        or dm['is_red']
+        or stale['is_red']
+    )
+
+    return {
+        'name': name,
+        'path': path,
+        'is_closed': False,
+        'ci': ci,
+        'release': rel,
+        'sdk': sdk,
+        'compiler': compiler,
+        'examples': examples,
+        'readme': readme,
+        'git': git_info,
+        'durable_memory': dm,
+        'stale': stale,
+        'is_red': is_red,
+    }
+
+  # --- Closed-source peer model audit ---
+  actionable_issues = []
+
+  # Visibility check
+  vis = check_visibility(name)
+  if not vis['is_ok']:
+    actionable_issues.extend(vis['issues'])
+
+  # Secret check
+  has_token = check_release_token(name)
+  if not has_token:
+    actionable_issues.append(f'Missing RELEASE_TOKEN secret in lmctlhq/{name}')
+
+  # Private and Public CI checks
+  priv_ci = check_private_ci(name)
+  pub_ci = check_public_ci(name)
+
+  if priv_ci['is_red']:
+    actionable_issues.append(
+        f"Private CI {priv_ci['conclusion']} ({priv_ci.get('run_url', '')})"
+    )
+  if pub_ci['is_red']:
+    actionable_issues.append(
+        f"Public CI {pub_ci['conclusion']} ({pub_ci.get('run_url', '')})"
+    )
+
+  # Combined CI display for main table row
+  if priv_ci['is_red']:
+    ci_display = priv_ci['display']
+  elif pub_ci['is_red']:
+    ci_display = pub_ci['display']
+  elif priv_ci['display'] in ('queued', 'in_progress'):
+    ci_display = priv_ci['display']
+  elif pub_ci['display'] in ('queued', 'in_progress'):
+    ci_display = pub_ci['display']
+  elif priv_ci['display'] in ('PASS', 'no runs (OK)') and pub_ci['display'] in (
+      'PASS',
+      'no runs',
+  ):
+    ci_display = 'PASS'
+  else:
+    ci_display = priv_ci['display']
+
+  combined_ci = {
+      'display': ci_display,
+      'is_red': priv_ci['is_red'] or pub_ci['is_red'],
+      'private_ci': priv_ci,
+      'public_ci': pub_ci,
+  }
+
+  # Public release check
+  rel = check_release(name, is_closed=True, private_path=priv_path)
+  if rel['is_red']:
+    actionable_issues.extend([f"Release: {i}" for i in rel.get('issues', [])])
+
+  # Examples check in public repo (with lmscript --check)
+  content_path = pub_path or priv_path
+  examples = check_examples(content_path, name, is_closed=True)
+  if examples['is_red']:
+    actionable_issues.append(
+        'Examples failed syntax check:'
+        f" {', '.join(examples['syntax_failures'])}"
+    )
+
+  # README check on public repo
+  readme = check_readme(content_path, name)
+  if readme['broken_images']:
+    actionable_issues.append(f"Broken images: {readme['broken_images']}")
+  if readme['broken_autorun']:
+    actionable_issues.append(
+        f"Broken autorun files: {readme['broken_autorun']}"
+    )
+
+  # Git check (both private and public trees)
+  git_info = check_git(priv_path or path, public_path=pub_path)
+
+  # Durable memory check (checked on private checkout only)
+  if priv_path and os.path.isdir(priv_path):
+    dm = check_durable_memory(priv_path, is_closed=True)
+  else:
+    dm = {
+        'exists': True,
+        'index_exists': True,
+        'unindexed': [],
+        'display': 'OK',
+        'is_red': False,
+    }
+  if dm['is_red']:
+    actionable_issues.append(f"Durable memory: {dm['display']}")
+
+  # SDK pin on private checkout
+  sdk = check_sdk_pin(priv_path or path, name)
+  if sdk['is_red']:
+    actionable_issues.append(f"SDK lock: {sdk['display']}")
+
+  # Compiler pin
+  compiler = check_compiler_pin(priv_path or path, name)
+  if compiler['is_stale']:
+    actionable_issues.append(
+        f"Stale compiler pin: {compiler['display']} < 0.2.420"
+        f" ({', '.join(compiler['stale_pins'])})"
+    )
+
+  # Stale names
+  stale = check_stale_names(priv_path or path, public_path=pub_path)
+  if stale['is_red']:
+    actionable_issues.append(f"Stale identifiers: {stale['stale_hits']}")
+
+  is_red = bool(actionable_issues)
 
   return {
       'name': name,
-      'path': path,
-      'ci': ci,
+      'path': priv_path or path,
+      'is_closed': True,
+      'private_path': priv_path,
+      'public_path': pub_path,
+      'private_url': f'https://github.com/lmctlhq/{name}',
+      'public_url': f'https://github.com/lmctl-ai/{name}',
+      'private_ci': priv_ci,
+      'public_ci': pub_ci,
+      'visibility': vis,
+      'has_release_token': has_token,
+      'ci': combined_ci,
       'release': rel,
       'sdk': sdk,
       'compiler': compiler,
@@ -912,10 +1564,151 @@ def audit_repo(repo_info):
       'durable_memory': dm,
       'stale': stale,
       'is_red': is_red,
+      'issues': actionable_issues,
   }
 
 
+def pad(txt, w):
+  raw_len = len(re.sub(r'\033\[[0-9;]*m', '', txt))
+  return txt + ' ' * max(0, w - raw_len)
+
+
+def print_products_table(results):
+  closed_map = {r['name']: r for r in results if r.get('is_closed')}
+
+  # If running for a single open repo, don't show products table
+  if not closed_map and len(results) == 1:
+    return
+
+  col_widths = {
+      'name': 11,
+      'priv_url': 38,
+      'pub_url': 39,
+      'release': 10,
+      'age': 7,
+      'assets': 8,
+      'pub_ci': 12,
+      'priv_ci': 22,
+  }
+
+  header_line = (
+      f"{'Product':<{col_widths['name']}} "
+      f"{'Private Repo':<{col_widths['priv_url']}} "
+      f"{'Public Repo':<{col_widths['pub_url']}} "
+      f"{'Release':<{col_widths['release']}} "
+      f"{'Age':<{col_widths['age']}} "
+      f"{'Assets':<{col_widths['assets']}} "
+      f"{'Public CI':<{col_widths['pub_ci']}} "
+      f"{'Private CI':<{col_widths['priv_ci']}}"
+  )
+
+  sep_len = len(header_line) + 2
+  print('=' * sep_len)
+  print(bold('CLOSED-SOURCE PRODUCTS'))
+  print('=' * sep_len)
+  print(bold(header_line))
+  print('-' * sep_len)
+
+  # Show audited closed products first, or all 9 products if full dashboard
+  display_names = [p for p in CLOSED_SOURCE_PRODUCTS if p in closed_map]
+  if len(results) > 1:
+    # Full dashboard: include all 9 products
+    for p in CLOSED_SOURCE_PRODUCTS:
+      if p not in display_names:
+        display_names.append(p)
+
+  for prod in sorted(display_names):
+    r = closed_map.get(prod)
+    if r:
+      c_name = red(prod) if r['is_red'] else prod
+      priv_url = r['private_url']
+      pub_url = r['public_url']
+      rel_tag = r['release']['tag'] or '-'
+      c_rel = green(rel_tag) if r['release']['tag'] else rel_tag
+      age = r['release'].get('age_str') or '-'
+      exp_plat = r['release'].get('expected_platforms', 5)
+      check_mark = (
+          '✓'
+          if (
+              r['release']['has_sha256']
+              and r['release'].get('has_license')
+              and r['release'].get('has_notices')
+              and not r['release'].get('extras')
+          )
+          else '✗'
+      )
+      assets_disp = (
+          f"{r['release']['platform_count']}/{exp_plat} {check_mark}"
+          if r['release']['tag']
+          else '-'
+      )
+      if '✓' in assets_disp:
+        c_assets = green(assets_disp)
+      elif '✗' in assets_disp:
+        c_assets = red(assets_disp)
+      else:
+        c_assets = assets_disp
+
+      pub_ci_disp = r['public_ci']['display']
+      if r['public_ci']['is_red']:
+        c_pub_ci = red(pub_ci_disp)
+      elif pub_ci_disp == 'PASS':
+        c_pub_ci = green(pub_ci_disp)
+      elif pub_ci_disp in ('queued', 'in_progress'):
+        c_pub_ci = yellow(pub_ci_disp)
+      else:
+        c_pub_ci = pub_ci_disp
+
+      priv_ci_disp = r['private_ci']['display']
+      if r['private_ci']['is_red']:
+        c_priv_ci = red(priv_ci_disp)
+      elif priv_ci_disp in ('PASS', 'no runs (OK)'):
+        c_priv_ci = green(priv_ci_disp)
+      elif priv_ci_disp in ('queued', 'in_progress'):
+        c_priv_ci = yellow(priv_ci_disp)
+      else:
+        c_priv_ci = priv_ci_disp
+    else:
+      # Product currently staging / unflipped
+      c_name = prod
+      priv_url = f'https://github.com/lmctlhq/{prod}'
+      pub_url = f'https://github.com/lmctl-ai/{prod}'
+      # Get release if present on lmctl-ai
+      q_rel = check_release(prod)
+      rel_tag = q_rel['tag'] or '-'
+      c_rel = rel_tag
+      age = q_rel.get('age_str') or '-'
+      exp_plat = q_rel.get('expected_platforms', 5)
+      check_mark = '✓' if q_rel['has_sha256'] else '✗'
+      assets_disp = (
+          f"{q_rel['platform_count']}/{exp_plat} {check_mark}"
+          if q_rel['tag']
+          else '-'
+      )
+      c_assets = assets_disp
+      c_pub_ci = 'staging'
+      c_priv_ci = 'staging'
+
+    line = (
+        f"{pad(c_name, col_widths['name'])} "
+        f"{pad(priv_url, col_widths['priv_url'])} "
+        f"{pad(pub_url, col_widths['pub_url'])} "
+        f"{pad(c_rel, col_widths['release'])} "
+        f"{pad(age, col_widths['age'])} "
+        f"{pad(c_assets, col_widths['assets'])} "
+        f"{pad(c_pub_ci, col_widths['pub_ci'])} "
+        f"{pad(c_priv_ci, col_widths['priv_ci'])}"
+    )
+    print(line)
+
+  print('=' * sep_len)
+  print()
+
+
 def print_table(results):
+  # Print dedicated PRODUCTS table at top if closed products are present
+  print_products_table(results)
+
   col_widths = {
       'name': 14,
       'ci': 18,
@@ -1049,11 +1842,6 @@ def print_table(results):
     else:
       c_stale = green(stale_disp)
 
-    # Print aligned line without color codes throwing off widths
-    def pad(txt, w):
-      raw_len = len(re.sub(r'\033\[[0-9;]*m', '', txt))
-      return txt + ' ' * max(0, w - raw_len)
-
     line = (
         f"{pad(c_name, col_widths['name'])} "
         f"{pad(c_ci, col_widths['ci'])} "
@@ -1088,36 +1876,49 @@ def print_table(results):
     print('\n' + bold(red('Actionable Issues:')))
     for r in results:
       if r['is_red']:
-        issues = []
-        if r['ci']['is_red']:
-          issues.append(
-              f"CI {r['ci']['conclusion']} ({r['ci'].get('run_url', '')})"
-          )
-        if r['release']['is_red']:
-          issues.append(f"Release incomplete: {r['release']['display']}")
-        if r['sdk']['is_red']:
-          issues.append(f"SDK lock: {r['sdk']['display']}")
-        if r['compiler']['is_stale']:
-          issues.append(
-              f"Stale compiler pin: {r['compiler']['display']} < 0.2.420 ({', '.join(r['compiler']['stale_pins'])})"
-          )
-        if r['readme']['broken_images']:
-          issues.append(f"Broken images: {r['readme']['broken_images']}")
-        if r['readme']['broken_autorun']:
-          issues.append(
-              f"Broken autorun files: {r['readme']['broken_autorun']}"
-          )
-        if r['durable_memory']['is_red']:
-          issues.append(f"Durable memory: {r['durable_memory']['display']}")
-        if r['stale']['is_red']:
-          issues.append(f"Stale identifiers: {r['stale']['stale_hits']}")
+        issues = r.get('issues', [])
+        if not issues:
+          # Fallback issue generation for standard repos
+          if r['ci']['is_red']:
+            issues.append(
+                f"CI {r['ci']['conclusion']} ({r['ci'].get('run_url', '')})"
+            )
+          if r['release']['is_red']:
+            issues.append(f"Release incomplete: {r['release']['display']}")
+          if r['sdk']['is_red']:
+            issues.append(f"SDK lock: {r['sdk']['display']}")
+          if r['compiler']['is_stale']:
+            issues.append(
+                f"Stale compiler pin: {r['compiler']['display']} < 0.2.420"
+                f" ({', '.join(r['compiler']['stale_pins'])})"
+            )
+          if r['readme']['broken_images']:
+            issues.append(f"Broken images: {r['readme']['broken_images']}")
+          if r['readme']['broken_autorun']:
+            issues.append(
+                f"Broken autorun files: {r['readme']['broken_autorun']}"
+            )
+          if r['durable_memory']['is_red']:
+            issues.append(f"Durable memory: {r['durable_memory']['display']}")
+          if r['stale']['is_red']:
+            issues.append(f"Stale identifiers: {r['stale']['stale_hits']}")
         print(f"  * {bold(r['name'])}: {'; '.join(issues)}")
 
   info_repos = [r for r in results if r['examples']['dsl_count'] > 0]
   if info_repos:
-    print('\n' + bold(cyan('Info Notes (examples with _dsl_ spelling; _lmcode_ expected):')))
+    print(
+        '\n'
+        + bold(
+            cyan(
+                'Info Notes (examples with _dsl_ spelling; _lmcode_ expected):'
+            )
+        )
+    )
     for r in info_repos:
-      print(f"  * {bold(r['name'])}: {r['examples']['dsl_count']} file(s) use _dsl_ ({r['examples']['lmcode_count']} use _lmcode_)")
+      print(
+          f"  * {bold(r['name'])}: {r['examples']['dsl_count']} file(s) use"
+          f" _dsl_ ({r['examples']['lmcode_count']} use _lmcode_)"
+      )
 
 
 def fix_pins(results):
@@ -1129,7 +1930,9 @@ def fix_pins(results):
   )
 
   repos_root = get_repos_root()
-  cpp_dir = os.environ.get('LMCODE_CPP') or os.path.join(repos_root, 'lmcode-cpp')
+  cpp_dir = os.environ.get('LMCODE_CPP') or os.path.join(
+      repos_root, 'lmcode-cpp'
+  )
 
   # Fetch origin in lmcode-cpp first
   if os.path.exists(cpp_dir):
@@ -1180,7 +1983,9 @@ def fix_pins(results):
     )
     if p_sync.returncode != 0:
       print(red(f'Sync script failed for {repo_name}: {p_sync.stderr.strip()}'))
-      subprocess.run(['git', '-C', repo_path, 'checkout', '--', '.'], check=False)
+      subprocess.run(
+          ['git', '-C', repo_path, 'checkout', '--', '.'], check=False
+      )
       continue
 
     # Run cheap test / verification
@@ -1195,10 +2000,14 @@ def fix_pins(results):
       )
       if p_ver.returncode != 0:
         verified = False
-        print(red(f'Verification failed for {repo_name}: {p_ver.stderr.strip()}'))
+        print(
+            red(f'Verification failed for {repo_name}: {p_ver.stderr.strip()}')
+        )
 
     if not verified:
-      subprocess.run(['git', '-C', repo_path, 'checkout', '--', '.'], check=False)
+      subprocess.run(
+          ['git', '-C', repo_path, 'checkout', '--', '.'], check=False
+      )
       continue
 
     # Check what changed
@@ -1235,7 +2044,6 @@ def fix_pins(results):
         ],
         check=False,
     )
-    # Also add any unstaged vendored files if touched
     subprocess.run(['git', '-C', repo_path, 'add', '-u'], check=False)
 
     commit_msg = (
@@ -1258,9 +2066,7 @@ def fix_pins(results):
         text=True,
     )
     if p_pull.returncode != 0:
-      print(
-          red(f'Pull rebase failed for {repo_name}: {p_pull.stderr.strip()}')
-      )
+      print(red(f'Pull rebase failed for {repo_name}: {p_pull.stderr.strip()}'))
       continue
 
     p_push = subprocess.run(
@@ -1302,7 +2108,9 @@ def main():
 
   if args.fix_pins:
     fix_pins(results)
-    # Re-audit after fixing pins
+    # Clear cache before re-auditing
+    with _GH_LOCK:
+      _GH_CACHE.clear()
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
       results = list(executor.map(audit_repo, repos))
     results.sort(key=lambda r: r['name'])
