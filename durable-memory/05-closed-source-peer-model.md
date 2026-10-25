@@ -1,6 +1,6 @@
 # Closed-source peer repository model
 
-**Status: lmaudio pilot approved; nine-product scope.** Final owner scope is lmdraw,
+**Status: in-place lmaudio pilot approved; nine-product scope.** No in-place public reset has run yet. Final owner scope is lmdraw,
 lmvideo, lmaudio, lmoffice, lmcad, lmmagnum, lmfilament, lmimg, and lmpdf.
 The generated public-only trees are under `/home/mma/staging/closed-source/`.
 `lmplot`, `lmphysics`, all other hosts, `lmcode-*`, and `lmgallery` remain open
@@ -14,7 +14,7 @@ Each included product uses two repositories with the same name:
 | Repository | Visibility and role | Contents |
 | --- | --- | --- |
 | `lmctlhq/<name>` | Private source/build repository | Implementation source, schemas, tests, build scripts, CI, dependency pins, private development history, and the release publisher workflow. |
-| `lmctl-ai/<name>` | Fresh public demo, docs, and release repository | One orphan main commit containing README, docs/images, examples plus required inputs, `THIRD_PARTY_NOTICES*`, root `LICENSE` (binary terms), `LICENSE-examples` (MIT), and minimal public CI. Private CI publishes five release assets and `SHA256SUMS` here. |
+| `lmctl-ai/<name>` | Existing public demo, docs, and release repository with its public history reset | One orphan `main` commit containing README, docs/images, examples plus required inputs, `THIRD_PARTY_NOTICES*`, root `LICENSE` (binary terms), `LICENSE-examples` (MIT), and minimal public CI. The repository identity, URL, settings, issues, and stars remain in place. Private CI publishes five release assets and `SHA256SUMS` here. |
 
 The public repository is the source of truth for README, docs, example scripts,
 and their images. Preserve README links and example repository-relative paths.
@@ -64,8 +64,8 @@ license/notices links. A rerun that collides with an existing version must
 fail closed rather than overwrite a release. The chosen first tag is recorded
 per product during the coordinated flip.
 
-The owner will provide `RELEASE_TOKEN` as a private repository Actions secret
-before the coordinated flip. Use a fine-grained PAT or GitHub App installation token
+Before each flip, put `RELEASE_TOKEN` in the private repository Actions secret
+from the protected operator file. Use a fine-grained PAT or GitHub App installation token
 scoped only to the selected `lmctl-ai/<name>` public repo with `contents:write`;
 expose it only to the release job. `GITHUB_TOKEN` from the private repository
 does not publish to its peer. The flip runner refuses apply without the token,
@@ -78,7 +78,7 @@ The public repository has a small, read-only workflow on pushes and
 documentation/example pull requests. It checks local README links and image
 paths, verifies every same-repo raw `lmctl autorun` target exists at the public
 path, and runs `lmscript --check` on every `examples/**/*.lms`. On the orphan
-push it waits for the private CI to publish the first release before checking
+main push it waits for the private CI to publish the first release before checking
 examples that use `install="github:...@latest"`. It does not build source or
 receive the release token.
 
@@ -91,50 +91,56 @@ private tracker without making private implementation details public.
 
 ## History, tags, redirects, and selected transition
 
-The owner selected a fresh public history. The flip transfers today's public
-repository to `lmctlhq/<name>` (so source history, releases, tags, issues, stars,
-and watchers move into the private peer), immediately makes it private, and
-creates a new public `lmctl-ai/<name>` with one orphan public-content commit.
-The owner states there are no outsider users yet and accepts the loss of public
-stars/issues/history. The new public repository begins with no tags/releases;
-private CI publishes the first new release after the flip.
+The owner replaced the transfer plan. For each product, create a new private
+`lmctlhq/<name>` repo, disable its Actions during seeding, and mirror all local
+source branches and tags into it. This clears any stale redirect at the private
+slug without moving the current public repo. Test the private release workflow
+before changing the public refs.
 
-Raw README autorun URLs and `install="github:lmctl-ai/<name>@latest"` retain
-their path because the new public repo reuses the same owner/name and example
-paths. Old `@TAG` pins do not work after history is moved; the consumer
-inventory must be updated to the first new release tag. The current inventory
-includes lmgallery and other local repositories; see
-[`closed-source-pin-inventory.md`](closed-source-pin-inventory.md).
+Keep the existing public `lmctl-ai/<name>` repository in place. Its URL,
+settings, issues, and stars remain. Before rewriting it, save the old main SHA,
+all public branches and tags, and every release asset, note, tag, and name under
+`/home/mma/staging/closed-source/`. Then force-with-lease the public `main` to
+one orphan commit containing the reviewed public tree, remove old public
+branches/tags/releases, and re-publish the latest release from the saved assets.
+Earlier releases remain in the local backup and source tags remain in the
+private mirror. The public `@latest` identity and raw README autorun paths stay
+unchanged.
 
-The staged script uses GitHub's transfer endpoint to preserve the old repository
-and its full history under `lmctlhq/<name>`, immediately makes it private, then
-creates a fresh public repo at the original slug. The new public repo has no old
-tags, releases, stars, issues, or source history; the old repository's records
-remain in the private peer. Creating the public repo permanently replaces the
-transfer redirect. Before the fresh public repo is created, a transfer can be
-rolled back by moving the private repo back and restoring visibility. After the
-new public repo occupies the slug, a full rollback is unavailable without
-delete permissions; use forward recovery and publish a corrected public tree.
-GitHub documents the transfer of issues, PRs, releases, stars, watchers and
-redirect behavior in [Transferring a repository — GitHub Docs](https://docs.github.com/en/repositories/creating-and-managing-repositories/transferring-a-repository).
+The lmaudio transition boundary is explicit: v0.2.1's five binaries,
+`LICENSE` asset, `SHA256SUMS`, and notices are re-published byte-for-byte; the
+release body, README, and public root `LICENSE` explain that releases through
+v0.2.1 remain MIT and later releases use the Personal Use License. The public
+root `LICENSE-examples` continues to cover examples and docs under MIT.
+
+Versioned consumer pins must refer to a release that will still exist publicly.
+The lmgallery example already pins lmaudio v0.2.1; the local simulation roadmap
+pin at v0.2.0 needs to move to v0.2.1 because older public tags/releases are
+removed. See [`closed-source-pin-inventory.md`](closed-source-pin-inventory.md).
+
+Before the public reset, rollback is simply to stop; the private mirror may
+remain. After the reset starts, restore the saved public `main` with
+`--force-with-lease` against the known orphan SHA, restore every saved branch
+and tag from the local mirror, and re-upload the saved release assets and
+metadata. Never delete either repository. The public history rewrite is
+explicitly owner-authorized only for the staged peer conversion.
 
 ## Migration sequence and rollback
 
 Every live step is gated by the product name in
-`~/tools/closed-source-approved.txt`, `--apply --i-have-owner-approval`, a
-configured `RELEASE_TOKEN`, and an explicit first release tag. The current
-instruction is to stage only; no apply is authorized in this pass.
+`~/tools/closed-source-approved.txt`, `--apply --i-have-owner-approval`, the
+mode-600 `~/.config/lmctl/release_token` file, and the approved release tag.
+The token is passed only through stdin to the private repo secret and is never
+logged.
 
 | Step | Action after approval | Rollback |
 | --- | --- | --- |
-| 1. Inventory and stage | Grep tag pins and record active teams; stage `origin/main` to `/home/mma/staging/closed-source/<name>-public/`; validate docs links, autorun URLs, notices, license files, and secret scans. | Remove only the generated staging tree/manifest; no repository or GitHub state changed. |
-| 2. Quiesce and preflight | Require clean/pushed source and consumer trees, green current-main CI, no active pusher, and a staged SHA equal to current `origin/main`. Resolve all consumer pins against the planned first tag. | Stop before transfer; refresh the staged tree and inventory after teams finish their pushes. |
-| 3. Approve the coordinated flip | Owner adds the product to `~/tools/closed-source-approved.txt`, provides `RELEASE_TOKEN`, and selects the first release tag. | Do not change GitHub; keep the staged tree ready for review. |
-| 4. Transfer and privatize source | Transfer the old public repo to `lmctlhq`, wait for it to appear, set it private immediately, and verify the private flag. | Before creating the replacement public repo, transfer back and restore public visibility. |
-| 5. Recreate public peer | Create fresh public `lmctl-ai/<name>` with matching metadata, Issues enabled, Wiki/Projects disabled; push exactly one orphan commit from the staged tree. | After the old slug is reused, the redirect is gone. Without `delete_repo`, use forward recovery; do not try to delete the new repo. |
-| 6. Install private CI and first release | Point local source origin to `lmctlhq`; install Linux-fast push CI plus manual/tag five-platform CI; check out public examples; trigger the full workflow and publish the first release through private CI. | Revert the private workflow commit/revoke the secret; repair the public tree and cut a corrected release forward. |
-| 7. Verify and update consumers | Download the public binary, check its hash and `--version`, check two raw examples, then update old `@TAG` consumer pins to the first new tag. Update private memory and public README. | Repair consumer pins to an existing public tag and publish a fixed version; preserve the fresh public repo. |
-| 8. Repoint checkouts | Set `~/repos/dsl/<name>` origin to private source and clone the public peer as `~/repos/dsl/<name>-public`. | Correct local remotes only; do not rewrite either repository history. |
+| 1. Backup and preflight | Require clean/pushed product source, green current-main CI, no active product pusher, and current staged SHA. Save old public refs plus every release's metadata/assets; verify asset digests and `SHA256SUMS`. | No GitHub mutation has occurred; discard only the new backup/stage files if review stops. |
+| 2. Seed private source | Create `lmctlhq/<name>` private with the existing description, disable Actions, `git push --mirror` the source history, and verify private `main` matches source `main`. | Public repo remains unchanged; the private repo can remain for review. |
+| 3. Test private publisher | Set the repo secret from the protected file, install the private workflow with `[skip ci]`, enable Actions, and dispatch `publish_test=true`; require the draft release create/delete job to pass with build jobs skipped. | Public repo remains unchanged; leave private source for review and revoke the secret if requested. |
+| 4. Rewrite public refs in place | `--force-with-lease` public `main` against its saved SHA, delete other heads and old release tags/releases, and re-publish the saved latest release. | Restore old `main` with a lease against the orphan SHA, mirror back saved refs, and re-upload all saved releases/assets/notes. Never delete the public repo. |
+| 5. Verify and update consumers | Download the public latest assets, compare hashes, run the Linux binary, check two raw examples and `@latest`, then refresh consumer pins whose old tags disappeared. | Restore the saved public refs/releases and revert any consumer pin edits. |
+| 6. Repoint checkouts | Set `~/repos/dsl/<name>` origin to private source and clone the public checkout as `~/repos/dsl/<name>-public`. | Restore only local remotes/clones; repository histories remain available. |
 
 ## Two-checkout sync discipline
 
@@ -212,13 +218,14 @@ The read-only planner is [`scripts/closed-source/split.lms`](../scripts/closed-s
 It generates exact tracked-file plans under
 `durable-memory/closed-source-plans/`, checks README autorun mappings, scans
 public docs for source links, and scans public text for high-confidence secret
-patterns. The staged-tree builder is
+patterns. The staging and in-place flip runner is
 [`scripts/closed-source/peer-flip.py`](../scripts/closed-source/peer-flip.py),
 invoked by [`scripts/closed-source/flip.lms`](../scripts/closed-source/flip.lms).
 `--dry-run` is the default; `--stage` writes only the public tree under
 `/home/mma/staging/closed-source/`. `--apply` requires a product entry in
-`~/tools/closed-source-approved.txt`, the release token, and a first release
-tag. The current owner instruction is stage-only.
+`~/tools/closed-source-approved.txt`, the protected release-token file, and an
+approved release tag. It creates a private mirror first, then resets public refs
+in place after the private publish test.
 
 The final candidate list is lmdraw, lmvideo, lmaudio, lmoffice, lmcad,
 lmmagnum, lmfilament, lmimg, and lmpdf. An OR-tools host is

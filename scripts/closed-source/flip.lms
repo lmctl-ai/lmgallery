@@ -1,4 +1,4 @@
-# Public-tree staging and owner-gated peer-repo flip.
+# Public-tree staging and owner-gated private-mirror/public-in-place flip.
 # Default mode is read-only. --stage writes only /home/mma/staging; --apply
 # needs an explicit owner flag/file entry and the protected token file checked by the helper.
 

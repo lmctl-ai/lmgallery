@@ -1,6 +1,6 @@
 # Closed-source public staging inventory
 
-Snapshot: 2026-10-25. Public-only trees are staged under `/home/mma/staging/closed-source/<product>-public/` from each recorded `origin/main` SHA. They contain no Git metadata and were not pushed. No product repository was transferred, created, deleted, or made private; no release changed.
+Snapshot: 2026-10-25. Public-only trees are staged under `/home/mma/staging/closed-source/<product>-public/` from each recorded `origin/main` SHA. They contain no Git metadata and were not pushed. The current public repositories and releases are intact. The earlier lmaudio transfer was reversed; no public history or release changed. The replacement in-place pilot has not started.
 
 | Product | Source SHA | Public files | Raw autorun | Private refs | Secrets | Versioned consumer refs | Local checkout | Public CI at stage | Owner active report |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |
@@ -26,4 +26,4 @@ See [closed-source-pin-inventory.md](closed-source-pin-inventory.md) for grep ma
 
 ## Apply status
 
-The approval file lists lmaudio. Its flip is owner-approved; `RELEASE_TOKEN` remains a later release-publication prerequisite. No apply command has run in this session yet. Nine public trees remain staged; lmblender has been removed from the staged candidate set because of its GPL corresponding-source obligation. lmplot, lmphysics, lmgallery, SDK repos, and all other products remain outside the scope and untouched.
+The approval file lists lmaudio and the protected `RELEASE_TOKEN` file is available. A transfer-based attempt briefly moved lmaudio to `lmctlhq` and was reversed; its public `main`, `pushed_at`, v0.2.1 release, and assets are unchanged. The first in-place retry stopped before any mutation because the old-name API redirect was mistaken for an existing private target. The new method creates a private mirror first and resets public refs in place only after its private publish test passes. Nine public trees remain staged; lmblender is excluded because its GPL corresponding-source obligation keeps it open source. lmplot, lmphysics, lmgallery, SDK repos, and all other products remain outside scope.
