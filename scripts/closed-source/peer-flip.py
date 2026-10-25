@@ -980,7 +980,7 @@ def _run_publish_test(product: str, private_sha: str) -> dict:
     if jobs.get("publish-test", {}).get("conclusion") != "success":
         raise FlipError(f"private publish-test job did not succeed: {details.get('url','')}")
     for name, job in jobs.items():
-        if name not in {"publish-test", "version"} and job.get("conclusion") != "skipped":
+        if name not in {"publish-test", "version", "audit"} and job.get("conclusion") != "skipped":
             raise FlipError(f"publish-test unexpectedly ran non-test job {name}: {details.get('url','')}")
     return details
 
