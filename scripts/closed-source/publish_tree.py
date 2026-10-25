@@ -48,6 +48,20 @@ def set_boundary(stage, product, tag):
                 f"release). Releases after {tag} are published under the Lattice Systems Personal Use License "
                 f"(this file).\n\n")
     path.write_text(sentence + text, encoding="utf-8", newline="\n")
+    readme = stage / "README.md"
+    readme_text = readme.read_text(encoding="utf-8")
+    readme_text = re.sub(
+        r"\[!\[License: MIT\]\([^)]*\)\]\(LICENSE\)",
+        "[![Examples: MIT](https://img.shields.io/badge/examples-MIT-blue.svg)](LICENSE-examples)",
+        readme_text,
+    )
+    if sentence.strip() not in readme_text:
+        license_section = re.search(r"(?m)^## License\s*\n", readme_text)
+        if not license_section:
+            raise SystemExit(f"{readme}: no License section for the MIT boundary sentence")
+        insert_at = license_section.end()
+        readme_text = readme_text[:insert_at] + "\n" + sentence.rstrip() + "\n" + readme_text[insert_at:]
+    readme.write_text(readme_text, encoding="utf-8", newline="\n")
     return sentence.strip()
 
 
