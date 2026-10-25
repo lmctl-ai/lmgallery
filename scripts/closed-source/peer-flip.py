@@ -1131,7 +1131,7 @@ def _prepare_release_bundle(product: str, root: Path, first_tag: str, run_stamp:
     def is_compliance(name: str) -> bool:
         lower = name.lower()
         return (name == "SHA256SUMS" or lower.endswith(".sha256") or any(
-            part in lower for part in ("license", "copying", "copyright", "notice", "relink", "recipe", "occt", "gpl", "lgpl", "exception")
+            part in lower for part in ("license", "copying", "copyright", "notice", "relink", "recipe", "occt", "gpl", "lgpl", "exception", "apache", "mit", "bsd", "zlib", "isc", "mpl", "bsl", "cc0")
         ))
 
     selected = []
