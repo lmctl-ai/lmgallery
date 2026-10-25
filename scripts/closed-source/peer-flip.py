@@ -1967,6 +1967,13 @@ def apply_general_product(product: str, first_tag: str) -> int:
     private_ci_ready = "  publish-test:" in current_private_text and "RELEASE_TOKEN" in current_private_text and (root / "scripts/release-to-public.sh").is_file()
     if not ci.get("ok") and not (source_is_private and not private_ci_ready):
         raise FlipError(f"{product} main CI is not green: {ci.get('url','')} {ci.get('error','')}")
+    if source_is_private and not private_ci_ready:
+        public_main_result = command(["git", "ls-remote", f"https://github.com/{public_repo(product)}.git", "refs/heads/main"], timeout=300)
+        if not public_main_result.stdout.split():
+            raise FlipError(f"cannot resolve original public {product} main during private mirror recovery")
+        public_ci = ci_latest(product, public_main_result.stdout.split()[0], public_repo(product))
+        if not public_ci.get("ok"):
+            raise FlipError(f"original public {product} main CI is not green: {public_ci.get('url','')} {public_ci.get('error','')}")
 
     stage = STAGING / f"{product}-public"
     manifest_path = STAGING / f"{product}-stage-manifest.json"
