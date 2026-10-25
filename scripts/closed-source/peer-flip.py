@@ -1528,6 +1528,14 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
             time.sleep(2)
         else:
             raise FlipError("public branches or tags remained after deletion")
+        if preserve_release_tags:
+            remaining = command(["git", "ls-remote", "--heads", "--tags", url], timeout=300).stdout.splitlines()
+            actual_refs = {parts[1]: parts[0] for line in remaining if len(parts := line.split()) == 2 and not parts[1].endswith("^{}")}
+            expected_tags = {ref: sha for ref, sha in old_refs["refs"].items() if ref.startswith("refs/tags/")}
+            if {ref: sha for ref, sha in actual_refs.items() if ref.startswith("refs/tags/")} != expected_tags:
+                raise FlipError("lmvideo public tags changed during the orphan main update")
+            if set(ref for ref in actual_refs if ref.startswith("refs/heads/")) != {"refs/heads/main"}:
+                raise FlipError("lmvideo public branch set differs from the single-main plan")
 
         latest = next((item for item in release_backups if item["tagName"] == first_tag), None)
         if latest is None:
@@ -1594,6 +1602,11 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
                 raise FlipError(f"downloaded re-published release bytes differ: {name}")
         if "SHA256SUMS" in downloaded:
             command(["sha256sum", "-c", "SHA256SUMS"], cwd=verify_dir)
+        if preserve_release_tags:
+            live_release_tags = {item.get("tag_name") for item in json.loads(command(["gh", "api", f"repos/{public_repo(product)}/releases?per_page=100"]).stdout)}
+            expected_release_tags = {item["tagName"] for item in release_backups}
+            if live_release_tags != expected_release_tags:
+                raise FlipError("lmvideo release tags changed while updating the latest SHA256SUMS")
         linux = verify_dir / f"{product}-linux-x64"
         command(["chmod", "+x", str(linux)])
         version = command([str(linux), "--version"]).stdout.strip()
