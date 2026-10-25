@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import hashlib
 import json
 import os
@@ -55,6 +56,30 @@ class FlipError(RuntimeError):
     pass
 
 
+AUDIT_LOG: Path | None = None
+
+
+def audit(message: str) -> None:
+    if AUDIT_LOG is None:
+        return
+    AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    with AUDIT_LOG.open("a", encoding="utf-8") as stream:
+        stream.write(f"{stamp} {message}\n")
+
+
+def _redact_for_log(value):
+    if isinstance(value, dict):
+        return {key: ("[REDACTED]" if re.search(r"token|secret|password|credential", str(key), re.I) else _redact_for_log(item)) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_redact_for_log(item) for item in value]
+    if not isinstance(value, str):
+        return value
+    value = re.sub(r"(?i)github_pat_[a-z0-9_]{20,}|gh[pousr]_[a-z0-9]{20,}", "[REDACTED]", value)
+    value = re.sub(r'(?i)("(?:temp_clone_token|access_token|refresh_token|release_token|client_secret|password)"\s*:\s*")[^"]*(")', r"\1[REDACTED]\2", value)
+    return re.sub(r"(?i)(authorization\s*:\s*bearer\s+)[^\s]+", r"\1[REDACTED]", value)
+
+
 def public_repo(product: str) -> str:
     return f"lmctl-ai/{product}"
 
@@ -66,9 +91,40 @@ def private_repo(product: str) -> str:
 def command(argv: list[str], *, cwd: Path | None = None, check: bool = True,
             timeout: int = 300, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
     proc = subprocess.run(argv, cwd=cwd, text=True, capture_output=True, timeout=timeout, input=input_text)
+    if AUDIT_LOG is not None:
+        audit(f"COMMAND {argv!r} cwd={str(cwd) if cwd else ''} exit={proc.returncode} stdin={'[REDACTED]' if input_text is not None else '[none]'}")
+        if proc.stdout.strip():
+            try:
+                logged = json.dumps(_redact_for_log(json.loads(proc.stdout)), sort_keys=True)
+            except json.JSONDecodeError:
+                logged = str(_redact_for_log(proc.stdout.strip()))
+            audit(f"STDOUT {logged}")
+        if proc.stderr.strip():
+            audit(f"STDERR {_redact_for_log(proc.stderr.strip())}")
     if check and proc.returncode:
         raise FlipError(f"command failed ({proc.returncode}): {' '.join(argv)}\n{proc.stderr.strip()}")
     return proc
+
+
+def gh_api_logged(api_args: list[str], *, timeout: int = 300) -> dict:
+    argv = ["gh", "api", "-i", *api_args]
+    proc = subprocess.run(argv, text=True, capture_output=True, timeout=timeout)
+    raw = proc.stdout
+    status_line = next((line.strip() for line in raw.splitlines() if line.startswith("HTTP/")), "HTTP status unavailable")
+    body_parts = re.split(r"\r?\n\r?\n", raw, maxsplit=1)
+    body_text = body_parts[1] if len(body_parts) == 2 else ""
+    try:
+        body = json.loads(body_text) if body_text.strip() else {}
+    except json.JSONDecodeError:
+        body = {"raw": body_text}
+    audit(f"HTTP_COMMAND {argv!r} exit={proc.returncode}")
+    audit(f"HTTP_STATUS {status_line}")
+    audit("HTTP_RESPONSE_BODY " + json.dumps(_redact_for_log(body), sort_keys=True))
+    status_match = re.match(r"HTTP/\S+\s+(\d+)", status_line)
+    status_code = int(status_match.group(1)) if status_match else 0
+    if proc.returncode or status_code >= 400:
+        raise FlipError(f"GitHub API request failed: {status_line}; response body: {json.dumps(_redact_for_log(body), sort_keys=True)}")
+    return body
 
 
 def git_snapshot(product: str, *, fetch: bool = False) -> dict:
@@ -738,7 +794,11 @@ def _wait_for_private_transfer(product: str, attempts: int = 30) -> dict:
         result = command(["gh", "api", f"repos/{private_repo(product)}"], check=False, timeout=60)
         if result.returncode == 0:
             try:
-                return json.loads(result.stdout)
+                data = json.loads(result.stdout)
+                if data.get("full_name", "").lower() == private_repo(product).lower():
+                    audit(f"TRANSFER_DESTINATION_READY full_name={data.get('full_name')} private={data.get('private')}")
+                    return data
+                last_error = f"API path resolved to {data.get('full_name', 'unknown')}, not {private_repo(product)}"
             except json.JSONDecodeError:
                 last_error = "invalid repo JSON"
         else:
@@ -782,7 +842,22 @@ def _update_local_checkouts(product: str, root: Path) -> None:
     command(["git", "clone", f"https://github.com/{public_repo(product)}.git", str(public_checkout)], timeout=900)
 
 
-def _point_source_checkout_private(product: str, root: Path) -> None:
+def _wait_for_git_main(product: str, remote: str, expected_sha: str, attempts: int = 60) -> None:
+    for attempt in range(1, attempts + 1):
+        result = subprocess.run(["git", "ls-remote", remote, "refs/heads/main"], text=True, capture_output=True, timeout=30)
+        observed = result.stdout.split()[0] if result.returncode == 0 and result.stdout.split() else ""
+        audit(f"GIT_REMOTE_READY_CHECK attempt={attempt}/{attempts} remote={remote} exit={result.returncode} expected={expected_sha} observed={observed or '[none]'} stderr={_redact_for_log(result.stderr.strip())}")
+        if result.returncode == 0 and observed == expected_sha:
+            return
+        if result.returncode == 0 and observed and observed != expected_sha:
+            raise FlipError(f"private Git main revision differs from transferred source: expected {expected_sha}, got {observed}")
+        time.sleep(2)
+    raise FlipError(f"Git transport for {private_repo(product)} did not become ready at expected main {expected_sha}")
+
+
+def _point_source_checkout_private(product: str, root: Path, expected_sha: str) -> None:
+    remote = f"https://github.com/{private_repo(product)}.git"
+    _wait_for_git_main(product, remote, expected_sha)
     command(["git", "-C", str(root), "remote", "set-url", "origin", f"https://github.com/{private_repo(product)}.git"])
     command(["git", "-C", str(root), "pull", "--rebase"], timeout=600)
 
@@ -906,8 +981,10 @@ def _set_release_secret_from_file(product: str) -> None:
     token_path = Path.home() / ".config/lmctl/release_token"
     if not token_path.is_file() or token_path.stat().st_mode & 0o777 != 0o600 or token_path.stat().st_size == 0:
         raise FlipError("release-token file is missing, empty, or not mode 600; no token value was read")
+    audit(f"COMMAND gh secret set RELEASE_TOKEN -R {private_repo(product)} stdin=[REDACTED:{token_path}]")
     with token_path.open("rb") as stream:
         result = subprocess.run(["gh", "secret", "set", "RELEASE_TOKEN", "-R", private_repo(product)], stdin=stream, capture_output=True, text=True)
+    audit(f"SECRET_SET exit={result.returncode} stdout={_redact_for_log(result.stdout.strip())} stderr={_redact_for_log(result.stderr.strip())}")
     if result.returncode:
         raise FlipError(f"could not set the private release secret: {result.stderr.strip()}")
 
@@ -1025,7 +1102,16 @@ def _update_untracked_consumer_docs(product: str, first_tag: str, expected_hashe
 
 
 def apply_lmaudio_pilot(first_tag: str) -> int:
+    global AUDIT_LOG
     product = "lmaudio"
+    stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    AUDIT_LOG = STAGING / f"lmaudio-flip-{stamp}.log"
+    audit("ATTEMPT retry=1 after the prior transfer was reversed; no token value is logged")
+    audit("PRIOR_ATTEMPT failing command: git -C /home/mma/repos/dsl/lmaudio pull --rebase")
+    audit("PRIOR_ATTEMPT error: remote: Repository 'lmctlhq/lmaudio' is disabled. Please ask the owner to check their account. fatal: unable to access 'https://github.com/lmctlhq/lmaudio.git/': The requested URL returned error: 403")
+    audit("PRIOR_ROLLBACK first transfer-back command: gh api -X POST repos/lmctlhq/lmaudio/transfer -f new_owner=lmctl-ai; captured error: gh: Validation Failed (HTTP 422); response body was not captured")
+    audit("PRIOR_ROLLBACK retry: HTTP/2.0 202 Accepted; polling then restored lmctl-ai/lmaudio and public visibility")
+    audit("FIX: require exact transferred full_name and wait for git ls-remote main to match the preflight SHA before pulling")
     if first_tag != "v0.2.1":
         raise FlipError("the approved lmaudio pilot must replay v0.2.1 unchanged")
     approval = Path.home() / "tools/closed-source-approved.txt"
@@ -1087,9 +1173,12 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
     private_secret_set = False
     public_created = False
     try:
-        command(["gh", "api", "-X", "POST", f"repos/{public_repo(product)}/transfer", "-f", "new_owner=lmctlhq"], timeout=300)
+        transfer_response = gh_api_logged(["-X", "POST", f"repos/{public_repo(product)}/transfer", "-f", "new_owner=lmctlhq"], timeout=300)
+        audit(f"TRANSFER_ACCEPTED full_name={transfer_response.get('full_name','unknown')}")
         transferred = True
         private_data = _wait_for_private_transfer(product, attempts=60)
+        if private_data.get("full_name", "").lower() != private_repo(product).lower():
+            raise FlipError(f"transfer API resolved to the wrong repository: {private_data.get('full_name','unknown')}")
         if private_data.get("private"):
             raise FlipError("transferred repo became private before the required immediate visibility step")
         command(["gh", "repo", "edit", private_repo(product), "--visibility", "private", "--accept-visibility-change-consequences"], timeout=300)
@@ -1098,7 +1187,7 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
             raise FlipError("source repo did not become private")
         _set_release_secret_from_file(product)
         private_secret_set = True
-        _point_source_checkout_private(product, root)
+        _point_source_checkout_private(product, root, snapshot["ref"])
 
         create = ["gh", "repo", "create", public_repo(product), "--public"]
         if metadata.get("description"):
@@ -1143,7 +1232,7 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
             try:
                 if private_secret_set:
                     command(["gh", "secret", "delete", "RELEASE_TOKEN", "-R", private_repo(product)], timeout=120)
-                command(["gh", "api", "-X", "POST", f"repos/{private_repo(product)}/transfer", "-f", "new_owner=lmctl-ai"], timeout=300)
+                gh_api_logged(["-X", "POST", f"repos/{private_repo(product)}/transfer", "-f", "new_owner=lmctl-ai"], timeout=300)
                 restored = _wait_for_transfer_back(product)
                 if restored:
                     command(["gh", "repo", "edit", public_repo(product), "--visibility", "public", "--accept-visibility-change-consequences"], timeout=300)
