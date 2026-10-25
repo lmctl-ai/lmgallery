@@ -132,7 +132,7 @@ def git_snapshot(product: str, *, fetch: bool = False) -> dict:
     if not root.is_dir():
         raise FlipError(f"source checkout is missing: {root}")
     if fetch:
-        command(["git", "-C", str(root), "fetch", "-q", "origin", "main"], timeout=300)
+        command(["git", "-C", str(root), "fetch", "-q", "--prune", "--prune-tags", "origin"], timeout=300)
     origin = command(["git", "-C", str(root), "remote", "get-url", "origin"]).stdout.strip()
     local_head = command(["git", "-C", str(root), "rev-parse", "HEAD"]).stdout.strip()
     local_branch = command(["git", "-C", str(root), "branch", "--show-current"]).stdout.strip()
