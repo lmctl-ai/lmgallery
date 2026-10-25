@@ -2021,9 +2021,15 @@ def apply_general_product(product: str, first_tag: str) -> int:
         raise FlipError(f"latest release backup {first_tag} is missing")
     local_ref_lines = command(["git", "-C", str(root), "for-each-ref", "--format=%(objectname) %(refname)", "refs/heads", "refs/tags"]).stdout.splitlines()
     source_refs = {parts[1]: parts[0] for line in local_ref_lines if len(parts := line.split()) == 2}
-    missing_source_refs = sorted(ref for ref, sha in old_refs["refs"].items() if source_refs.get(ref) != sha)
+    public_refs_to_match = {ref: sha for ref, sha in old_refs["refs"].items()
+                            if not (source_is_private and ref == "refs/heads/main")}
+    missing_source_refs = sorted(ref for ref, sha in public_refs_to_match.items() if source_refs.get(ref) != sha)
     if missing_source_refs:
         raise FlipError(f"local source mirror is missing or differs from public refs: {', '.join(missing_source_refs)}")
+    if source_is_private:
+        ancestry = command(["git", "-C", str(root), "merge-base", "--is-ancestor", old_refs["main"], snapshot["ref"]], check=False)
+        if ancestry.returncode:
+            raise FlipError("existing private main is not descended from the original public main")
     if product == "lmvideo":
         release_tags = {item["tagName"] for item in release_backups}
         tag_refs = {ref.removeprefix("refs/tags/") for ref in old_refs["refs"] if ref.startswith("refs/tags/")}
