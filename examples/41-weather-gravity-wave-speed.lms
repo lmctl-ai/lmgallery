@@ -106,8 +106,8 @@ r = system(concat(dsl_cli(figure), ["--dsl", "build/gravity-wave-figure.dslb"]),
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Report (lmoffice).
-report = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.29";
-let doc = office.docx("build/gravity-wave-report.docx");
+report = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.29";
+let doc = docx.create("build/gravity-wave-report.docx");
 doc.title("Gravity-wave speed from a shallow-water pulse").author("Atmospheric dynamics group");
 doc.heading("Gravity-wave speed from a shallow-water pulse", 1).bold(true);
 doc.heading("Method", 2);

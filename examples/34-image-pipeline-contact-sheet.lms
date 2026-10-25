@@ -45,8 +45,8 @@ for (line in split(r.stdout, "\n")) {
 cp = system cp build/pipeline-sheet.png images/showcase-34-image-pipeline.png;
 assert(cp.code == 0);
 
-deck = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.29";
-let slides = office.pptx("build/image-pipeline.pptx");
+deck = _lmcode_ cli="lmoffice pptx" install="github:lmctl-ai/lmoffice@v0.1.29";
+let slides = pptx.create("build/image-pipeline.pptx");
 let s1 = slides.slide();
 s1.title("Image pipeline: levels, sharpen, grade");
 s1.image("build/pipeline-sheet.png", 60.0, 170.0, 1160.0, 260.0);

@@ -84,8 +84,8 @@ r = system(concat(dsl_cli(cards), ["--dsl", "build/cards.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Word inventory (lmoffice).
-word = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.29";
-let doc = office.docx("build/cert-inventory.docx");
+word = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.29";
+let doc = docx.create("build/cert-inventory.docx");
 doc.title("Certificate inventory").author("Platform security");
 doc.heading("Certificate inventory", 1).bold(true);
 doc.paragraph("Two service certificates were parsed with lmssl. Both are self-signed test certificates, so they must be replaced before production use.");

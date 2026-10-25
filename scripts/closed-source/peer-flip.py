@@ -92,9 +92,52 @@ def _version_contains_release(output: str, product: str, tag: str) -> bool:
     return tag.removeprefix("v") in output
 
 
+def _install_example_hosts(product: str, stage: Path) -> tuple[dict[str, str], Path]:
+    script = stage / "scripts/install-hosts.sh"
+    if not script.is_file():
+        raise FlipError(f"public example host installer is missing: {script}")
+    scratch_base = Path("/tmp/claude-1000/scratch-workers")
+    scratch_base.mkdir(parents=True, exist_ok=True)
+    scratch = Path(tempfile.mkdtemp(prefix=f"{product}-example-hosts-", dir=scratch_base))
+    host_bin = scratch / "bin"
+    env = os.environ.copy()
+    env["LMCTL_HOST_BIN_DIR"] = str(host_bin)
+    env["RUNNER_TEMP"] = str(scratch)
+    command(["bash", str(script)], cwd=stage, timeout=900, env=env)
+    env["PATH"] = str(host_bin) + os.pathsep + env.get("PATH", "")
+    audit(f"LOCAL_EXAMPLE_HOSTS_INSTALLED product={product} bin={host_bin}")
+    return env, scratch
+
+
+def _delete_public_ref(product: str, stage: Path, url: str, ref: str) -> None:
+    expected_url = f"https://github.com/{public_repo(product)}.git"
+    if url != expected_url:
+        raise FlipError(f"ref deletion target is not the public remote URL for {product}: {url}")
+    origin = command(["git", "-C", str(stage), "remote", "get-url", "origin"]).stdout.strip()
+    if origin != expected_url:
+        raise FlipError(f"public staging remote mismatch before ref deletion: {origin}")
+    argv = ["git", "-C", str(stage), "push", expected_url, "--delete", ref]
+    if argv[4] != expected_url or str(stage) == str(PRODUCT_ROOTS[product]):
+        raise FlipError(f"ref deletion command is not explicitly scoped to the public remote: {argv!r}")
+    audit(f"PUBLIC_REF_DELETE_ASSERTED url={expected_url} ref={ref}")
+    command(argv, timeout=300)
+
+
+def _delete_public_release(product: str, tag: str) -> None:
+    repo = public_repo(product)
+    if repo != f"lmctl-ai/{product}":
+        raise FlipError(f"release deletion target is not the public repository: {repo}")
+    argv = ["gh", "release", "delete", tag, "-R", repo, "--cleanup-tag", "--yes"]
+    if argv[5] != repo:
+        raise FlipError(f"release and tag deletion is not scoped to the public repository: {argv!r}")
+    audit(f"PUBLIC_RELEASE_DELETE_ASSERTED repo={repo} tag={tag}")
+    command(argv, timeout=300)
+
+
 def command(argv: list[str], *, cwd: Path | None = None, check: bool = True,
-            timeout: int = 300, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
-    proc = subprocess.run(argv, cwd=cwd, text=True, capture_output=True, timeout=timeout, input=input_text)
+            timeout: int = 300, input_text: str | None = None,
+            env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    proc = subprocess.run(argv, cwd=cwd, text=True, capture_output=True, timeout=timeout, input=input_text, env=env)
     if AUDIT_LOG is not None:
         audit(f"COMMAND {argv!r} cwd={str(cwd) if cwd else ''} exit={proc.returncode} stdin={'[REDACTED]' if input_text is not None else '[none]'}")
         if proc.stdout.strip():
@@ -1532,16 +1575,16 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
 
         for ref in sorted(r for r in old_refs["refs"] if r.startswith("refs/heads/") and r != "refs/heads/main"):
             branch = ref.removeprefix("refs/heads/")
-            command(["git", "-C", str(stage), "push", "origin", "--delete", branch], timeout=300)
+            _delete_public_ref(product, stage, url, branch)
             audit(f"PUBLIC_BRANCH_DELETED {branch}")
         if not preserve_release_tags:
             for item in release_backups:
-                command(["gh", "release", "delete", item["tagName"], "-R", public_repo(product), "--cleanup-tag", "--yes"], timeout=300)
+                _delete_public_release(product, item["tagName"])
                 audit(f"PUBLIC_RELEASE_DELETED tag={item['tagName']}")
         released_tags = {item["tagName"] for item in release_backups}
         if not preserve_release_tags:
             for ref in sorted(r for r in old_refs["refs"] if r.startswith("refs/tags/") and r.removeprefix("refs/tags/") not in released_tags):
-                command(["git", "-C", str(stage), "push", "origin", "--delete", ref.removeprefix("refs/tags/")], timeout=300)
+                _delete_public_ref(product, stage, url, ref.removeprefix("refs/tags/"))
                 audit(f"PUBLIC_TAG_DELETED {ref.removeprefix('refs/tags/')}")
             _wait_for_no_public_releases(product)
         for attempt in range(1, 31):
@@ -1641,18 +1684,19 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
         version = command([str(linux), "--version"]).stdout.strip()
         if not _version_contains_release(version, product, first_tag):
             raise FlipError(f"re-published binary returned an unexpected version: {version}")
+        example_env, _example_host_scratch = _install_example_hosts(product, stage)
         examples_to_check = release_bundle["examples"] if release_bundle else ("eq_before_after.lms", "karplus_strong_harp.lms")
         for example in examples_to_check:
             url_example = f"https://raw.githubusercontent.com/{public_repo(product)}/main/examples/{example}"
             path = verify_dir / example
             command(["curl", "-fsSL", url_example, "-o", str(path)], timeout=120)
-            command(["lmscript", "--check", str(path)], timeout=300)
+            command(["lmscript", "--check", str(path)], timeout=300, env=example_env)
             contents = path.read_text(encoding="utf-8")
             latest_copy = STAGING / f"{product}-{example}.latest.lms"
             updated, count = re.subn(rf"github:lmctl-ai/{re.escape(product)}@v[0-9]+\.[0-9]+\.[0-9]+", f"github:lmctl-ai/{product}@latest", contents, count=1)
             if count:
                 latest_copy.write_text(updated, encoding="utf-8")
-                command(["lmscript", "--check", str(latest_copy)], timeout=300)
+                command(["lmscript", "--check", str(latest_copy)], timeout=300, env=example_env)
         _wait_for_latest_release_tag(product, first_tag)
         audit(f"PUBLIC_RELEASE_REPUBLISHED tag={first_tag} url={published.get('html_url','')}")
         return {"release": published, "orphan_sha": orphan_sha, "public_ci": public_ci}
@@ -1768,11 +1812,12 @@ def _publish_unchanged_release(product: str, first_tag: str, release: dict, asse
     version = command([str(linux), "--version"]).stdout.strip()
     if not _version_contains_release(version, product, first_tag):
         raise FlipError(f"republished binary returned an unexpected version: {version}")
+    example_env, _example_host_scratch = _install_example_hosts(product, STAGING / f"{product}-public")
     for example in ("eq_before_after.lms", "karplus_strong_harp.lms"):
         url = f"https://raw.githubusercontent.com/{public_repo(product)}/main/examples/{example}"
         path = verify_dir / example
         command(["curl", "-fsSL", url, "-o", str(path)], timeout=120)
-        command(["lmscript", "--check", str(path)], timeout=300)
+        command(["lmscript", "--check", str(path)], timeout=300, env=example_env)
     return published
 
 

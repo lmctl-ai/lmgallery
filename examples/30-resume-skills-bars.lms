@@ -32,8 +32,8 @@ r = system(concat(dsl_cli(skills), ["--dsl", "build/skills.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Resume (lmoffice). The levels are the bar lengths printed on the chart.
-resume_program = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.29";
-let doc = office.docx("build/resume-jordan-lee.docx");
+resume_program = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.29";
+let doc = docx.create("build/resume-jordan-lee.docx");
 doc.title("Jordan Lee, data engineer").author("Jordan Lee");
 doc.heading("Jordan Lee", 1).bold(true);
 doc.paragraph("Data engineer | jordan.lee@example.com | Leeds, UK");

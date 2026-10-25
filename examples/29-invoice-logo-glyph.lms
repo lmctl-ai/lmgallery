@@ -75,8 +75,8 @@ r = system(concat(dsl_cli(sheet), ["--dsl", "build/brand-art.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Invoice (lmoffice).
-book = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.29";
-let doc = office.docx("build/invoice-INV-1042.docx");
+book = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.29";
+let doc = docx.create("build/invoice-INV-1042.docx");
 doc.title("Invoice INV-1042").author("Lattice Systems");
 doc.image("build/logo.png", 110, 110);
 doc.heading("Invoice INV-1042", 1).bold(true);

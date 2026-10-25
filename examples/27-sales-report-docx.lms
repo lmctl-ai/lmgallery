@@ -84,8 +84,8 @@ assert(abs(regions - 67.5) < 0.0001);
 assert(abs(products - 67.5) < 0.0001);
 assert(abs(year - 281.9) < 0.0001);
 
-report_program = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.29";
-let doc = office.docx("build/sales-report.docx");
+report_program = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.29";
+let doc = docx.create("build/sales-report.docx");
 doc.title("Sales report, Q3 2026").author("Novaterra Technologies");
 doc.heading("Sales report, Q3 2026", 1).bold(true);
 doc.paragraph("Q3 2026 revenue was $67.5M, up 45% on Q3 2025. Revenue over the last twelve months totals $281.9M.");

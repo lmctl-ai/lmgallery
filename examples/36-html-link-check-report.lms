@@ -67,8 +67,8 @@ r = system(concat(dsl_cli(term), ["--dsl", "build/link-term.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Word report (lmoffice).
-report_doc = _lmcode_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.29";
-let doc = office.docx("build/link-check-report.docx");
+report_doc = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.29";
+let doc = docx.create("build/link-check-report.docx");
 doc.title("Link-check report").author("Documentation tooling");
 doc.heading("Link-check report: Lattice docs", 1).bold(true);
 doc.paragraph("Three pages were checked with lmhtml. Two internal links do not resolve; one external link is outside the check by policy.");
