@@ -1,0 +1,249 @@
+# Closed-source split dry-run: lmdraw
+
+- Source repo: `/home/mma/repos/dsl/lmdraw`
+- Source revision: `4b63140046ba2a28a5693a9dfed0f7beb9783c71`
+- Private peer target: `lmctlhq/lmdraw` (create/copy only after owner approval)
+- Public peer target: `lmctl-ai/lmdraw` (preserve the existing public URL)
+
+## Exact tracked-file plan
+
+### Public peer (`lmctl-ai/lmdraw`): 85 tracked files
+- `assets/fonts/OFL.txt`
+- `docs/images/architecture-layers.png`
+- `docs/images/carnot-cycle.png`
+- `docs/images/damped-oscillator.png`
+- `docs/images/decision-flowchart.png`
+- `docs/images/decision-tree.png`
+- `docs/images/entity-relationship.png`
+- `docs/images/etl-pipeline.png`
+- `docs/images/flowchart-order-approval.png`
+- `docs/images/hohmann-transfer.png`
+- `docs/images/hydrogen-spectrum.png`
+- `docs/images/incline-free-body.png`
+- `docs/images/kepler-second-law.gif`
+- `docs/images/kepler-second-law.png`
+- `docs/images/kleiber-allometry.png`
+- `docs/images/lens-ray-diagram.png`
+- `docs/images/lotka-volterra.png`
+- `docs/images/mortgage-amortization.png`
+- `docs/images/npv-irr-cashflow.png`
+- `docs/images/org-chart-grid.png`
+- `docs/images/punnett-square.png`
+- `docs/images/rc-lowpass.png`
+- `docs/images/relativity-lorentz.png`
+- `docs/images/render-assets.png`
+- `docs/images/sequence-oauth-refresh.png`
+- `docs/images/state-machines.png`
+- `docs/images/swimlane-process.png`
+- `docs/images/timeline-gantt.png`
+- `docs/images/truss-bridge.png`
+- `docs/LLM_GUIDE.md`
+- `docs/readme/architecture-light.lms`
+- `docs/readme/architecture-light.png`
+- `docs/readme/architecture.lms`
+- `docs/readme/architecture.png`
+- `docs/readme/render.sh`
+- `examples/animated-ladder.lms`
+- `examples/architecture-layers.lms`
+- `examples/arrow-helper.lms`
+- `examples/carnot-cycle.lms`
+- `examples/chart-bars-lines.lms`
+- `examples/damped-oscillator.lms`
+- `examples/decision-flowchart.lms`
+- `examples/decision-tree.lms`
+- `examples/entity-relationship.lms`
+- `examples/etl-pipeline.lms`
+- `examples/flow-pipeline.lms`
+- `examples/flowchart-order-approval.lms`
+- `examples/geometry-ellipse.lms`
+- `examples/heatmap-grid.lms`
+- `examples/hohmann-transfer.lms`
+- `examples/hydrogen-spectrum.lms`
+- `examples/incline-free-body.lms`
+- `examples/kepler-second-law.lms`
+- `examples/kleiber-allometry.lms`
+- `examples/lens-ray-diagram.lms`
+- `examples/lotka-volterra.lms`
+- `examples/mortgage-amortization.lms`
+- `examples/node-tour.lms`
+- `examples/npv-irr-cashflow.lms`
+- `examples/org-chart-grid.lms`
+- `examples/punnett-square.lms`
+- `examples/rc-lowpass.lms`
+- `examples/README.md`
+- `examples/relativity-lorentz.lms`
+- `examples/render-all.sh`
+- `examples/render-assets.lms`
+- `examples/sequence-oauth-refresh.lms`
+- `examples/state-machines.lms`
+- `examples/swimlane-process.lms`
+- `examples/table-metrics.lms`
+- `examples/timeline-gantt.lms`
+- `examples/title-card.lms`
+- `examples/tree-org.lms`
+- `examples/truss-bridge.lms`
+- `examples/tween-morph.lms`
+- `LICENSE`
+- `licenses/FreeType-FTL.txt`
+- `licenses/GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt`
+- `licenses/GPL-3.txt`
+- `licenses/LGPL-2.1.txt`
+- `licenses/LunaSVG-MIT.txt`
+- `licenses/Noto-OFL-1.1.txt`
+- `licenses/PlutoVG-MIT.txt`
+- `README.md`
+- `THIRD_PARTY_NOTICES`
+- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+
+### Private peer (`lmctlhq/lmdraw`): 132 tracked files
+- ``
+- `.gitattributes`
+- `.github/workflows/ci.yml`
+- `.gitignore`
+- `assets/automation-ladder-mobile.svg`
+- `assets/automation-ladder.svg`
+- `assets/fonts/NotoSans-Bold.ttf`
+- `assets/fonts/NotoSans-Regular.ttf`
+- `assets/fonts/NotoSansMath-Regular.ttf`
+- `assets/level-automation.svg`
+- `assets/level-delegate.svg`
+- `assets/level-sessions.svg`
+- `assets/level-team.svg`
+- `assets/refused-class.svg`
+- `CMakeLists.txt`
+- `cpp/luna_renderer.cpp`
+- `cpp/main.cpp`
+- `cpp/renderer.hpp`
+- `cpp/tick_format.hpp`
+- `durable-memory/01-purpose.md`
+- `durable-memory/02-schema-and-svg.md`
+- `durable-memory/03-build-run-test.md`
+- `durable-memory/04-gotchas.md`
+- `durable-memory/05-open-items.md`
+- `durable-memory/06-licensing-and-release.md`
+- `durable-memory/07-examples-and-images.md`
+- `durable-memory/index.md`
+- `schema/lmdraw.dsl.json`
+- `scripts/embed-resources.py`
+- `scripts/select-compiler.sh`
+- `scripts/stage-release-notices.sh`
+- `scripts/sync-sdk.sh`
+- `sdk.lock`
+- `sdk/dslvm.hpp`
+- `test.sh`
+- `tests/fixtures/automation-ladder-mobile.svg`
+- `tests/fixtures/automation-ladder.svg`
+- `tests/fixtures/level-automation.svg`
+- `tests/fixtures/level-delegate.svg`
+- `tests/fixtures/level-sessions.svg`
+- `tests/fixtures/level-team.svg`
+- `tests/fixtures/refused-class.svg`
+- `tests/golden/schema-summary.txt`
+- `tests/images-output.lms`
+- `tests/math-glyphs.lms`
+- `tests/refusals/images-subdir.lms`
+- `tests/refusals/images-traversal.lms`
+- `tests/refusals/invalid-anchor.lms`
+- `tests/refusals/invalid-axes.lms`
+- `tests/refusals/invalid-connector-label-t.lms`
+- `tests/refusals/invalid-connector-routing.lms`
+- `tests/refusals/invalid-dash.lms`
+- `tests/refusals/invalid-ellipse-radius.lms`
+- `tests/refusals/invalid-grid.lms`
+- `tests/refusals/invalid-legend.lms`
+- `tests/refusals/invalid-log-axes.lms`
+- `tests/refusals/invalid-marker.lms`
+- `tests/refusals/outside-output.lms`
+- `tests/refusals/prevalidate.lms`
+- `tests/refusals/refused-svg.lms`
+- `tests/refusals/stale-node.lms`
+- `tests/unit.cpp`
+- `tests/zero-corner-radius.lms`
+- `third_party.lock`
+- `third_party/lunasvg/.github/FUNDING.yml`
+- `third_party/lunasvg/.github/workflows/main.yml`
+- `third_party/lunasvg/.gitignore`
+- `third_party/lunasvg/cmake/lunasvgConfig.cmake.in`
+- `third_party/lunasvg/CMakeLists.txt`
+- `third_party/lunasvg/examples/CMakeLists.txt`
+- `third_party/lunasvg/examples/meson.build`
+- `third_party/lunasvg/examples/svg2png.cpp`
+- `third_party/lunasvg/include/lunasvg.h`
+- `third_party/lunasvg/LICENSE`
+- `third_party/lunasvg/meson_options.txt`
+- `third_party/lunasvg/meson.build`
+- `third_party/lunasvg/plutovg/.github/FUNDING.yml`
+- `third_party/lunasvg/plutovg/.github/workflows/main.yml`
+- `third_party/lunasvg/plutovg/.gitignore`
+- `third_party/lunasvg/plutovg/cmake/plutovgConfig.cmake.in`
+- `third_party/lunasvg/plutovg/CMakeLists.txt`
+- `third_party/lunasvg/plutovg/examples/CMakeLists.txt`
+- `third_party/lunasvg/plutovg/examples/meson.build`
+- `third_party/lunasvg/plutovg/examples/smiley.c`
+- `third_party/lunasvg/plutovg/include/plutovg.h`
+- `third_party/lunasvg/plutovg/LICENSE`
+- `third_party/lunasvg/plutovg/meson_options.txt`
+- `third_party/lunasvg/plutovg/meson.build`
+- `third_party/lunasvg/plutovg/README.md`
+- `third_party/lunasvg/plutovg/smiley.png`
+- `third_party/lunasvg/plutovg/source/FTL.TXT`
+- `third_party/lunasvg/plutovg/source/plutovg-blend.c`
+- `third_party/lunasvg/plutovg/source/plutovg-canvas.c`
+- `third_party/lunasvg/plutovg/source/plutovg-font.c`
+- `third_party/lunasvg/plutovg/source/plutovg-ft-math.c`
+- `third_party/lunasvg/plutovg/source/plutovg-ft-math.h`
+- `third_party/lunasvg/plutovg/source/plutovg-ft-raster.c`
+- `third_party/lunasvg/plutovg/source/plutovg-ft-raster.h`
+- `third_party/lunasvg/plutovg/source/plutovg-ft-stroker.c`
+- `third_party/lunasvg/plutovg/source/plutovg-ft-stroker.h`
+- `third_party/lunasvg/plutovg/source/plutovg-ft-types.h`
+- `third_party/lunasvg/plutovg/source/plutovg-matrix.c`
+- `third_party/lunasvg/plutovg/source/plutovg-paint.c`
+- `third_party/lunasvg/plutovg/source/plutovg-path.c`
+- `third_party/lunasvg/plutovg/source/plutovg-private.h`
+- `third_party/lunasvg/plutovg/source/plutovg-rasterize.c`
+- `third_party/lunasvg/plutovg/source/plutovg-stb-image-write.h`
+- `third_party/lunasvg/plutovg/source/plutovg-stb-image.h`
+- `third_party/lunasvg/plutovg/source/plutovg-stb-truetype.h`
+- `third_party/lunasvg/plutovg/source/plutovg-surface.c`
+- `third_party/lunasvg/plutovg/source/plutovg-utils.h`
+- `third_party/lunasvg/README.md`
+- `third_party/lunasvg/source/graphics.cpp`
+- `third_party/lunasvg/source/graphics.h`
+- `third_party/lunasvg/source/lunasvg.cpp`
+- `third_party/lunasvg/source/svgelement.cpp`
+- `third_party/lunasvg/source/svgelement.h`
+- `third_party/lunasvg/source/svggeometryelement.cpp`
+- `third_party/lunasvg/source/svggeometryelement.h`
+- `third_party/lunasvg/source/svglayoutstate.cpp`
+- `third_party/lunasvg/source/svglayoutstate.h`
+- `third_party/lunasvg/source/svgpaintelement.cpp`
+- `third_party/lunasvg/source/svgpaintelement.h`
+- `third_party/lunasvg/source/svgparser.cpp`
+- `third_party/lunasvg/source/svgparserutils.h`
+- `third_party/lunasvg/source/svgproperty.cpp`
+- `third_party/lunasvg/source/svgproperty.h`
+- `third_party/lunasvg/source/svgrenderstate.cpp`
+- `third_party/lunasvg/source/svgrenderstate.h`
+- `third_party/lunasvg/source/svgtextelement.cpp`
+- `third_party/lunasvg/source/svgtextelement.h`
+- `third_party/lunasvg/subprojects/plutovg.wrap`
+
+## Required path and release changes
+
+- README-relative image/docs/example paths stay byte-for-byte at their current paths in the public peer.
+- Raw autorun links checked: 28/28 map to public `.lms` files.
+- Existing CI workflow paths move to the private peer; replace them with the private CI template and add public `.github/workflows/public-ci.yml`.
+  - Private CI path: `.github/workflows/ci.yml`
+- Expected public release assets: `lmdraw-linux-x64`, `lmdraw-linux-arm64`, `lmdraw-macos-x64`, `lmdraw-macos-arm64`, `lmdraw-windows-x64.exe`, plus `SHA256SUMS`.
+- README links to private source paths checked: 0 finding(s).
+- Public-plan secret scan: 0 finding(s); values are never printed.
+- Licensing: Ship LICENSE, THIRD_PARTY_NOTICES, licenses/*.txt, Noto Sans/Noto Sans Math OFL texts and the existing source archive; keep LunaSVG/PlutoVG MIT, FreeType FTL, stb notices, and runtime license texts.
+
+## Verification result
+
+- Autorun path check: PASS
+- Public docs source-reference check: PASS
+- Public-plan secret scan: PASS
+
+This is a read-only plan. No files were copied or changed, no GitHub operation was performed, and no visibility was changed.

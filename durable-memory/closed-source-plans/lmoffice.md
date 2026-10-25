@@ -1,0 +1,284 @@
+# Closed-source split dry-run: lmoffice
+
+- Source repo: `/home/mma/repos/dsl/lmoffice`
+- Source revision: `ddc6bf070eddbf95968e00709cbc5a7715deba4b`
+- Private peer target: `lmctlhq/lmoffice` (create/copy only after owner approval)
+- Public peer target: `lmctl-ai/lmoffice` (preserve the existing public URL)
+
+## Exact tracked-file plan
+
+### Public peer (`lmctl-ai/lmoffice`): 184 tracked files
+- `docs/gallery.json`
+- `docs/images/5slidedeck.png`
+- `docs/images/annual_report.png`
+- `docs/images/budgetxlsx.png`
+- `docs/images/business-agenda.png`
+- `docs/images/business-job-offer.png`
+- `docs/images/business-letter.png`
+- `docs/images/business-memo.png`
+- `docs/images/business-press-release.png`
+- `docs/images/business-proposal.png`
+- `docs/images/business-purchase-order.png`
+- `docs/images/business-report-with-toc.png`
+- `docs/images/cap_table.png`
+- `docs/images/conference_talk.png`
+- `docs/images/cross-workbook-briefing.png`
+- `docs/images/cross-workbook-memo.png`
+- `docs/images/education-assessment-rubric.png`
+- `docs/images/education-certificate.png`
+- `docs/images/education-class-schedule.png`
+- `docs/images/education-gradebook-advanced.png`
+- `docs/images/education-lesson-deck.png`
+- `docs/images/education-lesson-plan.png`
+- `docs/images/education-rubric.png`
+- `docs/images/education-syllabus.png`
+- `docs/images/expense_report.png`
+- `docs/images/finance-balance-sheet.png`
+- `docs/images/finance-cap-table.png`
+- `docs/images/finance-cash-flow.png`
+- `docs/images/finance-profit-loss.png`
+- `docs/images/finance-tax-worksheet.png`
+- `docs/images/gradebook.png`
+- `docs/images/habit_tracker.png`
+- `docs/images/hr-leave-tracker.png`
+- `docs/images/hr-offer-letter.png`
+- `docs/images/hr-onboarding-checklist.png`
+- `docs/images/hr-onboarding-review.png`
+- `docs/images/hr-org-chart.png`
+- `docs/images/hr-performance-review.png`
+- `docs/images/inventory_tracker.png`
+- `docs/images/invoice_tracker.png`
+- `docs/images/invoice.png`
+- `docs/images/kpi_scorecard.png`
+- `docs/images/legal-demand-letter.png`
+- `docs/images/legal-lease.png`
+- `docs/images/legal-nda.png`
+- `docs/images/legal-power-of-attorney.png`
+- `docs/images/legal-services-agreement.png`
+- `docs/images/legal-terms-of-service.png`
+- `docs/images/loan_amortization.png`
+- `docs/images/markdown-budget-table.png`
+- `docs/images/markdown-business-letter.png`
+- `docs/images/markdown-contacts-csv.png`
+- `docs/images/markdown-gradebook-csv.png`
+- `docs/images/markdown-lesson-plan.png`
+- `docs/images/markdown-meeting-minutes.png`
+- `docs/images/markdown-nda.png`
+- `docs/images/markdown-project-deck.png`
+- `docs/images/markdown-report-toc.png`
+- `docs/images/markdown-resume.png`
+- `docs/images/markdown-review-notes.png`
+- `docs/images/markdown-services-agreement.png`
+- `docs/images/markdown-training-deck.png`
+- `docs/images/marketing-brand-guidelines.png`
+- `docs/images/marketing-campaign-calendar.png`
+- `docs/images/marketing-case-study.png`
+- `docs/images/marketing-content-plan.png`
+- `docs/images/meetingminutes.png`
+- `docs/images/monthly_budget.png`
+- `docs/images/multisheet.png`
+- `docs/images/onboarding.png`
+- `docs/images/operations-inspection-checklist.png`
+- `docs/images/operations-lease-abstract.png`
+- `docs/images/operations-maintenance-log.png`
+- `docs/images/pitch_deck.png`
+- `docs/images/product_launch.png`
+- `docs/images/project_gantt.png`
+- `docs/images/project_status.png`
+- `docs/images/quarterly_business_review.png`
+- `docs/images/report.png`
+- `docs/images/resume-academic-cv.png`
+- `docs/images/resume-classic.png`
+- `docs/images/resume-cover-letter.png`
+- `docs/images/resume-reference-sheet.png`
+- `docs/images/resume-two-column.png`
+- `docs/images/sales_dashboard.png`
+- `docs/images/sales_proposal.png`
+- `docs/images/shopping_list.png`
+- `docs/images/team_intro.png`
+- `docs/images/timesheet.png`
+- `docs/images/training_workshop.png`
+- `docs/images/travel_itinerary.png`
+- `examples/5slidedeck.lms`
+- `examples/annual_report.lms`
+- `examples/budgetxlsx.lms`
+- `examples/business-agenda.lms`
+- `examples/business-job-offer.lms`
+- `examples/business-letter.lms`
+- `examples/business-memo.lms`
+- `examples/business-press-release.lms`
+- `examples/business-proposal.lms`
+- `examples/business-purchase-order.lms`
+- `examples/business-report-with-toc.lms`
+- `examples/cap_table.lms`
+- `examples/conference_talk.lms`
+- `examples/cross-workbook-briefing.lms`
+- `examples/cross-workbook-memo.lms`
+- `examples/education-assessment-rubric.lms`
+- `examples/education-certificate.lms`
+- `examples/education-class-schedule.lms`
+- `examples/education-gradebook-advanced.lms`
+- `examples/education-lesson-deck.lms`
+- `examples/education-lesson-plan.lms`
+- `examples/education-rubric.lms`
+- `examples/education-syllabus.lms`
+- `examples/expense_report.lms`
+- `examples/finance-balance-sheet.lms`
+- `examples/finance-cap-table.lms`
+- `examples/finance-cash-flow.lms`
+- `examples/finance-profit-loss.lms`
+- `examples/finance-tax-worksheet.lms`
+- `examples/gradebook.lms`
+- `examples/habit_tracker.lms`
+- `examples/hr-leave-tracker.lms`
+- `examples/hr-offer-letter.lms`
+- `examples/hr-onboarding-checklist.lms`
+- `examples/hr-onboarding-review.lms`
+- `examples/hr-org-chart.lms`
+- `examples/hr-performance-review.lms`
+- `examples/inventory_tracker.lms`
+- `examples/invoice_tracker.lms`
+- `examples/invoice.lms`
+- `examples/kpi_scorecard.lms`
+- `examples/legal-demand-letter.lms`
+- `examples/legal-lease.lms`
+- `examples/legal-nda.lms`
+- `examples/legal-power-of-attorney.lms`
+- `examples/legal-services-agreement.lms`
+- `examples/legal-terms-of-service.lms`
+- `examples/loan_amortization.lms`
+- `examples/markdown-budget-table.lms`
+- `examples/markdown-business-letter.lms`
+- `examples/markdown-contacts-csv.lms`
+- `examples/markdown-gradebook-csv.lms`
+- `examples/markdown-lesson-plan.lms`
+- `examples/markdown-meeting-minutes.lms`
+- `examples/markdown-nda.lms`
+- `examples/markdown-project-deck.lms`
+- `examples/markdown-report-toc.lms`
+- `examples/markdown-resume.lms`
+- `examples/markdown-review-notes.lms`
+- `examples/markdown-services-agreement.lms`
+- `examples/markdown-training-deck.lms`
+- `examples/marketing-brand-guidelines.lms`
+- `examples/marketing-campaign-calendar.lms`
+- `examples/marketing-case-study.lms`
+- `examples/marketing-content-plan.lms`
+- `examples/meetingminutes.lms`
+- `examples/monthly_budget.lms`
+- `examples/multisheet.lms`
+- `examples/onboarding.lms`
+- `examples/operations-inspection-checklist.lms`
+- `examples/operations-lease-abstract.lms`
+- `examples/operations-maintenance-log.lms`
+- `examples/pitch_deck.lms`
+- `examples/product_launch.lms`
+- `examples/project_gantt.lms`
+- `examples/project_status.lms`
+- `examples/quarterly_business_review.lms`
+- `examples/report.lms`
+- `examples/resume-academic-cv.lms`
+- `examples/resume-classic.lms`
+- `examples/resume-cover-letter.lms`
+- `examples/resume-reference-sheet.lms`
+- `examples/resume-two-column.lms`
+- `examples/sales_dashboard.lms`
+- `examples/sales_proposal.lms`
+- `examples/shopping_list.lms`
+- `examples/team_intro.lms`
+- `examples/timesheet.lms`
+- `examples/training_workshop.lms`
+- `examples/travel_itinerary.lms`
+- `LICENSE`
+- `README.md`
+- `THIRD_PARTY_NOTICES.md`
+- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+
+### Private peer (`lmctlhq/lmoffice`): 65 tracked files
+- ``
+- `.gitattributes`
+- `.github/workflows/ci.yml`
+- `.gitignore`
+- `durable-memory/01-purpose-and-place.md`
+- `durable-memory/02-decisions.md`
+- `durable-memory/03-build-run-test.md`
+- `durable-memory/04-gotchas.md`
+- `durable-memory/05-open-items.md`
+- `durable-memory/06-word-layout.md`
+- `durable-memory/07-spreadsheet-and-presentation.md`
+- `durable-memory/08-gallery-rendering.md`
+- `durable-memory/09-review-and-images.md`
+- `durable-memory/10-markdown-design.md`
+- `durable-memory/11-multi-schema-host.md`
+- `durable-memory/index.md`
+- `schema/docx.dsl.json`
+- `schema/pptx.dsl.json`
+- `schema/xlsx.dsl.json`
+- `scripts/build.sh`
+- `scripts/check-gallery.py`
+- `scripts/check-render-fidelity.py`
+- `scripts/libreoffice-export.py`
+- `scripts/markdown-example-stats.py`
+- `scripts/render-gallery.py`
+- `scripts/select-compiler.sh`
+- `scripts/stamp-version.sh`
+- `scripts/sync-sdk.sh`
+- `scripts/update-gallery-readme.py`
+- `sdk.lock`
+- `src/LmOffice/ChartBuilder.cs`
+- `src/LmOffice/DeterministicPackage.cs`
+- `src/LmOffice/DocxDocument.cs`
+- `src/LmOffice/DocxLayout.cs`
+- `src/LmOffice/DocxMarkdown.cs`
+- `src/LmOffice/DocxRegistry.cs`
+- `src/LmOffice/DocxReview.cs`
+- `src/LmOffice/Guard.cs`
+- `src/LmOffice/HostRegistry.cs`
+- `src/LmOffice/Inspector.cs`
+- `src/LmOffice/LmOffice.csproj`
+- `src/LmOffice/MarkdownExporter.cs`
+- `src/LmOffice/MarkdownModel.cs`
+- `src/LmOffice/MarkdownSyntax.cs`
+- `src/LmOffice/OfficeHost.cs`
+- `src/LmOffice/packages.lock.json`
+- `src/LmOffice/PptxDocument.cs`
+- `src/LmOffice/PptxMarkdown.cs`
+- `src/LmOffice/PptxRegistry.cs`
+- `src/LmOffice/Program.cs`
+- `src/LmOffice/XlsxDocument.cs`
+- `src/LmOffice/XlsxMarkdown.cs`
+- `src/LmOffice/XlsxRegistry.cs`
+- `test.sh`
+- `tests/docx_genres.py`
+- `tests/docx_round3.py`
+- `tests/integration.py`
+- `tests/markdown_docx.py`
+- `tests/markdown_export.py`
+- `tests/markdown_io.py`
+- `tests/markdown_office.py`
+- `tests/markdown_syntax.py`
+- `tests/pptx_round3.py`
+- `tests/xlsx_round3.py`
+- `VERSION`
+
+## Required path and release changes
+
+- README-relative image/docs/example paths stay byte-for-byte at their current paths in the public peer.
+- Raw autorun links checked: 90/90 map to public `.lms` files.
+- Existing CI workflow paths move to the private peer; replace them with the private CI template and add public `.github/workflows/public-ci.yml`.
+  - Private CI path: `.github/workflows/ci.yml`
+- Expected public release assets: `lmoffice-linux-x64`, `lmoffice-linux-arm64`, `lmoffice-macos-x64`, `lmoffice-macos-arm64`, `lmoffice-windows-x64.exe`, plus `SHA256SUMS`.
+- README links to private source paths checked: 3 finding(s).
+  - SOURCE REFERENCE TO REVIEW: `README.md:28 -> ](schema/docx.dsl.json)`
+  - SOURCE REFERENCE TO REVIEW: `README.md:28 -> ](schema/xlsx.dsl.json)`
+  - SOURCE REFERENCE TO REVIEW: `README.md:28 -> ](schema/pptx.dsl.json)`
+- Public-plan secret scan: 0 finding(s); values are never printed.
+- Licensing: Ship LICENSE, THIRD_PARTY_NOTICES.md, Open XML SDK/System.IO.Packaging MIT notices, .NET 8 runtime component notices, lmcode-csharp MIT notice, and LICENSE-binaries separately.
+
+## Verification result
+
+- Autorun path check: PASS
+- Public docs source-reference check: REVIEW REQUIRED
+- Public-plan secret scan: PASS
+
+This is a read-only plan. No files were copied or changed, no GitHub operation was performed, and no visibility was changed.

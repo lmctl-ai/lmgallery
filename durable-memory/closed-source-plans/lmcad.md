@@ -1,0 +1,221 @@
+# Closed-source split dry-run: lmcad
+
+- Source repo: `/home/mma/repos/dsl/lmcad`
+- Source revision: `1af37f8d00ba2ee9275e5919773dd3b4d00e2b2a`
+- Private peer target: `lmctlhq/lmcad` (create/copy only after owner approval)
+- Public peer target: `lmctl-ai/lmcad` (preserve the existing public URL)
+
+## Exact tracked-file plan
+
+### Public peer (`lmctl-ai/lmcad`): 88 tracked files
+- `docs/images/beam-sections.png`
+- `docs/images/brick.png`
+- `docs/images/buckyball.png`
+- `docs/images/bullet.png`
+- `docs/images/caffeine-molecule.png`
+- `docs/images/coil-spring.png`
+- `docs/images/cornell-box.png`
+- `docs/images/cubemap.png`
+- `docs/images/dipole-field.png`
+- `docs/images/dna-double-helix.png`
+- `docs/images/fluidsimulation2d.png`
+- `docs/images/fluidsimulation3d.png`
+- `docs/images/gear-train.gif`
+- `docs/images/heat-sink.png`
+- `docs/images/level-1-sessions.gif`
+- `docs/images/level-1-sessions.png`
+- `docs/images/level-2-orchestration.gif`
+- `docs/images/level-2-orchestration.png`
+- `docs/images/level-3-hands-off-lead.gif`
+- `docs/images/level-3-hands-off-lead.png`
+- `docs/images/level-4-automation.gif`
+- `docs/images/level-4-automation.png`
+- `docs/images/material-sandbox.png`
+- `docs/images/model-viewer.png`
+- `docs/images/mug.png`
+- `docs/images/multidraw.png`
+- `docs/images/pbr-spheres.png`
+- `docs/images/plate-with-holes.png`
+- `docs/images/pressure-vessel.png`
+- `docs/images/primitives.png`
+- `docs/images/saturn-rings.png`
+- `docs/images/textured-triangle.png`
+- `docs/images/truss-bridge.png`
+- `docs/images/vase.png`
+- `docs/videos/level-1-sessions.mp4`
+- `docs/videos/level-2-orchestration.mp4`
+- `docs/videos/level-3-hands-off-lead.mp4`
+- `docs/videos/level-4-automation.mp4`
+- `examples/ball-stick.lms`
+- `examples/beam-sections.lms`
+- `examples/box-stl.lms`
+- `examples/box-volume.lms`
+- `examples/brick.lms`
+- `examples/buckyball.lms`
+- `examples/bullet.lms`
+- `examples/caffeine-molecule.lms`
+- `examples/coil-spring.lms`
+- `examples/cornell-box.lms`
+- `examples/cubemap.lms`
+- `examples/dipole-field.lms`
+- `examples/dna-double-helix.lms`
+- `examples/fluidsimulation2d.lms`
+- `examples/fluidsimulation3d.lms`
+- `examples/gear-train.lms`
+- `examples/heat-sink.lms`
+- `examples/level-1-sessions.lms`
+- `examples/level-2-orchestration.lms`
+- `examples/level-3-hands-off-lead.lms`
+- `examples/level-4-automation.lms`
+- `examples/loop-row.lms`
+- `examples/material-sandbox.lms`
+- `examples/model-viewer.lms`
+- `examples/mug.lms`
+- `examples/multidraw.lms`
+- `examples/pbr-spheres.lms`
+- `examples/plate-with-holes.lms`
+- `examples/pressure-vessel.lms`
+- `examples/primitives.lms`
+- `examples/README.md`
+- `examples/render-all.sh`
+- `examples/saturn-rings.lms`
+- `examples/section-view.lms`
+- `examples/still-life.lms`
+- `examples/textured-triangle.lms`
+- `examples/truss-bridge.lms`
+- `examples/turntable.lms`
+- `examples/tween.lms`
+- `examples/vase.lms`
+- `LICENSE`
+- `licenses/Apache-2.0.txt`
+- `licenses/build123d-NOTICE.txt`
+- `licenses/GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt`
+- `licenses/GPL-3.txt`
+- `licenses/LGPL-2.1.txt`
+- `licenses/LINUX-RELINKING.md`
+- `licenses/PyVista-MIT.txt`
+- `README.md`
+- `THIRD_PARTY_NOTICES.md`
+- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+
+### Private peer (`lmctlhq/lmcad`): 100 tracked files
+- ``
+- `.gitattributes`
+- `.github/occt-cmake-flags.txt`
+- `.github/workflows/ci.yml`
+- `.gitignore`
+- `CMakeLists.txt`
+- `cpp/atomic-file.cpp`
+- `cpp/atomic-file.hpp`
+- `cpp/cad.cpp`
+- `cpp/cad.hpp`
+- `cpp/deflate.hpp`
+- `cpp/dslvm.hpp`
+- `cpp/export.cpp`
+- `cpp/image.cpp`
+- `cpp/keyframes.hpp`
+- `cpp/main.cpp`
+- `cpp/render.cpp`
+- `cpp/render.hpp`
+- `cpp/scene.cpp`
+- `cpp/scene.hpp`
+- `durable-memory/00-index.md`
+- `durable-memory/01-purpose-and-place.md`
+- `durable-memory/02-render-stack-options.md`
+- `durable-memory/03-build-run-test.md`
+- `durable-memory/03-schema-v0.md`
+- `durable-memory/04-gotchas.md`
+- `durable-memory/04-loops-and-collections-notes.md`
+- `durable-memory/05-open-items.md`
+- `durable-memory/06-reference-examples.md`
+- `durable-memory/07-occt-static-spike.md`
+- `durable-memory/08-occt-integration.md`
+- `durable-memory/13-licensing.md`
+- `durable-memory/14-ci-macos-windows.md`
+- `durable-memory/15-example-gallery.md`
+- `durable-memory/20-sibling-3d-hosts.md`
+- `durable-memory/index.md`
+- `reference/.gitignore`
+- `reference/out/b3d_01_holes/b3d_01_holes.png`
+- `reference/out/b3d_01_holes/b3d_01_holes.stl`
+- `reference/out/b3d_02_lego/b3d_02_lego.png`
+- `reference/out/b3d_02_lego/b3d_02_lego.stl`
+- `reference/out/b3d_03_vase/b3d_03_vase.png`
+- `reference/out/b3d_03_vase/b3d_03_vase.stl`
+- `reference/out/b3d_05_tea_cup/b3d_05_tea_cup.png`
+- `reference/out/b3d_05_tea_cup/b3d_05_tea_cup.stl`
+- `reference/out/b3d_05_tea_cup/tea_cup.bin`
+- `reference/out/b3d_05_tea_cup/tea_cup.glb`
+- `reference/out/b3d_06_joints/b3d_06_joints.png`
+- `reference/out/b3d_06_joints/b3d_06_joints.stl`
+- `reference/out/pv_01_geometric_objects/pv_01_geometric_objects_1.png`
+- `reference/out/pv_02_boolean_operations/pv_02_boolean_operations_1.png`
+- `reference/out/pv_02_boolean_operations/pv_02_boolean_operations_2.png`
+- `reference/out/pv_02_boolean_operations/pv_02_boolean_operations_3.png`
+- `reference/out/pv_02_boolean_operations/pv_02_boolean_operations_4.png`
+- `reference/out/pv_02_boolean_operations/pv_02_boolean_operations_5.png`
+- `reference/out/pv_02_boolean_operations/pv_02_boolean_operations_6.png`
+- `reference/out/pv_02_boolean_operations/pv_02_boolean_operations_7.png`
+- `reference/out/pv_06_marching_cubes/pv_06_marching_cubes_1.png`
+- `reference/out/pv_06_marching_cubes/pv_06_marching_cubes_2.png`
+- `reference/python/b3d_01_holes.py`
+- `reference/python/b3d_02_lego.py`
+- `reference/python/b3d_03_vase.py`
+- `reference/python/b3d_05_tea_cup.py`
+- `reference/python/b3d_06_joints.py`
+- `reference/python/pv_01_geometric_objects.py`
+- `reference/python/pv_02_boolean_operations.py`
+- `reference/python/pv_03_clip_with_plane_box.py`
+- `reference/python/pv_04_light_types.py`
+- `reference/python/pv_05_glyph.py`
+- `reference/python/pv_06_marching_cubes.py`
+- `reference/runners/run_b3d.py`
+- `reference/runners/run_pv.py`
+- `schema/lmcad.dsl.json`
+- `scripts/build-occt.sh`
+- `scripts/lmscript-source.mjs`
+- `scripts/lmscript-source.sh`
+- `scripts/npm-layout.sh`
+- `scripts/select-compiler.sh`
+- `scripts/stage-release-notices.sh`
+- `scripts/stamp-version.sh`
+- `scripts/sync-sdk.sh`
+- `sdk.lock`
+- `spikes/occt/.gitignore`
+- `spikes/occt/cross_build123d.py`
+- `spikes/occt/spike.cpp`
+- `test.sh`
+- `tests/adapter.py`
+- `tests/apng-extract.cjs`
+- `tests/cad-exports.py`
+- `tests/cad.py`
+- `tests/compiler-selection.py`
+- `tests/data/keyframes.csv`
+- `tests/inflate.hpp`
+- `tests/multi-file.py`
+- `tests/refusals.py`
+- `tests/render-settings.py`
+- `tests/schema-cli.py`
+- `tests/tween.py`
+- `tests/unit.cpp`
+- `tools/apng-extract.cpp`
+
+## Required path and release changes
+
+- README-relative image/docs/example paths stay byte-for-byte at their current paths in the public peer.
+- Raw autorun links checked: 31/31 map to public `.lms` files.
+- Existing CI workflow paths move to the private peer; replace them with the private CI template and add public `.github/workflows/public-ci.yml`.
+  - Private CI path: `.github/workflows/ci.yml`
+- Expected public release assets: `lmcad-linux-x64`, `lmcad-linux-arm64`, `lmcad-macos-x64`, `lmcad-macos-arm64`, `lmcad-windows-x64.exe`, plus `SHA256SUMS`.
+- README links to private source paths checked: 1 finding(s).
+  - SOURCE REFERENCE TO REVIEW: `README.md:66 -> ](https://github.com/lmctl-ai/lmctl/tree/main/scripts/homepage/video)`
+- Public-plan secret scan: 0 finding(s); values are never printed.
+- Licensing: Ship THIRD_PARTY_NOTICES.md and exact license texts. Linux artifacts must retain OCCT LGPL-2.1 + Open CASCADE exception, OCCT relink objects/command/recipe, glibc LGPL materials and GCC exception materials; also build123d Apache-2.0 NOTICE and PyVista MIT.
+
+## Verification result
+
+- Autorun path check: PASS
+- Public docs source-reference check: REVIEW REQUIRED
+- Public-plan secret scan: PASS
+
+This is a read-only plan. No files were copied or changed, no GitHub operation was performed, and no visibility was changed.
