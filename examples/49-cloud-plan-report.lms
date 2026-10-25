@@ -92,6 +92,15 @@ savedsl(report, "build/infra-report.dslb");
 r = system(concat(dsl_cli(report), ["--dsl", "build/infra-report.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
+# The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
+report_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";
+let doc = docx.create("build/infra-change-report.pdf");
+doc.markdown(${body}).save();
+end _lmcode_
+savedsl(report_pdf, "build/infra-report-pdf.dslb");
+r = system(concat(dsl_cli(report_pdf), ["--dsl", "build/infra-report-pdf.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
 # Chart (lmvideo): the outcome counts (the gallery output).
 chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
 video.size(900, 480); video.frames(1); video.output("images/showcase-49-cloud-plan.png"); video.begin();

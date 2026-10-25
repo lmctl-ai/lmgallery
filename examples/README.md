@@ -454,7 +454,7 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples
 
 lmphysics runs a 6 kg block on a 24 degree ramp with friction 0.3 and records its velocity; the script measures the acceleration and the friction coefficient, asserts both, and formats the results as Markdown. lmoffice writes the Word lab report with a heredoc limitations section; lmvideo draws measured against predicted acceleration. The picture shows the source next to the rendered page.
 
-Hosts: lmphysics → lmoffice → lmvideo. Output: `images/showcase-43-physics-lab.png`.
+Hosts: lmphysics → lmoffice → lmpdf → lmvideo. Output: `images/showcase-43-physics-lab.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/43-physics-lab-report.lms
@@ -464,7 +464,7 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples
 
 lmspace propagates a satellite in an eccentric orbit for two periods; the script reads five epochs from the state history, checks the perigee and apogee distances against the elements, and formats the plan as Markdown. lmoffice writes the plan as a Word document and as a slide deck; lmvideo draws the distance at each epoch. The picture shows the source next to the rendered Word page.
 
-Hosts: lmspace → lmoffice → lmvideo. Output: `images/showcase-44-observing-plan.png`.
+Hosts: lmspace → lmoffice → lmpdf → lmvideo. Output: `images/showcase-44-observing-plan.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/44-astronomy-observing-plan.lms
@@ -474,7 +474,7 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples
 
 lmfinance bootstraps a zero curve, prices a 5-year 4 % bond and a one-year call, and reports the duration and DV01. The script checks the bond against the discount factors and the call against 10.4506; lmoffice writes the Word memo (with a heredoc limitations section) and an Excel workbook with the curve and the cash flows; lmvideo draws the zero rates. The picture shows the source next to the rendered memo.
 
-Hosts: lmfinance → lmoffice → lmvideo. Output: `images/showcase-45-finance-bond-memo.png`.
+Hosts: lmfinance → lmoffice → lmpdf → lmvideo. Output: `images/showcase-45-finance-bond-memo.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/45-finance-bond-memo.lms
@@ -484,7 +484,7 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples
 
 lmssl parses two service certificates (key, expiry, self-signed status, name match) and lmhtml checks every internal link of a three-page site; the script asserts the findings it expects, formats them as Markdown, and lmoffice writes the audit as a Word report. lmvideo draws the check counts. The picture shows the source next to the rendered audit.
 
-Hosts: lmssl → lmhtml → lmoffice → lmvideo. Output: `images/showcase-46-network-audit.png`.
+Hosts: lmssl → lmhtml → lmoffice → lmpdf → lmvideo. Output: `images/showcase-46-network-audit.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/46-network-audit-report.lms
@@ -514,7 +514,7 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples
 
 lmcloud runs OpenTofu in-process on three terraform_data resources, applies them, changes one input and applies again. The script reads both Terraform states back with json_parse, compares them resource by resource, and asserts one change and two unchanged resources. lmoffice writes the change table as a Word report; lmvideo draws the outcomes. The picture shows the source next to the rendered report.
 
-Hosts: lmcloud → lmoffice → lmvideo. Output: `images/showcase-49-cloud-plan.png`.
+Hosts: lmcloud → lmoffice → lmpdf → lmvideo. Output: `images/showcase-49-cloud-plan.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/49-cloud-plan-report.lms
@@ -524,7 +524,7 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples
 
 The script generates a 48-minute logger export with planted defects (blank cells, a repeated minute, a spike) and checks it with csv_parse. lmnum loads the cleaned table, computes the column statistics and the z-score of the spike, and lmoffice writes the report as a Word document. lmvideo draws the issue counts. The picture shows the source next to the rendered report.
 
-Hosts: lmnum → lmoffice → lmvideo. Output: `images/showcase-50-data-quality.png`.
+Hosts: lmnum → lmoffice → lmpdf → lmvideo. Output: `images/showcase-50-data-quality.png`.
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/50-data-quality-report.lms

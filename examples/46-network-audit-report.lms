@@ -113,6 +113,21 @@ savedsl(audit, "build/audit.dslb");
 r = system(concat(dsl_cli(audit), ["--dsl", "build/audit.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
+# The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
+audit_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";
+let scope = <<~MD;
+  ## Scope
+
+  The audit covers two certificates, read from PEM files, and every internal link on three pages.
+  External links are outside the check by policy. No live network connection is made.
+  MD
+let doc = docx.create("build/network-audit.pdf");
+doc.markdown(${findings} + "\n" + scope).save();
+end _lmcode_
+savedsl(audit_pdf, "build/audit-pdf.dslb");
+r = system(concat(dsl_cli(audit_pdf), ["--dsl", "build/audit-pdf.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
 # Counts for the chart: certificates checked, self-signed, names that match, broken links.
 let certs_n = 2.0;
 let self_n = 0.0;

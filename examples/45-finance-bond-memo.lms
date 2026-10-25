@@ -97,6 +97,21 @@ savedsl(memo, "build/desk-memo.dslb");
 r = system(concat(dsl_cli(memo), ["--dsl", "build/desk-memo.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
+# The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
+memo_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";
+let limits = <<~MD;
+  ## Limits
+
+  Prices are model values on one curve. The bond is priced without accrued interest and without credit spread.
+  Duration is taken at the five-year zero rate. The workbook holds the values only; no formulas are stored.
+  MD
+let doc = docx.create("build/desk-memo.pdf");
+doc.markdown(${memo_md} + "\n" + limits).save();
+end _lmcode_
+savedsl(memo_pdf, "build/desk-memo-pdf.dslb");
+r = system(concat(dsl_cli(memo_pdf), ["--dsl", "build/desk-memo-pdf.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
 let curve_csv = "Tenor (years),Zero rate,Discount factor\n" + sprintf("1,%.6f,%.6f\n", z1, df1) + sprintf("2,%.6f,%.6f\n", z2, df2) + sprintf("5,%.6f,%.6f\n", z5, df5) + sprintf("10,%.6f,%.6f\n", z10, df10);
 let book_csv = "Year,Cash flow,Present value\n" + sprintf("1,4,%.4f\n", pv1) + sprintf("2,4,%.4f\n", pv2) + sprintf("3,4,%.4f\n", pv3) + sprintf("4,4,%.4f\n", pv4) + sprintf("5,104,%.4f\n", pv5);
 workbook = _lmcode_ cli="lmoffice xlsx" install="github:lmctl-ai/lmoffice@v0.1.21";

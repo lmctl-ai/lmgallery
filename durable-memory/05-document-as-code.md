@@ -60,3 +60,19 @@ not affected.
   state instead. Revisit when lmcloud exposes plan JSON or a print call.
 - The source excerpts show the Markdown body as written, including `sprintf` calls, so they are long.
 - Compositions 43–50 need lmscript 0.2.420 (heredoc). CI pins it already.
+
+## PDF from the same block (lmpdf)
+
+Compositions 43, 44, 45, 46, 49 and 50 also write a PDF. Directly after the `cli="lmoffice docx"` block
+there is a copy of that block with exactly two changes:
+- `cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54"`;
+- `.pdf` instead of `.docx` in `docx.create(...)`.
+
+The variable and the bytecode name get a `_pdf` / `-pdf` suffix. lmpdf exposes the same
+`lmoffice_docx` schema, so the block compiles unchanged, Markdown body and heredoc included. The PDF is
+PDF/A-2b + PDF/UA-1 tagged and byte-reproducible. Its layout parity with LibreOffice's render of the .docx is
+measured in lmpdf's parity corpus (durable-memory/07-parity-report.md there).
+
+`showcases.json` lists `lmpdf` in each of these host chains, because `tests/check_gallery.py` requires the
+listed hosts to equal the `cli=` bindings. All six run with the released hosts from an empty directory and
+write both `build/*.docx` and `build/*.pdf`.

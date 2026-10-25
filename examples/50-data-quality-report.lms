@@ -120,6 +120,21 @@ savedsl(report, "build/quality.dslb");
 r = system(concat(dsl_cli(report), ["--dsl", "build/quality.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
+# The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
+report_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";
+let limits = <<~MD;
+  ## Scope
+
+  The export is checked for blank cells, repeated minutes and one spike. The statistics use the rows that
+  pass the checks. No values are imputed.
+  MD
+let doc = docx.create("build/quality-report.pdf");
+doc.markdown(${body} + "\n" + limits).save();
+end _lmcode_
+savedsl(report_pdf, "build/quality-pdf.dslb");
+r = system(concat(dsl_cli(report_pdf), ["--dsl", "build/quality-pdf.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
 # Chart (lmvideo): the issue counts (the gallery output).
 chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
 video.size(900, 480); video.frames(1); video.output("images/showcase-50-data-quality.png"); video.begin();

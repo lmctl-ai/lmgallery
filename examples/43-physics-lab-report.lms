@@ -71,6 +71,22 @@ savedsl(report, "build/physics-lab.dslb");
 r = system(concat(dsl_cli(report), ["--dsl", "build/physics-lab.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
+# The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
+report_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";
+let limits = <<~MD;
+  ## Limitations
+
+  The contact model is a single rigid block on a rigid ramp with no air drag. Velocities are read at two
+  instants only, so the result is a mean over 1.2 s and does not show the stick-slip transient.
+  MD
+let body = ${head + rows_md + tail};
+let doc = docx.create("build/physics-lab-report.pdf");
+doc.markdown(body + "\n" + limits).save();
+end _lmcode_
+savedsl(report_pdf, "build/physics-lab-pdf.dslb");
+r = system(concat(dsl_cli(report_pdf), ["--dsl", "build/physics-lab-pdf.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
 # Chart (lmvideo): measured and predicted acceleration (the gallery output).
 chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
 video.size(900, 480); video.frames(1); video.output("images/showcase-43-physics-lab.png"); video.begin();
