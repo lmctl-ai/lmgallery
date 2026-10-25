@@ -10,6 +10,7 @@ on:
       - THIRD_PARTY_NOTICES*
       - docs/**
       - examples/**
+      - scripts/install-hosts.sh
       - .github/workflows/public-ci.yml
 
 permissions:
@@ -29,19 +30,11 @@ jobs:
       - name: Install the compiler that accepts _lmcode_
         run: npm install --global @lmctl-ai/lmctl@0.2.420
 
-      - name: Wait for the first public binary/schema release
+      - name: Install released hosts referenced by public examples
         env:
           GH_TOKEN: ${{ github.token }}
-          REPOSITORY: ${{ github.repository }}
         shell: bash
-        run: |
-          set -euo pipefail
-          for ((attempt = 0; attempt < 60; attempt++)); do
-            if gh release view -R "$REPOSITORY" >/dev/null 2>&1; then exit 0; fi
-            sleep 10
-          done
-          echo "No public release appeared within ten minutes; lmscript cannot resolve host schemas." >&2
-          exit 1
+        run: bash scripts/install-hosts.sh
 
       - name: Check README links, images, and autorun targets
         shell: bash
@@ -94,6 +87,16 @@ jobs:
           if [ -d examples ]; then
             find examples -type f -name '*.lms' -print0 |
               while IFS= read -r -d '' example; do
+                skip_reason=""
+                if [ -n "${LMCTL_UNAVAILABLE_EXAMPLES_FILE:-}" ] && [ -f "$LMCTL_UNAVAILABLE_EXAMPLES_FILE" ]; then
+                  while IFS=$'\t' read -r skipped_example reason; do
+                    if [ "$skipped_example" = "$example" ]; then skip_reason="$reason"; break; fi
+                  done < "$LMCTL_UNAVAILABLE_EXAMPLES_FILE"
+                fi
+                if [ -n "$skip_reason" ]; then
+                  echo "SKIP $example: $skip_reason"
+                  continue
+                fi
                 lmscript --check "$example"
               done
           fi

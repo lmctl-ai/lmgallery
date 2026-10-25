@@ -110,6 +110,10 @@ def split_fast_path(body):
 def generate_private_ci(source, product, out):
     """Transform the product's current ci.yml into a private workflow; fail closed on what is not transformed."""
     text = (Path(source) / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    already_private = "  publish-test:" in text and "RELEASE_TOKEN" in text and "release-to-public.sh" in text
+    if already_private:
+        Path(out).write_text(text, encoding="utf-8", newline="\n")
+        return []
     lines = text.split("\n")
     # 1. Replace the top-level trigger block.
     start = lines.index("on:") if "on:" in lines else next(i for i, l in enumerate(lines) if l.startswith("on:"))

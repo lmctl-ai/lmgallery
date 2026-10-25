@@ -177,8 +177,8 @@ def agents_for(product: str, members: list[str]) -> list[str]:
     return [member for member in members if member.lower().startswith(product.lower() + ".lmctl:")]
 
 
-def ci_latest(product: str, sha: str) -> dict:
-    result = command(["gh", "run", "list", "-R", f"lmctl-ai/{product}", "-L", "1", "--json", "status,conclusion,displayTitle,headSha,url"], check=False, timeout=120)
+def ci_latest(product: str, sha: str, repository: str | None = None) -> dict:
+    result = command(["gh", "run", "list", "-R", repository or f"lmctl-ai/{product}", "-L", "20", "--json", "status,conclusion,displayTitle,headSha,url"], check=False, timeout=120)
     if result.returncode != 0:
         return {"ok": False, "error": result.stderr.strip(), "status": "unknown", "conclusion": ""}
     try:
@@ -187,8 +187,10 @@ def ci_latest(product: str, sha: str) -> dict:
         return {"ok": False, "error": "invalid gh run list JSON", "status": "unknown", "conclusion": ""}
     if not rows:
         return {"ok": False, "error": "no Actions run found", "status": "unknown", "conclusion": ""}
-    row = rows[0]
-    row["ok"] = row.get("status") == "completed" and row.get("conclusion") == "success" and row.get("headSha") == sha
+    row = next((item for item in rows if item.get("headSha") == sha), None)
+    if row is None:
+        return {"ok": False, "error": f"no Actions run found for {sha}", "status": "unknown", "conclusion": ""}
+    row["ok"] = row.get("status") == "completed" and row.get("conclusion") == "success"
     return row
 
 
@@ -544,9 +546,12 @@ def validate_stage(product: str, stage: Path, mapping: dict[str, str]) -> dict:
         for match in PRIVATE_TOKEN.finditer(scan_text):
             private_refs.append(f"{path.relative_to(stage).as_posix()}:{scan_text.count(chr(10), 0, match.start()) + 1}:{match.group(0)}")
     secrets = scan_secrets(stage, files)
-    allowed = {"README.md", "docs", "examples", ".github", "LICENSE", "LICENSE-examples"}
+    allowed = {"README.md", "docs", "examples", ".github", "scripts", "LICENSE", "LICENSE-examples"}
     allowed.update(name for name in {p.name for p in files} if name.startswith("THIRD_PARTY_NOTICES"))
     unapproved_top = sorted(p.name for p in stage.iterdir() if p.name not in allowed)
+    public_scripts = sorted(p.relative_to(stage).as_posix() for p in files if p.is_relative_to(stage / "scripts"))
+    if public_scripts and public_scripts != ["scripts/install-hosts.sh"]:
+        unapproved_top.append("scripts (only scripts/install-hosts.sh is permitted)")
     report = {
         "files": len(files),
         "top_level": sorted(p.name for p in stage.iterdir()),
@@ -655,6 +660,10 @@ def stage_product(product: str, snapshot: dict, *, refresh: bool = False,
         workflow = stage / ".github/workflows/public-ci.yml"
         workflow.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(GALLERY / "scripts/closed-source/templates/public-ci.yml", workflow)
+        public_script = stage / "scripts/install-hosts.sh"
+        public_script.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(GALLERY / "scripts/closed-source/templates/install-hosts.sh", public_script)
+        public_script.chmod(0o755)
         # Re-run the README sanitizer after inserting the standard license files.
         readme = stage / "README.md"
         text = readme.read_text(encoding="utf-8")
@@ -701,7 +710,10 @@ def run_dry_or_stage(product: str, stage: bool, refresh: bool = False) -> int:
     snap = git_snapshot(product, fetch=True)
     members = active_lmctl_members()
     agents = agents_for(product, members)
-    ci = ci_latest(product, snap["ref"])
+    source_repo = private_repo(product) if snap["origin"].rstrip("/") in {
+        f"https://github.com/{private_repo(product)}.git", f"https://github.com/{private_repo(product)}"
+    } else public_repo(product)
+    ci = ci_latest(product, snap["ref"], source_repo)
     pins = pin_inventory(product)
     mapping = {p: mapped for p in snap["files"] if (mapped := map_public_path(p)) is not None}
     inputs = discover_inputs(product, snap["ref"], set(snap["files"]), mapping)
@@ -822,6 +834,15 @@ def _repo_view(product: str) -> dict:
     return json.loads(command(["gh", "api", f"repos/{public_repo(product)}"]).stdout)
 
 
+def _repo_view_private(product: str) -> dict:
+    result = command(["gh", "api", f"repos/{private_repo(product)}"], check=False)
+    if result.returncode:
+        return {"exists": False}
+    data = json.loads(result.stdout)
+    data["exists"] = True
+    return data
+
+
 def _wait_for_repo_identity(product: str, *, private: bool | None = None, attempts: int = 30) -> dict:
     last = "repo not visible yet"
     for attempt in range(1, attempts + 1):
@@ -869,7 +890,14 @@ def _update_local_checkouts(product: str, root: Path) -> None:
     command(["git", "-C", str(root), "pull", "--rebase"], timeout=600)
     public_checkout = Path("/home/mma/repos/dsl") / f"{product}-public"
     if public_checkout.exists():
-        raise FlipError(f"public local checkout already exists: {public_checkout}")
+        public_origin = command(["git", "-C", str(public_checkout), "remote", "get-url", "origin"], check=False).stdout.strip().rstrip("/")
+        if public_origin not in {f"https://github.com/{public_repo(product)}.git", f"https://github.com/{public_repo(product)}"}:
+            raise FlipError(f"existing public checkout has an unexpected origin: {public_checkout}")
+        if command(["git", "-C", str(public_checkout), "status", "--porcelain", "--untracked-files=all"]).stdout.strip():
+            raise FlipError(f"existing public checkout is dirty: {public_checkout}")
+        command(["git", "-C", str(public_checkout), "fetch", "-q", "origin"], timeout=600)
+        command(["git", "-C", str(public_checkout), "reset", "--hard", "origin/main"], timeout=300)
+        return
     public_checkout.parent.mkdir(parents=True, exist_ok=True)
     command(["git", "clone", f"https://github.com/{public_repo(product)}.git", str(public_checkout)], timeout=900)
 
@@ -1034,7 +1062,12 @@ def _prepare_orphan_commit(stage: Path, product: str) -> None:
         raise FlipError("public stage already has Git history; refusing to reuse it")
     command(["git", "-C", str(stage), "init", "-b", "main"])
     command(["git", "-C", str(stage), "-c", "user.name=mike-lmctl", "-c", "user.email=281311770+mike-lmctl@users.noreply.github.com", "add", "-A"])
-    command(["git", "-C", str(stage), "-c", "user.name=mike-lmctl", "-c", "user.email=281311770+mike-lmctl@users.noreply.github.com", "commit", "-m", f"Publish {product} public documentation and examples"])
+    command([
+        "git", "-C", str(stage), "-c", "user.name=mike-lmctl", "-c", "user.email=281311770+mike-lmctl@users.noreply.github.com",
+        "commit", "-m", f"Keep {product} public documentation and examples available",
+        "-m", "The public peer serves MIT examples, documentation, and release entry points while private source and CI own future builds.",
+        "-m", "Constraint: Existing raw example URLs must keep their paths\nConfidence: high\nScope-risk: broad\nReversibility: messy\nTested: Staged tree validation and public-content CI\nNot-tested: None\nCo-Authored-By: OpenAI Codex <noreply@anthropic.com>",
+    ])
     parents = command(["git", "-C", str(stage), "rev-list", "--parents", "-n", "1", "HEAD"]).stdout.strip().split()
     if len(parents) != 1:
         raise FlipError("staged public commit is not an orphan root commit")
@@ -1277,6 +1310,43 @@ def _wait_for_public_main(product: str, expected_sha: str, attempts: int = 30) -
     raise FlipError(f"public main did not converge to expected SHA {expected_sha}")
 
 
+def _wait_for_public_ci(product: str, expected_sha: str, timeout_seconds: int = 900) -> dict:
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        result = command([
+            "gh", "run", "list", "-R", public_repo(product), "-L", "50",
+            "--json", "databaseId,status,conclusion,headSha,url,event",
+        ], check=False, timeout=120)
+        if result.returncode != 0:
+            raise FlipError(f"cannot inspect public CI for orphan commit {expected_sha}: {result.stderr.strip()}")
+        try:
+            rows = json.loads(result.stdout)
+        except json.JSONDecodeError as exc:
+            raise FlipError("GitHub returned invalid JSON while waiting for public CI") from exc
+        matching = [row for row in rows if row.get("headSha") == expected_sha and row.get("event") == "push"]
+        if matching:
+            run = matching[0]
+            audit(f"PUBLIC_CI_WAIT sha={expected_sha} status={run.get('status')} conclusion={run.get('conclusion')}")
+            if run.get("status") == "completed":
+                if run.get("conclusion") == "success":
+                    audit(f"PUBLIC_CI_SUCCESS sha={expected_sha} url={run.get('url','')}")
+                    return run
+                details = command([
+                    "gh", "run", "view", str(run["databaseId"]), "-R", public_repo(product),
+                    "--json", "jobs,url",
+                ], timeout=120)
+                view = json.loads(details.stdout)
+                failed_jobs = [job.get("name", "unknown") for job in view.get("jobs", []) if job.get("conclusion") == "failure"]
+                raise FlipError(
+                    f"public CI failed for orphan commit {expected_sha}; job(s): "
+                    f"{', '.join(failed_jobs) or 'unknown'}; run: {view.get('url', run.get('url',''))}"
+                )
+        else:
+            audit(f"PUBLIC_CI_WAIT sha={expected_sha} status=not-visible")
+        time.sleep(15)
+    raise FlipError(f"public CI for orphan commit {expected_sha} did not finish successfully within {timeout_seconds // 60} minutes")
+
+
 def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_git: Path,
                             release_backups: list[dict], first_tag: str,
                             verify_dir: Path) -> dict:
@@ -1295,6 +1365,7 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
         command(["git", "-C", str(stage), "push", f"--force-with-lease=refs/heads/main:{old_main}", "origin", f"{orphan_sha}:refs/heads/main"], timeout=900)
         public_mutated = True
         _wait_for_public_main(product, orphan_sha)
+        public_ci = _wait_for_public_ci(product, orphan_sha)
 
         for ref in sorted(r for r in old_refs["refs"] if r.startswith("refs/heads/") and r != "refs/heads/main"):
             branch = ref.removeprefix("refs/heads/")
@@ -1374,7 +1445,7 @@ def _replace_public_history(product: str, stage: Path, old_refs: dict, backup_gi
                 command(["lmscript", "--check", str(latest_copy)], timeout=300)
         _wait_for_latest_release_tag(product, first_tag)
         audit(f"PUBLIC_RELEASE_REPUBLISHED tag={first_tag} url={published.get('html_url','')}")
-        return {"release": published, "orphan_sha": orphan_sha}
+        return {"release": published, "orphan_sha": orphan_sha, "public_ci": public_ci}
     except Exception as exc:
         if not public_mutated:
             main_result = command(["git", "ls-remote", url, "refs/heads/main"], check=False)
@@ -1504,12 +1575,21 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
 
     snapshot = git_snapshot(product, fetch=True)
     expected_origin = f"https://github.com/{public_repo(product)}.git"
-    if snapshot["local_branch"] != "main" or not snapshot["clean"] or not snapshot["pushed"] or snapshot["origin"].rstrip("/") not in {expected_origin, expected_origin.removesuffix(".git")}:
-        raise FlipError("lmaudio source checkout must be clean, on main, and synchronized to public origin")
+    private_target = _repo_view_private(product)
+    source_is_private = snapshot["origin"].rstrip("/") in {
+        f"https://github.com/{private_repo(product)}.git", f"https://github.com/{private_repo(product)}"
+    }
+    valid_origins = {expected_origin, expected_origin.removesuffix(".git")}
+    if source_is_private:
+        valid_origins.update({f"https://github.com/{private_repo(product)}.git", f"https://github.com/{private_repo(product)}"})
+    if snapshot["local_branch"] != "main" or not snapshot["clean"] or not snapshot["pushed"] or snapshot["origin"].rstrip("/") not in valid_origins:
+        raise FlipError("lmaudio source checkout must be clean, on main, synchronized, and point at a known peer")
+    if source_is_private and (not private_target.get("exists") or not private_target.get("private")):
+        raise FlipError("local source points at lmctlhq/lmaudio, but that private peer is not verified")
     active = active_lmctl_members()
     if agents_for(product, active):
         raise FlipError("an active lmaudio session exists; stop before private mirror creation")
-    ci = ci_latest(product, snapshot["ref"])
+    ci = ci_latest(product, snapshot["ref"], private_repo(product) if source_is_private else public_repo(product))
     if not ci.get("ok"):
         raise FlipError(f"lmaudio main CI is not green: {ci.get('url','')} {ci.get('error','')}")
 
@@ -1533,13 +1613,13 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
                 "under the Lattice Systems Personal Use License (this file).")
     if boundary not in (stage / "README.md").read_text(encoding="utf-8") or not (stage / "LICENSE").read_text(encoding="utf-8").startswith(boundary):
         raise FlipError("staged README/LICENSE omit the approved lmaudio license boundary")
-    if stage.joinpath(".git").exists() or (Path("/home/mma/repos/dsl") / f"{product}-public").exists():
-        raise FlipError("public stage history or public checkout path already exists")
+    if stage.joinpath(".git").exists():
+        raise FlipError("public stage history already exists")
 
     metadata = _repo_view(product)
     if metadata.get("full_name", "").lower() != public_repo(product).lower() or metadata.get("private") or metadata.get("disabled") or metadata.get("default_branch") != "main":
         raise FlipError("public lmaudio identity/visibility/default branch is unexpected")
-    private_scaffold = _check_private_target_free(product)
+    private_scaffold = False if source_is_private else _check_private_target_free(product)
     pins, all_consumer_files = consumer_repositories(product)
     lmgallery_pin = GALLERY / "examples/39-audio-harmonics-slide.lms"
     if "github:lmctl-ai/lmaudio@v0.2.1" not in lmgallery_pin.read_text(encoding="utf-8"):
@@ -1555,14 +1635,18 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
     refs_path = STAGING / f"lmaudio-public-refs-{run_stamp}.txt"
     release_backup_root = STAGING / f"lmaudio-release-set-{run_stamp}"
     verify_dir = STAGING / f"lmaudio-release-verify-{run_stamp}"
-    old_refs = _backup_public_refs(product, snapshot["ref"], backup_git, refs_path)
+    public_main_result = command(["git", "ls-remote", f"https://github.com/{public_repo(product)}.git", "refs/heads/main"], timeout=300)
+    if not public_main_result.stdout.split():
+        raise FlipError("cannot resolve public main before backup")
+    public_main = public_main_result.stdout.split()[0]
+    old_refs = _backup_public_refs(product, public_main, backup_git, refs_path)
     release_backups = _backup_all_public_releases(product, release_backup_root, run_stamp)
     staged_latest, staged_latest_assets = _release_files(product, STAGING / f"{product}-release", first_tag)
     if not any(item["tagName"] == first_tag for item in release_backups) or len(staged_latest_assets) != 8:
         raise FlipError("latest release backup set does not match the reviewed v0.2.1 assets")
     local_ref_lines = command(["git", "-C", str(root), "for-each-ref", "--format=%(objectname) %(refname)", "refs/heads", "refs/tags"]).stdout.splitlines()
     local_refs = {parts[1]: parts[0] for line in local_ref_lines if len(parts := line.split()) == 2}
-    if local_refs != old_refs["refs"]:
+    if not source_is_private and local_refs != old_refs["refs"]:
         raise FlipError("local source clone refs do not include every public branch/tag; refusing an incomplete private mirror")
     audit(f"PREFLIGHT_PASS public_main={snapshot['ref']} ref_count={len(old_refs['refs'])} release_count={len(release_backups)} refs_backup={refs_path} release_backup={release_backup_root}")
 
@@ -1578,19 +1662,32 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
     private_url = f"https://github.com/{private_repo(product)}.git"
     # The mirrored source contains push-triggered build workflows. Keep Actions
     # disabled until the private workflow is replaced and the test-only input exists.
-    _set_repo_actions_enabled(product, False)
-    command(["git", "-C", str(root), "push", "--mirror", private_url], timeout=900)
-    command(["gh", "repo", "edit", private_repo(product), "--default-branch", "main"], timeout=300)
-    for topic in metadata.get("topics", []):
-        command(["gh", "repo", "edit", private_repo(product), "--add-topic", topic], timeout=300)
-    _assert_private_mirror_refs(product, old_refs["refs"])
-    audit(f"PRIVATE_MIRROR_COMPLETE repo={private_repo(product)} main={old_refs['main']} refs={len(old_refs['refs'])}")
+    if not source_is_private:
+        _set_repo_actions_enabled(product, False)
+        command(["git", "-C", str(root), "push", "--mirror", private_url], timeout=900)
+        command(["gh", "repo", "edit", private_repo(product), "--default-branch", "main"], timeout=300)
+        for topic in metadata.get("topics", []):
+            command(["gh", "repo", "edit", private_repo(product), "--add-topic", topic], timeout=300)
+        _assert_private_mirror_refs(product, old_refs["refs"])
+        audit(f"PRIVATE_MIRROR_COMPLETE repo={private_repo(product)} main={old_refs['main']} refs={len(old_refs['refs'])}")
+    else:
+        private_main = command(["git", "ls-remote", private_url, "refs/heads/main"], timeout=300).stdout.split()[0]
+        if private_main != snapshot["ref"]:
+            raise FlipError("existing private main no longer matches the clean local source checkout")
+        secrets = json.loads(command(["gh", "secret", "list", "-R", private_repo(product), "--json", "name"]).stdout)
+        if not any(item.get("name") == "RELEASE_TOKEN" for item in secrets):
+            raise FlipError("existing private peer is missing RELEASE_TOKEN")
+        audit(f"PRIVATE_RESUME_VERIFIED repo={private_repo(product)} main={private_main}")
 
     # Step 2: install the secret and test the private CI publishing path without building.
-    _set_release_secret_from_file(product)
-    private_sha = _install_private_ci(product, root, first_tag)
-    _set_repo_actions_enabled(product, True)
-    private_ci = _run_publish_test(product, private_sha)
+    if source_is_private:
+        private_sha = snapshot["ref"]
+        private_ci = ci
+    else:
+        _set_release_secret_from_file(product)
+        private_sha = _install_private_ci(product, root, first_tag)
+        _set_repo_actions_enabled(product, True)
+        private_ci = _run_publish_test(product, private_sha)
     audit(f"PRIVATE_PUBLISH_TEST_SUCCESS url={private_ci.get('url','')}")
 
     # Step 3: update the existing public repo only after private mirror and token test pass.
