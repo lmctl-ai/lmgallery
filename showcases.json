@@ -426,5 +426,17 @@
     ],
     "output": "images/showcase-38-product-render.png",
     "image": "docs/images/showcase-38-product-render.png"
+  },
+  {
+    "file": "examples/39-audio-harmonics-slide.lms",
+    "title": "Audio harmonics slide with a WAV file",
+    "description": "lmaudio synthesises a 220 Hz sawtooth, saves it as a WAV file, and measures its spectrum (peak frequency and the first eight harmonic amplitudes), asserting the fundamental and the 1/k fall-off; lmvideo draws the harmonic amplitudes as a PNG; lmoffice places the chart on a slide with the measured values and the WAV file name in the speaker notes. The picture is a LibreOffice render of the slide.",
+    "hosts": [
+      "lmaudio",
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-39-audio-harmonics.png",
+    "image": "docs/images/showcase-39-audio-harmonics.png"
   }
 ]

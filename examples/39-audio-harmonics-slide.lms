@@ -1,0 +1,81 @@
+# SPDX-License-Identifier: MIT
+# Audio analysis slide. lmaudio synthesises a 220 Hz sawtooth (1.5 s), saves it as a WAV file and
+# analyses its spectrum: the peak frequency and the magnitudes of the first eight harmonics. The
+# program asserts that the spectral peak is at the fundamental (within 3 Hz) and that the harmonic
+# amplitudes fall as 1/k. lmvideo draws the harmonic amplitudes as a bar chart (the gallery output,
+# 900 px wide); lmoffice (Open XML) places the chart on a slide, lists the measured values as bullets,
+# and puts the WAV file name and its location in the speaker notes.
+mkdir("images");
+mkdir("build");
+
+analysis = _dsl_ cli="lmaudio" install="github:lmctl-ai/lmaudio@v0.2.1";
+let tone = audio.saw(220.0, 1.5, 0.8);
+tone.save_wav("build/saw220.wav");
+let spec = tone.spectrum();
+audio.assert_close(spec.peak_freq(), 220.0, 3.0);
+let h1 = spec.mag_at_freq(220.0);
+audio.assert_close(spec.mag_at_freq(440.0) / h1, 0.5, 0.05);
+audio.assert_close(spec.mag_at_freq(660.0) / h1, 0.3333, 0.05);
+audio.print("peak=" + str(spec.peak_freq()));
+audio.print("rms=" + str(tone.rms()));
+audio.print("h2=" + str(spec.mag_at_freq(440.0) / h1));
+audio.print("h3=" + str(spec.mag_at_freq(660.0) / h1));
+audio.print("h4=" + str(spec.mag_at_freq(880.0) / h1));
+audio.print("h5=" + str(spec.mag_at_freq(1100.0) / h1));
+audio.print("h6=" + str(spec.mag_at_freq(1320.0) / h1));
+audio.print("h7=" + str(spec.mag_at_freq(1540.0) / h1));
+audio.print("h8=" + str(spec.mag_at_freq(1760.0) / h1));
+end _dsl_
+savedsl(analysis, "build/audio-analysis.dslb");
+r = system(concat(dsl_cli(analysis), ["--dsl", "build/audio-analysis.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+# Read the measured values back, one per line.
+let peak_hz = 0.0;
+let h2 = 0.0; let h3 = 0.0; let h4 = 0.0; let h5 = 0.0; let h6 = 0.0; let h7 = 0.0; let h8 = 0.0;
+for (line in split(r.stdout, "\n")) {
+  let parts = split(line, "=");
+  if (starts_with(line, "peak=")) { peak_hz = num(parts[1]); }
+  if (starts_with(line, "h2=")) { h2 = num(parts[1]); }
+  if (starts_with(line, "h3=")) { h3 = num(parts[1]); }
+  if (starts_with(line, "h4=")) { h4 = num(parts[1]); }
+  if (starts_with(line, "h5=")) { h5 = num(parts[1]); }
+  if (starts_with(line, "h6=")) { h6 = num(parts[1]); }
+  if (starts_with(line, "h7=")) { h7 = num(parts[1]); }
+  if (starts_with(line, "h8=")) { h8 = num(parts[1]); }
+}
+assert(peak_hz > 216.0 && peak_hz < 224.0);
+assert(abs(h2 - 0.5) < 0.05 && abs(h3 - 0.3333) < 0.05);
+
+# Chart (lmvideo): harmonic amplitudes relative to the fundamental.
+chart = _dsl_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+video.size(900, 480); video.frames(1); video.output("images/showcase-39-audio-harmonics.png"); video.begin();
+video.frame();
+canvas.clear("#ffffff");
+let fig = canvas.panel(12.0, 12.0, 876.0, 456.0).manager("box_v").padding(10.0, 10.0, 10.0, 10.0).gap(6.0).background("#ffffff");
+let plot = fig.add_plot().weight(1.0).fill("both").plot().title("Sawtooth at 220 Hz: harmonic amplitudes (lmaudio FFT)").xlabel("harmonic number").ylabel("amplitude relative to the fundamental").x_range(0.5, 8.5).y_range(0.0, 1.1).legend("top_right").background("#ffffff");
+let amp = plot.series("measured", "bar", "#7c3aed");
+amp.add(1.0, 1.0); amp.add(2.0, ${h2}); amp.add(3.0, ${h3}); amp.add(4.0, ${h4});
+amp.add(5.0, ${h5}); amp.add(6.0, ${h6}); amp.add(7.0, ${h7}); amp.add(8.0, ${h8});
+fig.draw();
+video.end();
+end _dsl_
+savedsl(chart, "build/audio-chart.dslb");
+r = system(concat(dsl_cli(chart), ["--dsl", "build/audio-chart.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+
+deck = _dsl_ cli="lmoffice" install="github:lmctl-ai/lmoffice@v0.1.9";
+let slides = office.pptx("build/audio-analysis.pptx");
+let s1 = slides.slide();
+s1.title("A 220 Hz sawtooth: harmonics fall as 1/k");
+s1.image("images/showcase-39-audio-harmonics.png", 60.0, 150.0, 760.0, 405.0);
+s1.bullet(850.0, 170.0, 390.0, 40.0, "Fundamental: 220 Hz (FFT peak)");
+s1.bullet(850.0, 240.0, 390.0, 40.0, "2nd harmonic: 0.50 of fundamental");
+s1.bullet(850.0, 310.0, 390.0, 40.0, "3rd harmonic: 0.33 of fundamental");
+s1.notes("Audio file: build/saw220.wav (1.5 s, 44.1 kHz mono, written by lmaudio save_wav). Open it in any audio player.");
+slides.save();
+end _dsl_
+savedsl(deck, "build/audio-analysis-deck.dslb");
+r = system(concat(dsl_cli(deck), ["--dsl", "build/audio-analysis-deck.dslb"]), 300000);
+assert(r.code == 0, r.stdout + r.stderr);
+println("wrote build/audio-analysis.pptx, build/saw220.wav and images/showcase-39-audio-harmonics.png");
