@@ -1957,7 +1957,7 @@ def apply_general_product(product: str, first_tag: str) -> int:
     if agents_for(product, active):
         raise FlipError(f"an active {product} session exists; stop before private peer creation")
     root = snapshot["root"]
-    if product in {"lmoffice", "lmpdf"}:
+    if product in {"lmoffice", "lmpdf"} and not source_is_private:
         recent = command(["git", "-C", str(snapshot["root"]), "log", "--since=30 minutes ago", "--format=%H", "origin/main"], timeout=120).stdout.strip()
         if recent:
             raise FlipError(f"{product} origin/main has a commit from the last 30 minutes; defer this product")
