@@ -82,3 +82,26 @@ Automated audit executed via `scripts/health.sh` covering 33 checkouts:
    - `lmnum`: Release `v0.1.4` has 5/5 platform binaries published on GitHub Releases, but lacks a separate `SHA256SUMS` text asset (asset digest hashes are present in GitHub release metadata).
    - `lmproxy` and `lmdb`: In-development hosts without published release tags yet (`none`).
    - SDK pins across standalone C++ hosts (`lmaudio`, `lmbio`, `lmblender`, `lmcad`, `lmcell`, `lmdraw`, `lmfinance`, `lmfluid`, `lmimg`, `lmmagnum`, `lmmolecule`, `lmnum`, `lmparticle`, `lmphysics`, `lmweather`, `lmvideo`): vendored single-file `dslvm.hpp` from stable milestone `a876646`; upstream `lmcode-cpp` added std catalog files which require coordinated std integration in those hosts.
+
+## Post-Sweep Health Audit Findings (2026-10-25)
+
+Comprehensive audit following the `_lmcode_` spelling rollout and `@lmctl-ai/lmctl@0.2.420` compiler upgrade across 39 repositories.
+
+### 1. Compiler Upgrade & Standard Library Integration
+- **Compiler Minimum Pin (0.2.420)**: Upgraded compiler pins across CI workflows and scripts from 0.2.419 (or older 0.2.369/0.2.401) to `@lmctl-ai/lmctl@0.2.420`.
+- **Implicit Standard Library**: `lmscript 0.2.420` builds the standard library catalog into compiler invocations by default. Schema signature parity tests in hosts comparing their own registrations against compiler schemas (`lmcad`, `lmcell`, `lmdraw`, `lmfluid`, `lmmagnum`) were updated to invoke `lmscript --dsl-signatures <schema> --without-std` so checks test host-declared signatures without tripping on built-in standard library signatures.
+- **SDK Parity Updates**: Core SDK runtimes (`lmcode-cpp`, `lmcode-rust`, `lmcode-go`, `lmcode-csharp`) adapted their signature parity suites for the compiler's implicit standard library.
+- **Std Migration Status**:
+  - `lmnet`: Migrated schema by stripping redundant standard library functions, updated CI pin to 0.2.420, and established `durable-memory/index.md`.
+  - `lmaws` and `lmproxy`: Flagged as `std migration pending` (retaining legacy standard function declarations in host schema).
+- **New Host Onboarding**:
+  - `lmdb`: Published initial binary release `v0.1.1` with 5/5 platforms and `SHA256SUMS`.
+  - `lmpdf`: Tracked as in-development host (Rust + Typst backend); unreleased state cleanly handled.
+  - `lmcode-java`: Fully integrated and passing conformance checks.
+
+### 2. Gallery & Demo Page Assets
+- **Image Alt Attributes**: Added descriptive `alt` text to all gallery screenshot tables across `lmcloud` (20 images), `lmplot` (35 images), `lmfilament` (35 images), `lmcode-cpp` (4 images), `lmcode-rust` (4 images), `lmcode-go` (4 images), and `lmcode-csharp` (4 images).
+- **Autorun and Image Links**: 100% of image references and `lmctl autorun` links resolve to committed files on default branch `main`. Zero dead links.
+
+### 3. Block Spelling & Example Health
+- `_lmcode_` spelling is standard; legacy `_dsl_` block spelling remains supported by the compiler and is audited at INFO severity (non-blocking) across pending suites (`lmaws`, `lmazure`, `lmcloud`, `lmoffice`).
