@@ -535,3 +535,18 @@ cd /home/mma/repos/dsl/lmgallery && git ls-files -z | xargs -0 sed -i -E 's#(git
 ### Ready to flip: NO
 
 Reasons: the Caladea licence classification is unresolved; the release contents are undecided; the release pipeline is active; the first tag and `RELEASE_TOKEN` are owner decisions.
+
+## Re-staging after the decisions (2026-10-25)
+
+- Font licences: all 30 bundled font files were checked against their own name tables (`Caladea` = Apache-2.0, `Carlito`/`Liberation`/`NotoNaskhArabic` = SIL OFL 1.1, `DejaVu` = Bitstream Vera, `Kosugi` = Apache-2.0). `fonts.json` matches every file. `scripts/generate-notices.py` now fails when a manifest licence differs from the file's own name table (demonstrated with a wrong Caladea entry). The OFL wording in `durable-memory/08-release.md` and `04-decision.md` is corrected.
+- Release contents: `scripts/package-release.py` now writes only the five binaries, `SHA256SUMS`, `LICENSE` and `THIRD_PARTY_NOTICES.md` to `dist/`; metrics and linkage go to `--evidence`; CI timing goes to `ci-evidence/`. Test updated (3/3 pass). Local commit `60e062d`, not pushed. The current `v0.1.61` release still contains the extra JSON files; the next release from pushed `main` will not.
+- Re-staged from `origin/main` `8647d95` (86 files). Boundary: releases up to and including `v0.1.61` are MIT (`gh release list`). Notices are byte-identical to the local source, which includes the unpushed `60e062d`.
+- Verified: 0 autorun (no README autorun lines), 76 refs, no leaks; `lmscript --check` 8/8 and 8/8 executed with `lmpdf 0.1.61` (latest release, assets verified with `SHA256SUMS`).
+- Non-binary extras in this release: `BUILD_METRICS.json`, `CI_JOB_TIMINGS.json`, `CI_MINUTES.json`, per-platform `*-build-metrics.json` and `*-linkage.json` (fixed in source, not yet released).
+
+### Ready to flip: NO
+
+1. Push local commit `60e062d` to `lmctl-ai/lmpdf` main after owner go-ahead; then the next release contains only the allowed assets; re-stage so the stage SHA equals the source.
+2. Quiesce main pushes and the release pipeline (releases on every main push).
+3. Install `scripts/release-to-public.sh` and the generated `lmpdf-private-ci.yml` into `lmctlhq/lmpdf`; not run.
+4. Owner: first public tag and `RELEASE_TOKEN`; then pin rewrite (sed in the plan above).

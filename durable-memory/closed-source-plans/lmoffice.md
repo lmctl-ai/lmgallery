@@ -323,3 +323,17 @@ Re-run `python3 scripts/closed-source/inventory-pins.py` to confirm zero old pin
 ### Ready to flip: NO
 
 Reasons: the .NET runtime notice bundle is missing; the staged notices carry placeholders; the LICENSE boundary is hand-patched and must be generated; the active release pipeline must be quiesced; the first tag and `RELEASE_TOKEN` are owner decisions.
+
+## Re-staging after the decisions (2026-10-25)
+
+- Tooling: `scripts/closed-source/publish_tree.py` post-processes a staged tree without editing `peer-flip.py`: `--boundary` takes the MIT boundary tag from `gh release list` (latest tag, not a constant); `--notices` copies `THIRD_PARTY_NOTICES*` byte-exact from the source and refuses placeholder text; `--private-ci` generates the private workflow from the product's current `ci.yml` (version from the tag, push runs a Linux `build-fast` job, the full matrix runs on dispatch or tag, publish uses `RELEASE_TOKEN` and waits for the matrix jobs only), and fails closed on constructs it does not transform.
+- Re-staged from `origin/main` `aa59d72` (186 files). Boundary: releases up to and including `v0.1.23` are MIT. Verified: 90/90 autorun targets, 180 refs, no leaks; `lmscript --check` 90/90 and 90/90 executed with `lmoffice 0.1.23`.
+- Notices: the generated `THIRD_PARTY_NOTICES.md` (complete .NET 8.0.32 runtime and ILCompiler texts, System.IO.Packaging 8.0.1, Open XML SDK 3.5.1 with the nuspec copyright, lmcode-csharp) exists only in the local commit `scripts/generate-notices.py` + `scripts/licenses/` (pinned by SHA-256). It is NOT on origin yet; the staged notice is byte-identical to that local file, not to `aa59d72`.
+- Other non-binary release extras in the closed set (for the owner): lmcad ships LGPL relink-object tarballs, recipes and licence texts; lmfilament ships relink-object tarballs and `.sha256` files; lmdraw ships `lmdraw-notices.tar.gz`; lmvideo ships `.sha256` files and `lmvideo-third-party-licenses.tar.gz` and has no `SHA256SUMS`; lmmagnum ships Corrade/Magnum COPYING files; lmimg ships no licence files at all (binaries and `SHA256SUMS` only).
+
+### Ready to flip: NO
+
+1. Push the local product commit `217a254` (generated notices, `test.sh` check) to `lmctl-ai/lmoffice` main after owner go-ahead, then re-stage so the stage SHA equals the notice source.
+2. Quiesce main pushes and the release pipeline; the first tag and `RELEASE_TOKEN` are owner decisions.
+3. Install `scripts/release-to-public.sh` and the generated `lmoffice-private-ci.yml` into `lmctlhq/lmoffice`; the workflow has not been run.
+4. Pin rewrite to the first new tag (see the sed above).
