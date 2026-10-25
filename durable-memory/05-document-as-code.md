@@ -65,7 +65,7 @@ not affected.
 
 Compositions 43, 44, 45, 46, 49 and 50 also write a PDF. Directly after the `cli="lmoffice docx"` block
 there is a copy of that block with exactly two changes:
-- `cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54"`;
+- `cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.62"`;
 - `.pdf` instead of `.docx` in `docx.create(...)`.
 
 The variable and the bytecode name get a `_pdf` / `-pdf` suffix. lmpdf exposes the same

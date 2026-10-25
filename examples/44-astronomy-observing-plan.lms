@@ -68,7 +68,7 @@ r = system(concat(dsl_cli(word), ["--dsl", "build/plan-word.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
-word_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";
+word_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.62";
 let doc = docx.create("build/observing-plan.pdf");
 doc.markdown(${body}).save();
 end _lmcode_

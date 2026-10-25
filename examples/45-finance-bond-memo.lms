@@ -98,7 +98,7 @@ r = system(concat(dsl_cli(memo), ["--dsl", "build/desk-memo.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
-memo_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54";
+memo_pdf = _lmcode_ cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.62";
 let limits = <<~MD;
   ## Limits
 

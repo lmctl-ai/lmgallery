@@ -517,7 +517,7 @@ Staged at `/home/mma/staging/closed-source/lmpdf-private-ci.yml`, adapted from t
 
 ### Pin inventory (8 consumers)
 
-- `lmgallery` examples 43, 44, 45, 46, 49, 50 (`cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.54"`) and `lmgallery/durable-memory/05-document-as-code.md`.
+- `lmgallery` examples 43, 44, 45, 46, 49, 50 (`cli="lmpdf docx" install="github:lmctl-ai/lmpdf@v0.1.62"`) and `lmgallery/durable-memory/05-document-as-code.md`.
 - `lmpdf/durable-memory/08-release.md` (a release link, historical, not a pin).
 
 After the first new tag `<FIRST>` is chosen:
