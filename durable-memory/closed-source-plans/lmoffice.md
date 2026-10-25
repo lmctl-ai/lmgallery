@@ -1,13 +1,13 @@
 # Closed-source split dry-run: lmoffice
 
 - Source repo: `/home/mma/repos/dsl/lmoffice`
-- Source revision: `ddc6bf070eddbf95968e00709cbc5a7715deba4b`
+- Source revision: `aa59d72ea09e83d8b2fd2f96df3d2d998a624fdf`
 - Private peer target: `lmctlhq/lmoffice` (transfer this repository, then set it private, only after owner approval)
 - Public peer target: `lmctl-ai/lmoffice` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 
-### Public peer (`lmctl-ai/lmoffice`): 184 tracked files
+### Public peer (`lmctl-ai/lmoffice`): 183 tracked files
 - `docs/gallery.json`
 - `docs/images/5slidedeck.png`
 - `docs/images/annual_report.png`
@@ -189,12 +189,12 @@
 - `examples/timesheet.lms`
 - `examples/training_workshop.lms`
 - `examples/travel_itinerary.lms`
-- `LICENSE`
 - `README.md`
 - `THIRD_PARTY_NOTICES.md`
-- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+- `LICENSE` (new binary-license draft from templates/LICENSE-binaries.md)
+- `LICENSE-examples` (MIT text from templates/LICENSE-examples-MIT; source repo LICENSE stays private)
 
-### Private peer (`lmctlhq/lmoffice`): 65 tracked files
+### Private peer (`lmctlhq/lmoffice`): 67 tracked files
 - ``
 - `.gitattributes`
 - `.github/workflows/ci.yml`
@@ -211,6 +211,7 @@
 - `durable-memory/10-markdown-design.md`
 - `durable-memory/11-multi-schema-host.md`
 - `durable-memory/index.md`
+- `LICENSE`
 - `schema/docx.dsl.json`
 - `schema/pptx.dsl.json`
 - `schema/xlsx.dsl.json`
@@ -258,6 +259,7 @@
 - `tests/markdown_office.py`
 - `tests/markdown_syntax.py`
 - `tests/pptx_round3.py`
+- `tests/std_families.py`
 - `tests/xlsx_round3.py`
 - `VERSION`
 
@@ -273,7 +275,7 @@
   - SOURCE REFERENCE TO REVIEW: `README.md:28 -> ](schema/xlsx.dsl.json)`
   - SOURCE REFERENCE TO REVIEW: `README.md:28 -> ](schema/pptx.dsl.json)`
 - Public-plan secret scan: 0 finding(s); values are never printed.
-- Licensing: Ship LICENSE, THIRD_PARTY_NOTICES.md, Open XML SDK/System.IO.Packaging MIT notices, .NET 8 runtime component notices, lmcode-csharp MIT notice, and LICENSE-binaries separately.
+- Licensing: Carry Open XML SDK/System.IO.Packaging MIT, .NET 8 component, and lmcode-csharp MIT notices under docs/third-party-licenses/.
 
 ## Verification result
 

@@ -7,7 +7,7 @@
 
 ## Exact tracked-file plan
 
-### Public peer (`lmctl-ai/lmaudio`): 71 tracked files
+### Public peer (`lmctl-ai/lmaudio`): 70 tracked files
 - `docs/audio/analog_drum_kit.wav`
 - `docs/audio/biquad_filter_bank.wav`
 - `docs/audio/chirp_spectrogram.wav`
@@ -76,12 +76,12 @@
 - `examples/synthesis_methods_compared.lms`
 - `examples/vocal_pitch_tracking.lms`
 - `examples/xylophone_bar_modes.lms`
-- `LICENSE`
 - `README.md`
 - `THIRD_PARTY_NOTICES`
-- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+- `LICENSE` (new binary-license draft from templates/LICENSE-binaries.md)
+- `LICENSE-examples` (MIT text from templates/LICENSE-examples-MIT; source repo LICENSE stays private)
 
-### Private peer (`lmctlhq/lmaudio`): 43 tracked files
+### Private peer (`lmctlhq/lmaudio`): 44 tracked files
 - ``
 - `.gitattributes`
 - `.github/workflows/ci.yml`
@@ -111,6 +111,7 @@
 - `durable-memory/07-decisions.md`
 - `durable-memory/08-limitations.md`
 - `durable-memory/index.md`
+- `LICENSE`
 - `schema/lmaudio.dsl.json`
 - `scripts/gen-schema.py`
 - `scripts/merge-std.py`
@@ -136,7 +137,7 @@
 - README links to private source paths checked: 1 finding(s).
   - SOURCE REFERENCE TO REVIEW: `README.md:353 -> ](schema/lmaudio.dsl.json)`
 - Public-plan secret scan: 0 finding(s); values are never printed.
-- Licensing: Ship LICENSE and full THIRD_PARTY_NOTICES. Preserve MIT notices for DaisySP, Soundpipe's selected modules, lmcode-cpp and the listed BSD-3-Clause KissFFT/MT19937 texts; do not include the excluded Csound/GPL Soundpipe modules.
+- Licensing: Carry full third-party notices for DaisySP, selected Soundpipe modules, KissFFT, MT19937, PaulStretch, FAUST/STK, lmcode-cpp, and runtimes; keep excluded Csound/GPL modules out.
 
 ## Verification result
 

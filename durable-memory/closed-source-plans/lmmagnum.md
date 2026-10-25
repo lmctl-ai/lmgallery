@@ -1,13 +1,13 @@
 # Closed-source split dry-run: lmmagnum
 
 - Source repo: `/home/mma/repos/dsl/lmmagnum`
-- Source revision: `a821053d15c394021b67f979159fc0d1263d9f83`
+- Source revision: `41a7d8504826d599aa9660b26329efb77ded6bee`
 - Private peer target: `lmctlhq/lmmagnum` (transfer this repository, then set it private, only after owner approval)
 - Public peer target: `lmctl-ai/lmmagnum` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 
-### Public peer (`lmctl-ai/lmmagnum`): 88 tracked files
+### Public peer (`lmctl-ai/lmmagnum`): 87 tracked files
 - `docs/images/animated-gif.gif`
 - `docs/images/area-lights.png`
 - `docs/images/ball-stick.png`
@@ -93,12 +93,12 @@
 - `examples/textured-triangle.lms`
 - `examples/triangle.lms`
 - `examples/truss-bridge.lms`
-- `LICENSE`
 - `README.md`
 - `THIRD_PARTY_NOTICES.md`
-- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+- `LICENSE` (new binary-license draft from templates/LICENSE-binaries.md)
+- `LICENSE-examples` (MIT text from templates/LICENSE-examples-MIT; source repo LICENSE stays private)
 
-### Private peer (`lmctlhq/lmmagnum`): 34 tracked files
+### Private peer (`lmctlhq/lmmagnum`): 43 tracked files
 - ``
 - `.gitattributes`
 - `.github/workflows/ci.yml`
@@ -113,6 +113,13 @@
 - `cpp/scene.cpp`
 - `cpp/scene.hpp`
 - `cpp/stb_image.h`
+- `cpp/std/lmcode-std.schema.json`
+- `cpp/stdlib/collections.hpp`
+- `cpp/stdlib/file.hpp`
+- `cpp/stdlib/math.hpp`
+- `cpp/stdlib/std.hpp`
+- `cpp/stdlib/string.hpp`
+- `cpp/stdlib/testing.hpp`
 - `cpp/texture.cpp`
 - `deps.lock`
 - `durable-memory/00-index.md`
@@ -124,7 +131,9 @@
 - `durable-memory/06-release.md`
 - `durable-memory/20-sibling-3d-hosts.md`
 - `durable-memory/index.md`
+- `LICENSE`
 - `schema/lmmagnum.dsl.json`
+- `scripts/merge-std.py`
 - `scripts/select-compiler.sh`
 - `scripts/stage-release-notices.sh`
 - `scripts/stamp-version.sh`
@@ -144,7 +153,7 @@
 - README links to private source paths checked: 1 finding(s).
   - SOURCE REFERENCE TO REVIEW: `README.md:77 -> ](https://github.com/lmctl-ai/lmctl/tree/main/scripts/homepage/video)`
 - Public-plan secret scan: 0 finding(s); values are never printed.
-- Licensing: Ship LICENSE, THIRD_PARTY_NOTICES.md, Magnum and Corrade MIT COPYING files, stb notice, lmcode-cpp notice, and platform runtime license texts; Linux static glibc remains LGPL-2.1+.
+- Licensing: Carry Magnum/Corrade MIT COPYING files, stb/lmcode-cpp notices, runtime terms, and re-check static-glibc obligations.
 
 ## Verification result
 

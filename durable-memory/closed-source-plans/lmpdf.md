@@ -1,16 +1,25 @@
 # Closed-source split dry-run: lmpdf
 
 - Source repo: `/home/mma/repos/dsl/lmpdf`
-- Source revision: `f47aea24f8833c33bd2cc18605f8dd540fc88337`
+- Source revision: `821ebcede14c7b3775df2f934d8287dec4807888`
 - Private peer target: `lmctlhq/lmpdf` (transfer this repository, then set it private, only after owner approval)
 - Public peer target: `lmctl-ai/lmpdf` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 
-### Public peer (`lmctl-ai/lmpdf`): 49 tracked files
-- `assets/fonts/LICENSE-DejaVu.txt`
-- `assets/fonts/LICENSE-Kosugi-Apache-2.0.txt`
-- `assets/fonts/LICENSE-OFL-1.1.txt`
+### Public peer (`lmctl-ai/lmpdf`): 66 tracked files
+- `assets/fonts/LICENSE-DejaVu.txt` → `docs/third-party-licenses/assets/fonts/LICENSE-DejaVu.txt`
+- `assets/fonts/LICENSE-Kosugi-Apache-2.0.txt` → `docs/third-party-licenses/assets/fonts/LICENSE-Kosugi-Apache-2.0.txt`
+- `assets/fonts/LICENSE-OFL-1.1.txt` → `docs/third-party-licenses/assets/fonts/LICENSE-OFL-1.1.txt`
+- `docs/examples/bilingual-arabic-cjk.png`
+- `docs/examples/certificate.png`
+- `docs/examples/contract-pdfa.png`
+- `docs/examples/invoice-multipage.png`
+- `docs/examples/letterhead-footnotes.png`
+- `docs/examples/newsletter-two-column.png`
+- `docs/examples/report-40-pages.png`
+- `docs/examples/results.json`
+- `docs/examples/resume.png`
 - `docs/gallery/parity/business-agenda.png`
 - `docs/gallery/parity/business-job-offer.png`
 - `docs/gallery/parity/business-letter.png`
@@ -54,12 +63,21 @@
 - `docs/gallery/parity/resume-cover-letter.png`
 - `docs/gallery/parity/resume-reference-sheet.png`
 - `docs/gallery/parity/resume-two-column.png`
-- `LICENSE`
+- `examples/bilingual-arabic-cjk.lms`
+- `examples/certificate.lms`
+- `examples/contract-pdfa.lms`
+- `examples/invoice-multipage.lms`
+- `examples/letterhead-footnotes.lms`
+- `examples/newsletter-two-column.lms`
+- `examples/render.py`
+- `examples/report-40-pages.lms`
+- `examples/resume.lms`
 - `README.md`
 - `THIRD_PARTY_NOTICES.md`
-- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+- `LICENSE` (new binary-license draft from templates/LICENSE-binaries.md)
+- `LICENSE-examples` (MIT text from templates/LICENSE-examples-MIT; source repo LICENSE stays private)
 
-### Private peer (`lmctlhq/lmpdf`): 381 tracked files
+### Private peer (`lmctlhq/lmpdf`): 395 tracked files
 - ``
 - `.gitattributes`
 - `.github/workflows/ci.yml`
@@ -115,10 +133,13 @@
 - `durable-memory/06-docx-parity.md`
 - `durable-memory/07-parity-report.md`
 - `durable-memory/08-release.md`
+- `durable-memory/09-pdf-examples.md`
 - `durable-memory/index.md`
 - `fonts.json`
+- `LICENSE`
 - `release/budget-notes/.gitkeep`
 - `release/budgets.json`
+- `release/native-baseline.json`
 - `release/poppler-linux-64.explicit`
 - `release/poppler-packages.json`
 - `research/.gitignore`
@@ -375,6 +396,13 @@
 - `scripts/licenses/MIT.txt`
 - `scripts/licenses/OFL-1.1.txt`
 - `scripts/licenses/policy.json`
+- `scripts/licenses/runtime-notices.json`
+- `scripts/licenses/runtime/llvm-21.1.3/libunwind-LICENSE.TXT`
+- `scripts/licenses/runtime/llvm-21.1.3/LICENSE.TXT`
+- `scripts/licenses/runtime/musl-1.2.5-COPYRIGHT.txt`
+- `scripts/licenses/runtime/rust-1.92.0-COPYRIGHT.txt`
+- `scripts/licenses/runtime/rust-1.92.0-LICENSE-APACHE.txt`
+- `scripts/licenses/runtime/rust-1.92.0-LICENSE-MIT.txt`
 - `scripts/licenses/UPSTREAM-SHA256SUMS.txt`
 - `scripts/measure-build.py`
 - `scripts/package-release.py`
@@ -386,6 +414,7 @@
 - `scripts/sync-docx-schema.sh`
 - `scripts/sync-sdk.sh`
 - `scripts/test-package-release.py`
+- `scripts/test-parity-gate.py`
 - `scripts/test-release-budgets.py`
 - `sdk.lock`
 - `src/lib.rs`
@@ -421,12 +450,15 @@
 - `tests/parity/expected_differences.json`
 - `tests/parity/known_failures/kf-align.lms`
 - `tests/parity/known_failures/kf-bullets.lms`
+- `tests/parity/known_failures/kf-first-heading-level2.lms`
 - `tests/parity/known_failures/kf-header-footer.lms`
 - `tests/parity/known_failures/kf-heading.lms`
+- `tests/parity/known_failures/kf-md-list.lms`
 - `tests/parity/known_failures/kf-pagebreak.lms`
 - `tests/parity/known_failures/kf-paragraphs.lms`
 - `tests/parity/known_failures/kf-quote.lms`
 - `tests/parity/known_failures/kf-table.lms`
+- `tests/parity/known_failures/kf-textbox.lms`
 - `tests/parity/known_failures/README.md`
 - `tests/parity/lo_convert.py`
 - `tests/parity/markdown_roundtrip.py`
@@ -453,7 +485,7 @@
 - Expected public release assets: `lmpdf-linux-x64`, `lmpdf-linux-arm64`, `lmpdf-macos-x64`, `lmpdf-macos-arm64`, `lmpdf-windows-x64.exe`, plus `SHA256SUMS`.
 - README links to private source paths checked: 0 finding(s).
 - Public-plan secret scan: 0 finding(s); values are never printed.
-- Licensing: Ship LICENSE and generated THIRD_PARTY_NOTICES.md, every pinned crate/font license text and font attribution/hash inventory, plus Rust target runtime notices; its policy denies GPL/AGPL-only components.
+- Licensing: Carry generated crate/font notices, font hashes/attribution, and Rust runtime notices; GPL/AGPL-only dependencies remain disallowed.
 
 ## Verification result
 

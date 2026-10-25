@@ -1,13 +1,13 @@
 # Closed-source split dry-run: lmimg
 
 - Source repo: `/home/mma/repos/dsl/lmimg`
-- Source revision: `1b386318f028bc7f94ca26af75bf6def34f5a334`
+- Source revision: `49186552658accc063eb5e7af9b33715523a3d6e`
 - Private peer target: `lmctlhq/lmimg` (transfer this repository, then set it private, only after owner approval)
 - Public peer target: `lmctl-ai/lmimg` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 
-### Public peer (`lmctl-ai/lmimg`): 66 tracked files
+### Public peer (`lmctl-ai/lmimg`): 65 tracked files
 - `docs/images/animation_wave.gif`
 - `docs/images/animation_wave.png`
 - `docs/images/barcode_label.png`
@@ -71,12 +71,12 @@
 - `examples/thumbnail_grid.lms`
 - `examples/watermark_story.lms`
 - `examples/watermark_tiled.lms`
-- `LICENSE`
 - `README.md`
 - `THIRD_PARTY_NOTICES`
-- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+- `LICENSE` (new binary-license draft from templates/LICENSE-binaries.md)
+- `LICENSE-examples` (MIT text from templates/LICENSE-examples-MIT; source repo LICENSE stays private)
 
-### Private peer (`lmctlhq/lmimg`): 39 tracked files
+### Private peer (`lmctlhq/lmimg`): 48 tracked files
 - ``
 - `.gitattributes`
 - `.github/workflows/ci.yml`
@@ -89,6 +89,13 @@
 - `cpp/main.cpp`
 - `cpp/memory_budget.cpp`
 - `cpp/memory_budget.hpp`
+- `cpp/std/lmcode-std.schema.json`
+- `cpp/stdlib/collections.hpp`
+- `cpp/stdlib/file.hpp`
+- `cpp/stdlib/math.hpp`
+- `cpp/stdlib/std.hpp`
+- `cpp/stdlib/string.hpp`
+- `cpp/stdlib/testing.hpp`
 - `deps.lock`
 - `durable-memory/01-purpose.md`
 - `durable-memory/02-libraries-and-licenses.md`
@@ -101,9 +108,11 @@
 - `durable-memory/09-review-0.1.1.md`
 - `durable-memory/10-review-0.1.2.md`
 - `durable-memory/index.md`
+- `LICENSE`
 - `schema/lmimg.dsl.json`
 - `scripts/check-gallery.py`
 - `scripts/gen-schema.py`
+- `scripts/merge-std.py`
 - `scripts/select-compiler.sh`
 - `scripts/static-codec-pkg-config.sh.in`
 - `scripts/sync-deps.sh`
@@ -126,7 +135,7 @@
 - Expected public release assets: `lmimg-linux-x64`, `lmimg-linux-arm64`, `lmimg-macos-x64`, `lmimg-macos-arm64`, `lmimg-windows-x64.exe`, plus `SHA256SUMS`.
 - README links to private source paths checked: 0 finding(s).
 - Public-plan secret scan: 0 finding(s); values are never printed.
-- Licensing: Ship LICENSE, THIRD_PARTY_NOTICES, ImageMagick NOTICE, IJG README/license/attribution, chosen stb license, Apache-2.0 Roboto, SDK MIT and platform runtime texts; no GPL delegates are linked.
+- Licensing: Carry ImageMagick NOTICE, IJG attribution, selected stb, Apache Roboto, SDK and runtime texts; optional GPL delegates remain disabled.
 
 ## Verification result
 

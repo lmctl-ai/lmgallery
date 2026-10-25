@@ -1,13 +1,13 @@
 # Closed-source split dry-run: lmcad
 
 - Source repo: `/home/mma/repos/dsl/lmcad`
-- Source revision: `1af37f8d00ba2ee9275e5919773dd3b4d00e2b2a`
+- Source revision: `87cbb33ee71c962e4ae4ff4b13ab92251bdc5e65`
 - Private peer target: `lmctlhq/lmcad` (transfer this repository, then set it private, only after owner approval)
 - Public peer target: `lmctl-ai/lmcad` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 
-### Public peer (`lmctl-ai/lmcad`): 88 tracked files
+### Public peer (`lmctl-ai/lmcad`): 87 tracked files
 - `docs/images/beam-sections.png`
 - `docs/images/brick.png`
 - `docs/images/buckyball.png`
@@ -86,19 +86,19 @@
 - `examples/turntable.lms`
 - `examples/tween.lms`
 - `examples/vase.lms`
-- `LICENSE`
-- `licenses/Apache-2.0.txt`
-- `licenses/build123d-NOTICE.txt`
-- `licenses/GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt`
-- `licenses/GPL-3.txt`
-- `licenses/LGPL-2.1.txt`
-- `licenses/LINUX-RELINKING.md`
-- `licenses/PyVista-MIT.txt`
+- `licenses/Apache-2.0.txt` → `docs/third-party-licenses/Apache-2.0.txt`
+- `licenses/build123d-NOTICE.txt` → `docs/third-party-licenses/build123d-NOTICE.txt`
+- `licenses/GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt` → `docs/third-party-licenses/GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt`
+- `licenses/GPL-3.txt` → `docs/third-party-licenses/GPL-3.txt`
+- `licenses/LGPL-2.1.txt` → `docs/third-party-licenses/LGPL-2.1.txt`
+- `licenses/LINUX-RELINKING.md` → `docs/third-party-licenses/LINUX-RELINKING.md`
+- `licenses/PyVista-MIT.txt` → `docs/third-party-licenses/PyVista-MIT.txt`
 - `README.md`
 - `THIRD_PARTY_NOTICES.md`
-- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+- `LICENSE` (new binary-license draft from templates/LICENSE-binaries.md)
+- `LICENSE-examples` (MIT text from templates/LICENSE-examples-MIT; source repo LICENSE stays private)
 
-### Private peer (`lmctlhq/lmcad`): 100 tracked files
+### Private peer (`lmctlhq/lmcad`): 109 tracked files
 - ``
 - `.gitattributes`
 - `.github/occt-cmake-flags.txt`
@@ -119,6 +119,13 @@
 - `cpp/render.hpp`
 - `cpp/scene.cpp`
 - `cpp/scene.hpp`
+- `cpp/std/lmcode-std.schema.json`
+- `cpp/stdlib/collections.hpp`
+- `cpp/stdlib/file.hpp`
+- `cpp/stdlib/math.hpp`
+- `cpp/stdlib/std.hpp`
+- `cpp/stdlib/string.hpp`
+- `cpp/stdlib/testing.hpp`
 - `durable-memory/00-index.md`
 - `durable-memory/01-purpose-and-place.md`
 - `durable-memory/02-render-stack-options.md`
@@ -135,6 +142,7 @@
 - `durable-memory/15-example-gallery.md`
 - `durable-memory/20-sibling-3d-hosts.md`
 - `durable-memory/index.md`
+- `LICENSE`
 - `reference/.gitignore`
 - `reference/out/b3d_01_holes/b3d_01_holes.png`
 - `reference/out/b3d_01_holes/b3d_01_holes.stl`
@@ -175,6 +183,7 @@
 - `scripts/build-occt.sh`
 - `scripts/lmscript-source.mjs`
 - `scripts/lmscript-source.sh`
+- `scripts/merge-std.py`
 - `scripts/npm-layout.sh`
 - `scripts/select-compiler.sh`
 - `scripts/stage-release-notices.sh`
@@ -210,7 +219,7 @@
 - README links to private source paths checked: 1 finding(s).
   - SOURCE REFERENCE TO REVIEW: `README.md:66 -> ](https://github.com/lmctl-ai/lmctl/tree/main/scripts/homepage/video)`
 - Public-plan secret scan: 0 finding(s); values are never printed.
-- Licensing: Ship THIRD_PARTY_NOTICES.md and exact license texts. Linux artifacts must retain OCCT LGPL-2.1 + Open CASCADE exception, OCCT relink objects/command/recipe, glibc LGPL materials and GCC exception materials; also build123d Apache-2.0 NOTICE and PyVista MIT.
+- Licensing: Carry OCCT LGPL-2.1/Open CASCADE exception, OCCT relink objects/recipe/instructions, glibc/GCC runtime texts, build123d Apache NOTICE and PyVista MIT; do not omit OCCT relink assets.
 
 ## Verification result
 

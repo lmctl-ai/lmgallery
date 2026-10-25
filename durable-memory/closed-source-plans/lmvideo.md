@@ -7,8 +7,8 @@
 
 ## Exact tracked-file plan
 
-### Public peer (`lmctl-ai/lmvideo`): 135 tracked files
-- `assets/fonts/LICENSE-DejaVu.txt`
+### Public peer (`lmctl-ai/lmvideo`): 134 tracked files
+- `assets/fonts/LICENSE-DejaVu.txt` → `docs/third-party-licenses/assets/fonts/LICENSE-DejaVu.txt`
 - `docs/design.md`
 - `docs/images/carnot-cycle.gif`
 - `docs/images/carnot-cycle.png`
@@ -135,17 +135,17 @@
 - `examples/vector-outputs.lms`
 - `examples/video.lms`
 - `examples/waveform-sampling.lms`
-- `LICENSE`
-- `licenses/Expat.txt`
-- `licenses/ICU.txt`
-- `licenses/libjpeg-turbo.md`
-- `licenses/README.ijg`
-- `licenses/Skia.txt`
+- `licenses/Expat.txt` → `docs/third-party-licenses/Expat.txt`
+- `licenses/ICU.txt` → `docs/third-party-licenses/ICU.txt`
+- `licenses/libjpeg-turbo.md` → `docs/third-party-licenses/libjpeg-turbo.md`
+- `licenses/README.ijg` → `docs/third-party-licenses/README.ijg`
+- `licenses/Skia.txt` → `docs/third-party-licenses/Skia.txt`
 - `README.md`
 - `THIRD_PARTY_NOTICES.md`
-- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+- `LICENSE` (new binary-license draft from templates/LICENSE-binaries.md)
+- `LICENSE-examples` (MIT text from templates/LICENSE-examples-MIT; source repo LICENSE stays private)
 
-### Private peer (`lmctlhq/lmvideo`): 63 tracked files
+### Private peer (`lmctlhq/lmvideo`): 64 tracked files
 - ``
 - `.github/workflows/ci.yml`
 - `.gitignore`
@@ -184,6 +184,7 @@
 - `durable-memory/10-vector-recording.md`
 - `durable-memory/11-diagram-vocabulary.md`
 - `durable-memory/index.md`
+- `LICENSE`
 - `Makefile`
 - `schema/lmvideo.dsl.json`
 - `scripts/fetch-skia.sh`
@@ -213,8 +214,7 @@
 ## Required path and release changes
 
 - README-relative image/docs/example paths stay byte-for-byte at their current paths in the public peer.
-- Raw autorun links checked: 42/43 map to public `.lms` files.
-  - MISSING PUBLIC AUTORUN TARGET: `examples/confusion_matrix.lms`
+- Raw autorun links checked: 41/41 map to public `.lms` files.
 - Existing CI workflow paths move to the private peer; replace them with the private CI template and add public `.github/workflows/public-ci.yml`.
   - Private CI path: `.github/workflows/ci.yml`
 - Expected public release assets: `lmvideo-linux-x64`, `lmvideo-linux-arm64`, `lmvideo-macos-x64`, `lmvideo-macos-arm64`, `lmvideo-windows-x64.exe`, plus `SHA256SUMS`.
@@ -222,11 +222,11 @@
   - SOURCE REFERENCE TO REVIEW: `README.md:13 -> ](scripts/skia.lock)`
   - SOURCE REFERENCE TO REVIEW: `README.md:166 -> ](scripts/sync-sdk.sh)`
 - Public-plan secret scan: 0 finding(s); values are never printed.
-- Licensing: Ship LICENSE, THIRD_PARTY_NOTICES.md, licenses/*, DejaVu font license, Skia BSD-3-Clause, ICU, Expat, libjpeg/IJG, libpng, zlib, HarfBuzz, libwebp and FreeType FTL texts. FFmpeg is a user-selected external process, not bundled.
+- Licensing: Carry THIRD_PARTY_NOTICES.md, DejaVu/Skia/ICU/Expat/IJG/libpng/zlib/HarfBuzz/libwebp/FreeType texts; FFmpeg remains an external user-selected process.
 
 ## Verification result
 
-- Autorun path check: REVIEW REQUIRED
+- Autorun path check: PASS
 - Public docs source-reference check: REVIEW REQUIRED
 - Public-plan secret scan: PASS
 

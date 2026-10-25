@@ -1,14 +1,14 @@
 # Closed-source split dry-run: lmdraw
 
 - Source repo: `/home/mma/repos/dsl/lmdraw`
-- Source revision: `4b63140046ba2a28a5693a9dfed0f7beb9783c71`
+- Source revision: `9452958efb8aceebb835daf7660a00d2f731dd9d`
 - Private peer target: `lmctlhq/lmdraw` (transfer this repository, then set it private, only after owner approval)
 - Public peer target: `lmctl-ai/lmdraw` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 
-### Public peer (`lmctl-ai/lmdraw`): 85 tracked files
-- `assets/fonts/OFL.txt`
+### Public peer (`lmctl-ai/lmdraw`): 84 tracked files
+- `assets/fonts/OFL.txt` → `docs/third-party-licenses/assets/fonts/OFL.txt`
 - `docs/images/architecture-layers.png`
 - `docs/images/carnot-cycle.png`
 - `docs/images/damped-oscillator.png`
@@ -83,19 +83,19 @@
 - `examples/tree-org.lms`
 - `examples/truss-bridge.lms`
 - `examples/tween-morph.lms`
-- `LICENSE`
-- `licenses/FreeType-FTL.txt`
-- `licenses/GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt`
-- `licenses/GPL-3.txt`
-- `licenses/LGPL-2.1.txt`
-- `licenses/LunaSVG-MIT.txt`
-- `licenses/Noto-OFL-1.1.txt`
-- `licenses/PlutoVG-MIT.txt`
+- `licenses/FreeType-FTL.txt` → `docs/third-party-licenses/FreeType-FTL.txt`
+- `licenses/GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt` → `docs/third-party-licenses/GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt`
+- `licenses/GPL-3.txt` → `docs/third-party-licenses/GPL-3.txt`
+- `licenses/LGPL-2.1.txt` → `docs/third-party-licenses/LGPL-2.1.txt`
+- `licenses/LunaSVG-MIT.txt` → `docs/third-party-licenses/LunaSVG-MIT.txt`
+- `licenses/Noto-OFL-1.1.txt` → `docs/third-party-licenses/Noto-OFL-1.1.txt`
+- `licenses/PlutoVG-MIT.txt` → `docs/third-party-licenses/PlutoVG-MIT.txt`
 - `README.md`
 - `THIRD_PARTY_NOTICES`
-- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+- `LICENSE` (new binary-license draft from templates/LICENSE-binaries.md)
+- `LICENSE-examples` (MIT text from templates/LICENSE-examples-MIT; source repo LICENSE stays private)
 
-### Private peer (`lmctlhq/lmdraw`): 132 tracked files
+### Private peer (`lmctlhq/lmdraw`): 142 tracked files
 - ``
 - `.gitattributes`
 - `.github/workflows/ci.yml`
@@ -111,9 +111,17 @@
 - `assets/level-team.svg`
 - `assets/refused-class.svg`
 - `CMakeLists.txt`
+- `cpp/dslvm.hpp`
 - `cpp/luna_renderer.cpp`
 - `cpp/main.cpp`
 - `cpp/renderer.hpp`
+- `cpp/std/lmcode-std.schema.json`
+- `cpp/stdlib/collections.hpp`
+- `cpp/stdlib/file.hpp`
+- `cpp/stdlib/math.hpp`
+- `cpp/stdlib/std.hpp`
+- `cpp/stdlib/string.hpp`
+- `cpp/stdlib/testing.hpp`
 - `cpp/tick_format.hpp`
 - `durable-memory/01-purpose.md`
 - `durable-memory/02-schema-and-svg.md`
@@ -123,13 +131,15 @@
 - `durable-memory/06-licensing-and-release.md`
 - `durable-memory/07-examples-and-images.md`
 - `durable-memory/index.md`
+- `LICENSE`
 - `schema/lmdraw.dsl.json`
 - `scripts/embed-resources.py`
+- `scripts/merge-std.py`
 - `scripts/select-compiler.sh`
 - `scripts/stage-release-notices.sh`
 - `scripts/sync-sdk.sh`
+- `scripts/test-std.sh`
 - `sdk.lock`
-- `sdk/dslvm.hpp`
 - `test.sh`
 - `tests/fixtures/automation-ladder-mobile.svg`
 - `tests/fixtures/automation-ladder.svg`
@@ -238,7 +248,7 @@
 - Expected public release assets: `lmdraw-linux-x64`, `lmdraw-linux-arm64`, `lmdraw-macos-x64`, `lmdraw-macos-arm64`, `lmdraw-windows-x64.exe`, plus `SHA256SUMS`.
 - README links to private source paths checked: 0 finding(s).
 - Public-plan secret scan: 0 finding(s); values are never printed.
-- Licensing: Ship LICENSE, THIRD_PARTY_NOTICES, licenses/*.txt, Noto Sans/Noto Sans Math OFL texts and the existing source archive; keep LunaSVG/PlutoVG MIT, FreeType FTL, stb notices, and runtime license texts.
+- Licensing: Carry THIRD_PARTY_NOTICES, Noto Sans/Noto Sans Math OFL texts, FreeType FTL, stb/runtime terms, and the release process's source archive; full license texts go beneath docs/third-party-licenses/.
 
 ## Verification result
 

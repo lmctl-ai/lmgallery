@@ -1,13 +1,13 @@
 # Closed-source split dry-run: lmfilament
 
 - Source repo: `/home/mma/repos/dsl/lmfilament`
-- Source revision: `8bd8b35cedd07ab376e6bc0054749b2386864187`
+- Source revision: `24a0c3e851336c05e9b149c56e113355982c4c89`
 - Private peer target: `lmctlhq/lmfilament` (transfer this repository, then set it private, only after owner approval)
 - Public peer target: `lmctl-ai/lmfilament` (recreate at the old slug after transfer; preserve README/example paths)
 
 ## Exact tracked-file plan
 
-### Public peer (`lmctl-ai/lmfilament`): 86 tracked files
+### Public peer (`lmctl-ai/lmfilament`): 85 tracked files
 - `docs/images/ball-stick.png`
 - `docs/images/buckyball.png`
 - `docs/images/bullet.png`
@@ -91,12 +91,12 @@
 - `examples/truss-bridge.lms`
 - `examples/vbotest.lms`
 - `examples/viewtest.lms`
-- `LICENSE`
 - `README.md`
 - `THIRD_PARTY_NOTICES.md`
-- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+- `LICENSE` (new binary-license draft from templates/LICENSE-binaries.md)
+- `LICENSE-examples` (MIT text from templates/LICENSE-examples-MIT; source repo LICENSE stays private)
 
-### Private peer (`lmctlhq/lmfilament`): 33 tracked files
+### Private peer (`lmctlhq/lmfilament`): 44 tracked files
 - ``
 - `.github/workflows/ci.yml`
 - `.gitignore`
@@ -109,6 +109,13 @@
 - `cpp/preview.cpp`
 - `cpp/preview.hpp`
 - `cpp/stb_image.h`
+- `cpp/std/lmcode-std.schema.json`
+- `cpp/stdlib/collections.hpp`
+- `cpp/stdlib/file.hpp`
+- `cpp/stdlib/math.hpp`
+- `cpp/stdlib/std.hpp`
+- `cpp/stdlib/string.hpp`
+- `cpp/stdlib/testing.hpp`
 - `cpp/texture.cpp`
 - `cpp/texture.hpp`
 - `durable-memory/00-index.md`
@@ -122,12 +129,16 @@
 - `durable-memory/20-sibling-3d-hosts.md`
 - `durable-memory/index.md`
 - `filament.lock`
+- `LICENSE`
 - `schema/lmfilament.dsl.json`
 - `scripts/build-filament.sh`
 - `scripts/build.sh`
+- `scripts/merge-std.py`
+- `scripts/select-compiler.sh`
 - `scripts/stamp-version.sh`
 - `scripts/sync-filament.sh`
 - `scripts/sync-sdk.sh`
+- `scripts/test-std.sh`
 - `sdk.lock`
 - `test.sh`
 
@@ -142,7 +153,7 @@
   - SOURCE REFERENCE TO REVIEW: `README.md:6 -> ](schema/lmfilament.dsl.json)`
   - SOURCE REFERENCE TO REVIEW: `README.md:93 -> ](https://github.com/lmctl-ai/lmctl/tree/main/scripts/homepage/video)`
 - Public-plan secret scan: 0 finding(s); values are never printed.
-- Licensing: Ship LICENSE, THIRD_PARTY_NOTICES.md, FILAMENT-LICENSE, all pinned Filament third-party notices, LLVM exception/runtime texts and Linux glibc LGPL materials.
+- Licensing: Carry FILAMENT-LICENSE, pinned Filament component notices, LLVM exceptions and Linux runtime terms.
 
 ## Verification result
 

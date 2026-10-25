@@ -379,40 +379,41 @@
 - `examples/video/throughput.lms`
 - `examples/volume-control.lms`
 - `examples/volume-fog.lms`
-- `LICENSE`
-- `licenses/cpp-dsl-sdk-MIT.txt`
-- `licenses/LMBlender-MIT-code.txt`
-- `licenses/nlohmann-json-MIT.txt`
-- `licenses/upstream/Blender-GPL-3.0-or-later.txt`
-- `licenses/upstream/Cycles-Apache-2.0.txt`
-- `licenses/upstream/Embree-Apache-2.0.txt`
-- `licenses/upstream/expat-license.txt`
-- `licenses/upstream/fmt-MIT.txt`
-- `licenses/upstream/GCC-14-runtime-copyright.txt`
-- `licenses/upstream/GPL-3.txt`
-- `licenses/upstream/Imath-license.md`
-- `licenses/upstream/ISPC-BSD-3-Clause.txt`
-- `licenses/upstream/LGPL-2.1.txt`
-- `licenses/upstream/libjpeg-license.md`
-- `licenses/upstream/libpng-license.txt`
-- `licenses/upstream/libtiff-license.md`
-- `licenses/upstream/minizip-ng-license.txt`
-- `licenses/upstream/oneTBB-license.txt`
-- `licenses/upstream/OpenColorIO-license.txt`
-- `licenses/upstream/OpenEXR-license.rst`
-- `licenses/upstream/OpenImageDenoise-Apache-2.0.txt`
-- `licenses/upstream/OpenImageIO-BSD.txt`
-- `licenses/upstream/OpenJPH-license.txt`
-- `licenses/upstream/pugixml-MIT.txt`
-- `licenses/upstream/pystring-license.txt`
-- `licenses/upstream/robin-map-MIT.txt`
-- `licenses/upstream/sse2neon-MIT.txt`
-- `licenses/upstream/yaml-cpp-license.txt`
-- `licenses/upstream/zlib-license.txt`
-- `licenses/upstream/zstd-license.txt`
+- `licenses/cpp-dsl-sdk-MIT.txt` → `docs/third-party-licenses/cpp-dsl-sdk-MIT.txt`
+- `licenses/LMBlender-MIT-code.txt` → `docs/third-party-licenses/LMBlender-MIT-code.txt`
+- `licenses/nlohmann-json-MIT.txt` → `docs/third-party-licenses/nlohmann-json-MIT.txt`
+- `licenses/upstream/Blender-GPL-3.0-or-later.txt` → `docs/third-party-licenses/upstream/Blender-GPL-3.0-or-later.txt`
+- `licenses/upstream/Cycles-Apache-2.0.txt` → `docs/third-party-licenses/upstream/Cycles-Apache-2.0.txt`
+- `licenses/upstream/Embree-Apache-2.0.txt` → `docs/third-party-licenses/upstream/Embree-Apache-2.0.txt`
+- `licenses/upstream/expat-license.txt` → `docs/third-party-licenses/upstream/expat-license.txt`
+- `licenses/upstream/fmt-MIT.txt` → `docs/third-party-licenses/upstream/fmt-MIT.txt`
+- `licenses/upstream/GCC-14-runtime-copyright.txt` → `docs/third-party-licenses/upstream/GCC-14-runtime-copyright.txt`
+- `licenses/upstream/GPL-3.txt` → `docs/third-party-licenses/upstream/GPL-3.txt`
+- `licenses/upstream/Imath-license.md` → `docs/third-party-licenses/upstream/Imath-license.md`
+- `licenses/upstream/ISPC-BSD-3-Clause.txt` → `docs/third-party-licenses/upstream/ISPC-BSD-3-Clause.txt`
+- `licenses/upstream/LGPL-2.1.txt` → `docs/third-party-licenses/upstream/LGPL-2.1.txt`
+- `licenses/upstream/libjpeg-license.md` → `docs/third-party-licenses/upstream/libjpeg-license.md`
+- `licenses/upstream/libpng-license.txt` → `docs/third-party-licenses/upstream/libpng-license.txt`
+- `licenses/upstream/libtiff-license.md` → `docs/third-party-licenses/upstream/libtiff-license.md`
+- `licenses/upstream/minizip-ng-license.txt` → `docs/third-party-licenses/upstream/minizip-ng-license.txt`
+- `licenses/upstream/oneTBB-license.txt` → `docs/third-party-licenses/upstream/oneTBB-license.txt`
+- `licenses/upstream/OpenColorIO-license.txt` → `docs/third-party-licenses/upstream/OpenColorIO-license.txt`
+- `licenses/upstream/OpenEXR-license.rst` → `docs/third-party-licenses/upstream/OpenEXR-license.rst`
+- `licenses/upstream/OpenImageDenoise-Apache-2.0.txt` → `docs/third-party-licenses/upstream/OpenImageDenoise-Apache-2.0.txt`
+- `licenses/upstream/OpenImageIO-BSD.txt` → `docs/third-party-licenses/upstream/OpenImageIO-BSD.txt`
+- `licenses/upstream/OpenJPH-license.txt` → `docs/third-party-licenses/upstream/OpenJPH-license.txt`
+- `licenses/upstream/pugixml-MIT.txt` → `docs/third-party-licenses/upstream/pugixml-MIT.txt`
+- `licenses/upstream/pystring-license.txt` → `docs/third-party-licenses/upstream/pystring-license.txt`
+- `licenses/upstream/robin-map-MIT.txt` → `docs/third-party-licenses/upstream/robin-map-MIT.txt`
+- `licenses/upstream/sse2neon-MIT.txt` → `docs/third-party-licenses/upstream/sse2neon-MIT.txt`
+- `licenses/upstream/yaml-cpp-license.txt` → `docs/third-party-licenses/upstream/yaml-cpp-license.txt`
+- `licenses/upstream/zlib-license.txt` → `docs/third-party-licenses/upstream/zlib-license.txt`
+- `licenses/upstream/zstd-license.txt` → `docs/third-party-licenses/upstream/zstd-license.txt`
+- `presets/presets.json` → `docs/presets/presets.json`
 - `README.md`
 - `THIRD_PARTY_NOTICES.md`
-- `LICENSE-binaries` (new owner-approved binary license text; not present in this source checkout unless listed above)
+- `LICENSE` (new binary-license draft from templates/LICENSE-binaries.md)
+- `LICENSE-examples` (MIT text from templates/LICENSE-examples-MIT; source repo LICENSE stays private)
 
 ### Private peer (`lmctlhq/lmblender`): 268 tracked files
 - ``
@@ -445,10 +446,10 @@
 - `durable-memory/20-sibling-3d-hosts.md`
 - `durable-memory/index.md`
 - `durable-memory/tool-book-feedback/lmblender.md`
+- `LICENSE`
 - `patches/cycles-bvh2-instance-sharing.patch`
 - `patches/cycles-motion-vectorizer.patch`
 - `patches/cycles-msvc-guarded-allocator.patch`
-- `presets/presets.json`
 - `schema/lmblender.dsl.json`
 - `scripts/assemble-release.sh`
 - `scripts/bootstrap-static-deps.sh`
@@ -697,7 +698,7 @@
   - SOURCE REFERENCE TO REVIEW: `README.md:68 -> ](https://github.com/lmctl-ai/lmctl/tree/main/scripts/homepage/video)`
   - SOURCE REFERENCE TO REVIEW: `README.md:162 -> ](tests/bridge_matched_reference.py)`
 - Public-plan secret scan: 0 finding(s); values are never printed.
-- Licensing: The combined binary is GPL-3.0-or-later, so it cannot be represented as a closed-source binary. Every release must keep LICENSE, THIRD_PARTY_NOTICES, full source asset lmblender-source-vX.Y.Z.tar.gz, SOURCE_OFFER.md, SOURCES.json, RELINKING docs and all linked-component license texts.
+- Licensing: The combined binary is GPL-3.0-or-later and cannot be described as a closed-source binary; each release still needs its corresponding source, SOURCE_OFFER, SOURCES.json, RELINKING docs, and component texts.
 
 ## Verification result
 
