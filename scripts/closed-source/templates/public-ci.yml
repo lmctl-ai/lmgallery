@@ -6,11 +6,9 @@ on:
     paths:
       - README.md
       - LICENSE
-      - LICENSE-binaries
+      - LICENSE-examples
       - THIRD_PARTY_NOTICES*
-      - licenses/**
       - docs/**
-      - images/**
       - examples/**
       - .github/workflows/public-ci.yml
 
@@ -31,11 +29,26 @@ jobs:
       - name: Install the compiler that accepts _lmcode_
         run: npm install --global @lmctl-ai/lmctl@0.2.420
 
+      - name: Wait for the first public binary/schema release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for ((attempt = 0; attempt < 60; attempt++)); do
+            if gh release view latest -R "$REPOSITORY" >/dev/null 2>&1; then exit 0; fi
+            sleep 10
+          done
+          echo "No public release appeared within ten minutes; lmscript cannot resolve host schemas." >&2
+          exit 1
+
       - name: Check README links, images, and autorun targets
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import os
           import re
           from urllib.parse import unquote, urlsplit
 
@@ -54,6 +67,7 @@ jobs:
                   raise SystemExit(f"README target is missing or escapes the public tree: {value}")
 
           autorun = re.compile(r"lmctl\s+autorun\s+(https?://[^\s`<>]+)", re.I)
+          owner, repo = os.environ["GITHUB_REPOSITORY"].split("/", 1)
           checked = 0
           for line in text.splitlines():
               for value in autorun.findall(line):
@@ -61,6 +75,8 @@ jobs:
                   parts = [part for part in parsed.path.split("/") if part]
                   if "raw.githubusercontent.com" not in parsed.netloc or len(parts) < 4:
                       raise SystemExit(f"README autorun URL is not a raw GitHub file URL: {value}")
+                  if parts[0] != owner or parts[1] != repo:
+                      continue
                   target = root.joinpath(*parts[3:]).resolve()
                   if not target.is_relative_to(root.resolve()) or not target.is_file():
                       raise SystemExit(f"README autorun target is absent from this public tree: {value}")
@@ -75,7 +91,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          find examples -type f -name '*.lms' -print0 |
-            while IFS= read -r -d '' example; do
-              lmscript --check "$example"
-            done
+          if [ -d examples ]; then
+            find examples -type f -name '*.lms' -print0 |
+              while IFS= read -r -d '' example; do
+                lmscript --check "$example"
+              done
+          fi

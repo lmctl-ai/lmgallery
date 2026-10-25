@@ -1,5 +1,9 @@
 # Lattice Systems Personal Use License (binaries)
 
+> **DRAFT FOR OWNER AND LEGAL REVIEW — NOT FINAL LICENSE TEXT.** Do not publish
+> this template as an approved license until Lattice Systems LLC's legal reviewer
+> approves it.
+
 Copyright (c) 2026 Lattice Systems LLC. All rights reserved.
 
 This license covers the compiled program (the "Software") that is published as release assets in this repository. It does not cover the files under `examples/`, `docs/` and the README, which are licensed under the MIT License (see `LICENSE-examples`), and it does not replace or narrow the licenses of third-party components bundled in the Software (see `THIRD_PARTY_NOTICES`); those terms continue to apply to those components.

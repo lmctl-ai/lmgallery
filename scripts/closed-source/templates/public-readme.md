@@ -29,14 +29,15 @@ lmctl autorun https://raw.githubusercontent.com/lmctl-ai/<product>/main/examples
 
 ## License and support
 
-The public README, docs, and examples use the license stated in [`LICENSE`](LICENSE).
-The binary license is [`LICENSE-binaries`](LICENSE-binaries); third-party
-terms and required notices are in [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES)
-and [`licenses/`](licenses/).
+The README, docs, pictures, and `examples/*.lms` are MIT-licensed under
+[`LICENSE-examples`](LICENSE-examples). **`LICENSE` is a DRAFT for owner/legal review and must not be treated as approved terms.**
+Binary releases will be subject to [`LICENSE`](LICENSE) after approval; third-party components remain under their own licenses
+and notices in `THIRD_PARTY_NOTICES*` and the accompanying license texts under
+`docs/third-party-licenses/`.
 
-This public peer contains the demo/docs/examples and released binaries. New
-implementation source is maintained in the private `lmctlhq/<product>` peer;
-older public MIT commits and tags remain in this repository's history.
+This fresh public repository contains only the demo/docs/examples and released
+binaries. Implementation source and its full development history are kept in
+the private `lmctlhq/<product>` peer.
 
 Open product questions in [Issues](https://github.com/lmctl-ai/<product>/issues).
 Source-code pull requests are not accepted here. <State whether docs/example

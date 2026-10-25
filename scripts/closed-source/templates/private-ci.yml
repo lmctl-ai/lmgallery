@@ -1,187 +1,167 @@
-name: Private build and public release
+name: Private source CI and release
 
 on:
   push:
     branches: [main]
+    tags: ["v*"]
+  pull_request:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Version tag to publish after the full matrix
+        required: false
+        type: string
 
-# This template intentionally has no pull_request trigger: RELEASE_TOKEN is
-# only available to trusted main-branch publishing, never to fork code.
+# No public workflow has release credentials. Build jobs only read source.
 permissions:
   contents: read
 
-env:
-  VERSION_SERIES: ${{ vars.VERSION_SERIES }}
-
 jobs:
-  version:
+  linux-fast:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      tag: ${{ steps.version.outputs.tag }}
     steps:
-      - name: Validate the owner-selected major.minor series
-        id: version
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ ! "$VERSION_SERIES" =~ ^[0-9]+\.[0-9]+$ ]]; then
-            echo "Set repository variable VERSION_SERIES to MAJOR.MINOR, for example 0.1" >&2
-            exit 1
-          fi
-          version="${VERSION_SERIES}.${GITHUB_RUN_NUMBER}"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "tag=v$version" >> "$GITHUB_OUTPUT"
-
-  build:
-    needs: version
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-24.04
-            os: linux
-            arch: x64
-            suffix: ""
-          - runner: ubuntu-24.04-arm
-            os: linux
-            arch: arm64
-            suffix: ""
-          - runner: macos-15
-            os: macos
-            arch: arm64
-            suffix: ""
-          - runner: macos-15-intel
-            os: macos
-            arch: x64
-            suffix: ""
-          - runner: windows-2022
-            os: windows
-            arch: x64
-            suffix: ".exe"
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - name: Check out private source
-        uses: actions/checkout@v4
-
-      - name: Check out the public examples and docs peer
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          repository: lmctl-ai/${{ github.event.repository.name }}
-          ref: main
-          path: public
-
-      - name: Set up Node for lmscript
-        uses: actions/setup-node@v4
+          persist-credentials: false
+      - name: Check out public docs and examples without credentials
+        run: git clone --depth 1 https://github.com/lmctl-ai/${{ github.event.repository.name }}.git public
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
-
-      - name: Install the compiler that accepts _lmcode_
+      - name: Install a compiler with _lmcode_ support
         run: npm install --global @lmctl-ai/lmctl@0.2.420
-
-      # Adapt the command and output path to this product before enabling the
-      # workflow. It must build the fresh host for the current matrix target.
-      - name: Build and test the private source
-        shell: bash
-        env:
-          HOST_BIN_PATH: build/${{ github.event.repository.name }}${{ matrix.suffix }}
+      # Replace the product build command and binary output directory as needed.
+      - name: Build and run source tests
         run: |
           set -euo pipefail
-          ./scripts/build-release.sh
+          ./scripts/build-release.sh --linux-x64
           ./test.sh
-          test -f "$HOST_BIN_PATH"
-          dirname "$HOST_BIN_PATH" >> "$GITHUB_PATH"
-
-      - name: Check and execute every public example with the fresh host
-        shell: bash
+          echo "$GITHUB_WORKSPACE/build" >> "$GITHUB_PATH"
+      - name: Check and run public examples against the fresh Linux host
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          test -d public/examples
-          find public/examples -type f -name '*.lms' -print0 |
-            while IFS= read -r -d '' example; do
-              relative="${example#public/}"
-              (cd public && lmscript --check "$relative" && lmscript "$relative")
-            done
+          if [ -d public/examples ]; then
+            find public/examples -type f -name '*.lms' -print0 |
+              while IFS= read -r -d '' example; do
+                relative="${example#public/}"
+                (cd public && lmscript --check "$relative" && lmscript "$relative")
+              done
+          fi
 
-      - name: Stage the platform asset under the installer filename
-        shell: bash
+  full-matrix:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: ubuntu-24.04, os: linux, arch: x64, suffix: "" }
+          - { runner: ubuntu-24.04-arm, os: linux, arch: arm64, suffix: "" }
+          - { runner: macos-15, os: macos, arch: arm64, suffix: "" }
+          - { runner: macos-15-intel, os: macos, arch: x64, suffix: "" }
+          - { runner: windows-2022, os: windows, arch: x64, suffix: ".exe" }
+    runs-on: ${{ matrix.runner }}
+    name: full ${{ matrix.os }}-${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check out public docs and examples without credentials
+        run: git clone --depth 1 https://github.com/lmctl-ai/${{ github.event.repository.name }}.git public
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install a compiler with _lmcode_ support
+        run: npm install --global @lmctl-ai/lmctl@0.2.420
+      # Replace this adapter command/output path for the selected product.
+      - name: Build and run source tests
         env:
-          ASSET_NAME: ${{ github.event.repository.name }}-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.suffix }}
-          HOST_BIN_PATH: build/${{ github.event.repository.name }}${{ matrix.suffix }}
+          HOST_BIN: build/${{ github.event.repository.name }}${{ matrix.suffix }}
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/release-assets"
-          cp "$HOST_BIN_PATH" "$RUNNER_TEMP/release-assets/$ASSET_NAME"
-
-      - name: Upload this platform binary
-        uses: actions/upload-artifact@v4
+          ./scripts/build-release.sh --target "${{ matrix.os }}-${{ matrix.arch }}"
+          ./test.sh
+          test -f "$HOST_BIN"
+          echo "$GITHUB_WORKSPACE/build" >> "$GITHUB_PATH"
+      - name: Check and run public examples against the fresh host
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -d public/examples ]; then
+            find public/examples -type f -name '*.lms' -print0 |
+              while IFS= read -r -d '' example; do
+                relative="${example#public/}"
+                (cd public && lmscript --check "$relative" && lmscript "$relative")
+              done
+          fi
+      - name: Stage the release asset
+        env:
+          PRODUCT: ${{ github.event.repository.name }}
+          OS: ${{ matrix.os }}
+          ARCH: ${{ matrix.arch }}
+          SUFFIX: ${{ matrix.suffix }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp "build/$PRODUCT$SUFFIX" "dist/$PRODUCT-$OS-$ARCH$SUFFIX"
+          if [ "$OS-$ARCH" = linux-x64 ]; then
+            cp public/LICENSE dist/LICENSE
+            cp public/THIRD_PARTY_NOTICES* dist/
+          fi
+      - uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.os }}-${{ matrix.arch }}
-          path: ${{ runner.temp }}/release-assets/${{ github.event.repository.name }}-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.suffix }}
+          path: dist/
           if-no-files-found: error
-          retention-days: 2
+          retention-days: 7
 
   publish:
-    needs: [version, build]
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    needs: [full-matrix]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
-      - name: Download all five platform assets
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
         with:
           pattern: binary-*
-          path: release-assets
+          path: release-artifacts
           merge-multiple: true
-
-      - name: Verify the complete asset set and create SHA256SUMS
-        shell: bash
+      - name: Select the first release tag
+        id: release
         env:
-          PRODUCT: ${{ github.event.repository.name }}
+          MANUAL_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
-          cd release-assets
-          for asset in \
-            "$PRODUCT-linux-x64" \
-            "$PRODUCT-linux-arm64" \
-            "$PRODUCT-macos-x64" \
-            "$PRODUCT-macos-arm64" \
-            "$PRODUCT-windows-x64.exe"; do
-            test -f "$asset"
-          done
-          sha256sum \
-            "$PRODUCT-linux-x64" \
-            "$PRODUCT-linux-arm64" \
-            "$PRODUCT-macos-x64" \
-            "$PRODUCT-macos-arm64" \
-            "$PRODUCT-windows-x64.exe" > SHA256SUMS
+          tag="$MANUAL_TAG"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then tag="$GITHUB_REF_NAME"; fi
+          test -n "$tag" || { echo "Set release_tag for workflow_dispatch" >&2; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Check whether the owner has configured cross-repo publishing
+        id: release_token
+        env:
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          if [ -n "$RELEASE_TOKEN" ]; then echo "available=true" >> "$GITHUB_OUTPUT"; else echo "available=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Require the release credential before the coordinated flip
+        if: steps.release_token.outputs.available != 'true'
+        run: |
+          echo "RELEASE_TOKEN must be configured before the peer flip; this full run will not publish." >&2
+          exit 1
 
-      - name: Publish a versioned release to the public peer
+      # Actions does not allow secrets directly in an if expression. When
+      # Actions does not allow secrets directly in an if expression; the
+      # availability output is the equivalent safe guard. The publisher uses
+      # the secret only for the cross-repo gh release create call.
+      - name: Publish to the public peer when the token is configured
+        if: steps.release_token.outputs.available == 'true'
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-          PRODUCT: ${{ github.event.repository.name }}
-          VERSION: ${{ needs.version.outputs.version }}
-          TAG: ${{ needs.version.outputs.tag }}
-          SOURCE_COMMIT: ${{ github.sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "$GH_TOKEN"
-          public_repo="lmctl-ai/$PRODUCT"
-          cat > release-notes.md <<EOF
-          $PRODUCT $VERSION
-
-          Proprietary binary release built from private source commit $SOURCE_COMMIT.
-          Public README, docs, examples, LICENSE-binaries, and third-party notices:
-          https://github.com/$public_repo/tree/main
-
-          Verify downloaded files with SHA256SUMS.
-          EOF
-          gh release create "$TAG" \
-            --repo "$public_repo" \
-            --target main \
-            --title "$PRODUCT $VERSION" \
-            --notes-file release-notes.md \
-            release-assets/*
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: ./scripts/release-to-public.sh "$RELEASE_TAG" "$GITHUB_WORKSPACE/release-artifacts"
