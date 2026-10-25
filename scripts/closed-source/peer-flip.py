@@ -1651,7 +1651,7 @@ def apply_lmaudio_pilot(first_tag: str) -> int:
     audit(f"PREFLIGHT_PASS public_main={snapshot['ref']} ref_count={len(old_refs['refs'])} release_count={len(release_backups)} refs_backup={refs_path} release_backup={release_backup_root}")
 
     # Step 1: private source peer, with the existing history and tags mirrored in place.
-    if not private_scaffold:
+    if not source_is_private and not private_scaffold:
         create = ["gh", "repo", "create", private_repo(product), "--private"]
         if metadata.get("description"):
             create.extend(["--description", metadata["description"]])
