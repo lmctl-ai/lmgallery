@@ -1,6 +1,6 @@
 # Closed-source public staging inventory
 
-Snapshot: 2026-10-25. Public-only trees are staged under `/home/mma/staging/closed-source/<product>-public/` from each recorded `origin/main` SHA. They contain no Git metadata and were not pushed. The current public repositories and releases are intact. The earlier lmaudio transfer was reversed; no public history or release changed. The replacement in-place pilot has not started. An empty private `lmctlhq/lmaudio` scaffold now exists with Actions disabled; it has no branches, tags, releases, secrets, or workflows and is intended for reuse.
+Snapshot: 2026-10-25. Public-only trees are staged under `/home/mma/staging/closed-source/<product>-public/` from each recorded `origin/main` SHA. They contain no Git metadata and were not pushed. The current public repositories and releases are intact. The earlier lmaudio transfer was reversed; no public history or release changed. The in-place pilot seeded `lmctlhq/lmaudio` with the full source mirror and generated private CI, enabled Actions, and set the release-token secret. Its publish-test failed during draft cleanup (HTTP 422, missing test tag); all build jobs were skipped, the draft is gone, and the public repo was not rewritten.
 
 | Product | Source SHA | Public files | Raw autorun | Private refs | Secrets | Versioned consumer refs | Local checkout | Public CI at stage | Owner active report |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Closed-source peer repository model
 
-**Status: in-place lmaudio pilot approved; nine-product scope.** No in-place public reset has run yet. An empty private `lmctlhq/lmaudio` scaffold exists with Actions disabled; its history, secrets, and workflows are empty. Final owner scope is lmdraw,
+**Status: lmaudio pilot paused before the public reset; nine-product scope.** The private source peer now contains the mirrored source refs and generated CI, but its publish-test failed; public refs and releases are unchanged. Final owner scope is lmdraw,
 lmvideo, lmaudio, lmoffice, lmcad, lmmagnum, lmfilament, lmimg, and lmpdf.
 The generated public-only trees are under `/home/mma/staging/closed-source/`.
 `lmplot`, `lmphysics`, all other hosts, `lmcode-*`, and `lmgallery` remain open
@@ -208,6 +208,15 @@ temporary draft release using `RELEASE_TOKEN` without starting a build. The
 workflow-install commit uses `[skip ci]`, so the pilot waits until the next
 source change to start its Linux build; later tagged/manual releases run the
 five-platform matrix and publish with the cross-repo secret.
+
+Pilot status (2026-10-25): `lmctlhq/lmaudio` was created private by the in-place
+method and received the complete source refs; the generated private workflow is
+on its `main`, Actions are enabled, and the `RELEASE_TOKEN` secret is present.
+The `publish_test` dispatch failed in its draft-delete step with HTTP 422 because
+`gh release delete --cleanup-tag` attempted to remove a tag ref that the draft
+release had not created. All build jobs were skipped; the draft is gone. The
+public repository remains on its original main/tags/releases, and the local
+source checkout still has its public origin pending owner review.
 
 `lmplot` remains open source and is excluded. Its existing gnuplot patch and
 runtime notices are unchanged by this plan.
