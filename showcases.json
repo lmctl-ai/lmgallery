@@ -462,5 +462,17 @@
     ],
     "output": "images/showcase-41-gravity-wave-speed.png",
     "image": "docs/images/showcase-41-gravity-wave-speed-report.png"
+  },
+  {
+    "file": "examples/42-cell-growth-report.lms",
+    "title": "Cell growth lab report with an lmvideo figure",
+    "description": "lmcell seeds 2000 dividing cells on a 2D nutrient grid and records the live-cell count over two minutes; the program checks the final count against the exponential 2000 exp(0.6) within 10 %. lmvideo plots the counts against the expected curve as a PNG; lmoffice writes the Word lab report with the method, a results table, the figure and a conclusion. The picture is a LibreOffice render of the report.",
+    "hosts": [
+      "lmcell",
+      "lmvideo",
+      "lmoffice"
+    ],
+    "output": "images/showcase-42-cell-growth.png",
+    "image": "docs/images/showcase-42-cell-growth-report.png"
   }
 ]

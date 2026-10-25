@@ -24,7 +24,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#rates-and-options-desk-pack-curve-option-table-and-memo"><img src="../docs/images/showcase-35-rates-options.png" width="400" alt="Rates and options desk pack: curve, option table and memo"></a><br>Rates and options desk pack: curve, option table and memo | <a href="#html-link-check-report-with-a-terminal-picture"><img src="../docs/images/showcase-36-link-check.png" width="400" alt="HTML link-check report with a terminal picture"></a><br>HTML link-check report with a terminal picture |
 | <a href="#certificate-inventory-from-lmssl"><img src="../docs/images/showcase-37-cert-inventory.png" width="400" alt="Certificate inventory from lmssl"></a><br>Certificate inventory from lmssl | <a href="#product-slide-with-a-lmmagnum-3d-render"><img src="../docs/images/showcase-38-product-render.png" width="400" alt="Product slide with a lmmagnum 3D render"></a><br>Product slide with a lmmagnum 3D render |
 | <a href="#audio-harmonics-slide-with-a-wav-file"><img src="../docs/images/showcase-39-audio-harmonics.png" width="400" alt="Audio harmonics slide with a WAV file"></a><br>Audio harmonics slide with a WAV file | <a href="#predator-prey-lab-report-with-an-lmvideo-figure"><img src="../docs/images/showcase-40-predator-prey-report.png" width="400" alt="Predator-prey lab report with an lmvideo figure"></a><br>Predator-prey lab report with an lmvideo figure |
-| <a href="#gravity-wave-speed-from-a-shallow-water-pulse"><img src="../docs/images/showcase-41-gravity-wave-speed-report.png" width="400" alt="Gravity-wave speed from a shallow-water pulse"></a><br>Gravity-wave speed from a shallow-water pulse | |
+| <a href="#gravity-wave-speed-from-a-shallow-water-pulse"><img src="../docs/images/showcase-41-gravity-wave-speed-report.png" width="400" alt="Gravity-wave speed from a shallow-water pulse"></a><br>Gravity-wave speed from a shallow-water pulse | <a href="#cell-growth-lab-report-with-an-lmvideo-figure"><img src="../docs/images/showcase-42-cell-growth-report.png" width="400" alt="Cell growth lab report with an lmvideo figure"></a><br>Cell growth lab report with an lmvideo figure |
 
 ## Damped oscillator dashboard
 
@@ -434,4 +434,14 @@ Hosts: lmweather → lmvideo → lmoffice. Output: `images/showcase-41-gravity-w
 
 ```sh
 lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/41-weather-gravity-wave-speed.lms
+```
+
+## Cell growth lab report with an lmvideo figure
+
+lmcell seeds 2000 dividing cells on a 2D nutrient grid and records the live-cell count over two minutes; the program checks the final count against the exponential 2000 exp(0.6) within 10 %. lmvideo plots the counts against the expected curve as a PNG; lmoffice writes the Word lab report with the method, a results table, the figure and a conclusion. The picture is a LibreOffice render of the report.
+
+Hosts: lmcell → lmvideo → lmoffice. Output: `images/showcase-42-cell-growth.png`.
+
+```sh
+lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/42-cell-growth-report.lms
 ```
