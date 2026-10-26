@@ -368,6 +368,112 @@ examples migrate to lmvideo scripts with `renderer="cycles"`. No rename to lmcyc
 Archiving is an owner decision after migration.
 
 
+### Owner question: lmcycles as a new lean repo on standalone Cycles (github.com/blender/cycles)
+
+**Key fact: lmblender already is standalone Cycles, not a Blender build.**
+- Its `.github/cycles-flags.txt` says `WITH_BLENDER=OFF WITH_CYCLES_STANDALONE=ON WITH_PYTHON=OFF`.
+- The sources are Blender v5.2.2's `intern/cycles`, CPU only, with OSL, LLVM, OpenVDB, OpenSubdiv,
+  GPU, USD and Hydra off, and Embree, OIDN and TBB on.
+- Its README measures the plain standalone `cycles` ELF at **88.4 MB** on arm64, against 90.9 MB
+  for the released lmblender arm64 binary.
+
+The DSL adds about 3 MB. A "lean" repo would therefore save almost nothing in size or build time.
+What changes, if the source moves to the standalone `blender/cycles` repository, is the
+**licence**.
+
+**Licences in standalone `blender/cycles` (checked on main via the GitHub API, 2026-10-26):**
+
+| Part | Licence | GPL? |
+|---|---|---|
+| repo `LICENSE`, `src/**` (Cycles) | Apache-2.0 (SPDX headers) | no |
+| `third_party/sky` (Hosek–Wilkie, single and multiple scattering) | BSD-3-Clause, Apache-2.0, MIT | no; replaces Blender's GPL `intern/sky` |
+| `third_party/libc_compat` | Apache-2.0 | no; replaces Blender's GPL `intern/libc_compat` |
+| `util/guarded_allocator` | Apache-2.0; Blender's `MEM_guardedalloc` only `#ifdef WITH_BLENDER_GUARDEDALLOC` (off in standalone) | no |
+| **`third_party/atomic/atomic_ops.h` + `intern/*.h`** | jemalloc BSD notice **plus a "GPL LICENSE BLOCK" (GPL-2.0-or-later)**, included by `src/util/atomic.h` | **yes, the only GPL left**. Replace with a small `std::atomic`/compiler-builtin shim of the same functions (our patch, MIT) |
+| `third_party/mikktspace`, `cuew`, `hipew` | permissive (zlib-style, Apache-2.0) | no |
+| Embree 4, OIDN 2, oneTBB | Apache-2.0 | no |
+| OpenImageIO (Apache-2.0 since 2.5; BSD-3 before), OpenColorIO, OpenEXR/Imath | BSD-3 / Apache-2.0 | no |
+| OSL, OpenVDB/NanoVDB, OpenSubdiv, Alembic, USD/Hydra (all optional, now OFF) | BSD-3 or Apache-2.0 (OSL, OpenVDB); OpenSubdiv and USD under Pixar's modified Apache-2.0 | no GPL; OSL also needs LLVM (Apache-2.0 + LLVM exception) and adds much build time, so keep it OFF |
+| our `cpp/view_luts.h` (Blender OCIO-derived) | treated as GPL | yes: not carried over (see the table below) |
+
+Conclusion: standalone Cycles plus our atomic shim plus no Blender LUT gives a **fully permissive**
+closure. Upstream licences change across versions, so CI must check each pinned tag with the SBOM
+licence gate in 6.0.
+
+**Build size and time vs lmblender:**
+- Size is about the same: 85–125 MB per platform, dominated by multi-ISA Cycles CPU kernels,
+  Embree, OIDN weights and OIIO.
+- Build time is the same per cold dependency build (hours), or about 40 min cached.
+- `make update` in `blender/cycles` can fetch Blender's precompiled dependency libraries for linux
+  x64, macOS arm64 and Windows x64/arm64. That cuts the cold build to a large Git LFS download,
+  but there is **no linux-arm64 set**, so lmblender's own static dependency build stays needed for
+  arm64. Keep one own-build path for all platforms, for reproducibility.
+
+**Scene input: our own glTF importer to the Cycles C++ scene API, not Cycles XML.**
+- lmblender's `cpp/gltf_import.hpp` and `cpp/obj_import.hpp` are project-authored (MIT SPDX). They
+  already build `Scene`, `Mesh`, `Object`, `ShaderGraph`, camera and lights directly through the
+  API, with bounded inputs and structured errors.
+- Cycles XML (`app/cycles_xml.cpp`) is the standalone app's test format: unversioned, with no PBR
+  importer and no bounds checks.
+- Job extensions for Cycles-only features go in `job.json` (subsurface, volume, procedural nodes,
+  hair curves, DOF, motion blur).
+
+**What moves to lmvideo** (lmblender never had Blender modifiers, metaballs or geometry nodes; it
+only had DSL helpers):
+
+| lmblender DSL helper | Becomes |
+|---|---|
+| `cube`, `uv_sphere`, `cylinder`, `cone`, `capsule`, `torus`, `plane`, `ring_arc`, `tube_between`, `arrow_between`, `loft`, `checkmark`, `glow_orb` | lmvideo Scene mesh builders (phase 3.1), exported in the glTF |
+| `hair_patch`, `hair_sphere`, `strand` | lmvideo curve primitive → job extension `lm_curves` → Cycles native curve geometry (glTF has no hair) |
+| `checker/noise/ramp_material`, `bump`, `subsurface`, `volume`, `mix_with*`, `toon_outline` | lmvideo material compiler (4.5–4.7) for baked maps; Cycles-only shading as `job.json` material extensions |
+| `label`, `studio_setup`, `fit_camera`, `ground_plane`, `wall_plane_y`, presets | lmvideo Scene and Canvas helpers (labels as 2D overlays on the returned Image) |
+| keyframes (camera, lights, materials, visibility), `motion_blur`, `camera_dof` | lmvideo Timeline → per-frame resolved states in the job |
+
+Features Blender has but lmblender never had (modifiers, subdivision, metaballs, curve bevel,
+booleans) are new lmvideo work only if wanted:
+- subdivision: Cycles with OpenSubdiv ON (Pixar's modified Apache-2.0), or our own Catmull–Clark;
+- metaballs: marching cubes in lmvideo;
+- booleans: lmcad, or Manifold (Apache-2.0).
+
+**CPU / GPU / denoise:**
+- CPU with Embree and OIDN CPU denoise is the default everywhere, and deterministic per machine.
+- GPU backends all exist in standalone Cycles and are all OFF: CUDA/OptiX (NVIDIA toolkit to
+  build, driver at runtime), HIP (AMD), Metal (Apple Silicon), oneAPI (Intel).
+- Metal on macOS arm64 is the cheapest later addition: no extra runtime, and a GPU on every Mac.
+  CUDA/OptiX adds large kernel binaries and an NVIDIA driver dependency. Both are later,
+  build-flag-only options, not v1.
+- The OptiX denoiser is NVIDIA-only, so OIDN stays the denoiser.
+- **arm64:** Cycles CPU (via sse2neon), Embree 4 and OIDN 2 (NEON) all support it; lmblender
+  already ships linux-arm64 and macOS arm64.
+
+**Recommendation: switch the Cycles *source* to standalone `blender/cycles`, but do not create
+an lmcycles repo.**
+- The switch to standalone is the cheapest way to a permissive closure: one atomic shim instead of
+  replacing three Blender subsystems.
+- A separate repo adds a product, release train and CI with no size or build-time gain.
+- Build Cycles inside lmvideo as recommended above (w75d: `third_party/cycles` pinned to a
+  `blender/cycles` tag, plus the cached `cycles-sdk` workflow).
+- lmblender then stays **only as a frozen public legacy GPL repo**: releases, tags and source
+  offers kept; critical fixes only.
+
+If the owner wants the permissive Cycles build itself to be public open source for others, the
+alternative is a build-only public `lmcycles` repo. It would hold scripts, patches, the atomic shim
+and CI producing the static prefix and the `render --job` CLI, with no DSL, and lmvideo would
+consume its artifacts. That is a valid choice for publishing reasons, not for size. It needs
+owner-created repo identity.
+
+**Migration steps:**
+1. Pin a `blender/cycles` tag matching Blender 5.2's Cycles. Add the `std::atomic` shim patch. Port
+   lmblender's dependency scripts into lmvideo `third_party/cycles/` (6.0).
+2. CI SBOM licence gate on the linked closure: no GPL object; `view_luts.h` absent; Standard view
+   transform only until a permissive AgX exists.
+3. Port the glTF and OBJ importers and the Principled BSDF mapping (MIT) to the in-process job (6.2).
+4. Parity: lmblender v0.3.138 vs lmvideo `renderer="cycles"` on its fixture scenes, SSIM ≥ 0.99
+   except sky and view transform (6.3).
+5. Migrate lmblender examples one family at a time to lmvideo Scene + `renderer="cycles"` (7.1).
+6. Freeze lmblender: README notice "legacy; use lmvideo `renderer=\"cycles\"`", critical fixes only.
+   Archiving is an owner decision later. **No repo is created or renamed.**
+
 ### Cycles in lmvideo: what blocks it and how it is removed
 
 From lmblender `docs/LICENSE_AUDIT.md`, the link closure is:
@@ -383,9 +489,9 @@ From lmblender `docs/LICENSE_AUDIT.md`, the link closure is:
 
 | Item | Replacement (permissive) |
 |---|---|
-| `bf_intern_guardedalloc` + atomic | plain `malloc`/aligned allocation shim, as standalone Cycles builds use outside Blender; atomics from `<atomic>` |
-| `bf_intern_libc_compat` | not needed with the chosen libc (dynamic glibc ≥ 2.35 or musl); drop it |
-| `bf_intern_sky` | Hosek–Wilkie sky (BSD-3 reference code) or our own implementation of the published Nishita formulas; the gate is a visual comparison with the current sky example |
+| `bf_intern_guardedalloc` + atomic | standalone `blender/cycles` builds without guardedalloc; its `third_party/atomic` headers are still GPL, so replace them with our `std::atomic` shim |
+| `bf_intern_libc_compat` | standalone `third_party/libc_compat` (Apache-2.0), or drop it with dynamic glibc ≥ 2.35 or musl |
+| `bf_intern_sky` | standalone `third_party/sky` (BSD-3/Apache-2.0/MIT); no rewrite needed |
 | `view_luts.h` | AgX implemented from its published description, or LUTs generated by a separately licensed OCIO config; until then ship `Standard` (exact sRGB) only. Never move the existing GPL LUT into lmvideo |
 
 With these replaced, the whole closure is permissive and can sit in the closed core,
