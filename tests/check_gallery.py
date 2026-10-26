@@ -15,7 +15,7 @@ from urllib.request import Request, urlopen
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
-HOSTS = set("lmplot lmnum lmfinance lmspace lmphysics lmbio lmfluid lmmolecule lmcell lmparticle lmweather lmdraw lmcad lmblender lmimg lmaudio lmshark".split())
+HOSTS = set("lmplot lmnum lmfinance lmspace lmphysics lmbio lmfluid lmmolecule lmcell lmparticle lmweather lmdraw lmcad lmblender lmimg lmaudio".split())
 RAW = "https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/"
 
 

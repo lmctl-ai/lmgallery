@@ -61,7 +61,6 @@ Comprehensive audit of demo-page health across all 31 `lmctl-ai` repositories (s
 - `lmphysics`: index.md complete; 11 docs indexed; Project Chrono physics engine, example & release workflows documented; SDK pinned to lmcode-cpp.
 - `lmplot`: index.md complete; 10 docs indexed; gnuplot 6.0 embedding, example & release workflows documented; SDK pinned to lmcode-cpp.
 - `lmproxy`: index.md complete; 1 doc indexed; reverse proxy and TLS interception engine, example & release workflows documented; Go SDK runtime.
-- `lmshark`: index.md complete; 11 docs indexed; Wireshark/libpcap packet analysis, example & release workflows documented; SDK pinned to lmcode-cpp.
 - `lmspace`: index.md complete; 11 docs indexed; astrodynamics and orbit propagation, example & release workflows documented; SDK pinned to lmcode-cpp.
 - `lmssh`: index.md complete; 8 docs indexed; 07-sdk-catalog.md linked; OpenSSH client automation, example & release workflows documented; SDK pinned to lmcode-cpp.
 - `lmssl`: index.md complete; 6 docs indexed; OpenSSL 3.3.2 cryptographic host, example & release workflows documented; SDK pinned to lmcode-cpp.

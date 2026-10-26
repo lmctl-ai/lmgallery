@@ -286,23 +286,5 @@
     "sha256": "c969a3f0575f1f23b14edada455270d99c55f7aebedc34c129f112591ea23043",
     "attribution": "Lattice Systems LLC (MIT)",
     "snapshot_note": "Committed source image"
-  },
-  {
-    "name": "lmshark",
-    "category": "preview",
-    "topic": "Packet and protocol analysis",
-    "caption": "From ARP to HTTP in a packet sequence",
-    "repo": "https://github.com/lmctl-ai/lmshark",
-    "releases": "https://github.com/lmctl-ai/lmshark/releases",
-    "repo_available": true,
-    "image": "docs/images/host-lmshark.png",
-    "source_image": "docs/images/protocol_sequence_ladder.png",
-    "source_script": "examples/protocol_sequence_ladder.lms",
-    "source_commit": "c262f75168084963b3805c37aa37766fcba4cf4e",
-    "source_image_url": "https://github.com/lmctl-ai/lmshark/blob/c262f75168084963b3805c37aa37766fcba4cf4e/docs/images/protocol_sequence_ladder.png",
-    "source_script_url": "https://github.com/lmctl-ai/lmshark/blob/c262f75168084963b3805c37aa37766fcba4cf4e/examples/protocol_sequence_ladder.lms",
-    "sha256": "2f5321da171fa0ad88db5af7376ed88a3ed43e355f519b0242032a75bbcc9b71",
-    "attribution": "Lattice Systems LLC (MIT)",
-    "snapshot_note": "Committed source image"
   }
 ]
