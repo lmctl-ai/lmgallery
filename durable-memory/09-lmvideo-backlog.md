@@ -12,29 +12,25 @@ code, repository visibility, repository name, release or licence grant.
   Timeline. No separately branded draw/img/Magnum/Filament modes or schema bundles.
 - **lmcad** remains an external exact OCCT B-Rep product, suitable for public open
   source. It exports geometry; it is not linked into the closed lmvideo core.
-- **lmcycles** is the new name for the reduced lmblender render engine. It takes
-  a resolved scene job and returns rendered frames; it does not expose modelling,
-  drawing or a parallel authoring/timeline DSL. It is a public open-source product.
-  **Owner note (w75e): binary size is not a blocker, and the default is Cycles built
-  into lmvideo.** The only reason the current engine cannot be linked into closed
-  lmvideo is licence, not size: four GPL Blender helpers (see "Cycles in lmvideo"
-  below). Cycles itself and its dependencies are permissive. The plan is therefore
-  to remove those helpers, then link Cycles in-process (`renderer="cycles"` needs no
-  second install). lmcycles stays the public open-source home of that permissive
-  Cycles build and its standalone `render --job` CLI.
+- **Cycles is a built-in render backend of lmvideo (`renderer="cycles"`); there is
+  no lmcycles repo** (owner follow-up w75d, analysis in phase 6). Cycles and its
+  dependencies are built from pinned upstream sources inside the lmvideo repo,
+  after the four GPL Blender helpers are replaced. **lmblender is frozen as a public
+  legacy GPL product:** no new features, releases and source offers kept, and its
+  authoring examples migrate to lmvideo. Archiving is an owner decision once
+  migration is done.
 - **lmdraw, lmmagnum, lmfilament and lmimg are maintenance-only:** critical fixes,
   no new features. Alias/retirement timing is **deferred to the owner**. There is no
   approved six-release, three-month or two-release deadline. Existing pins, raw
   example URLs and working downloads stay available while migration is incomplete.
-- lmvideo keeps its private-source/public-demo-release peer arrangement. lmcad and
-  lmcycles instead end with **one canonical public source repo each, containing
+- lmvideo keeps its private-source/public-demo-release peer arrangement. lmcad
+  instead ends with **one canonical public source repo, containing
   CI and releases, and no active private source/build twin**. Other products are
   outside this change. lmblender already has this shape: `lmctl-ai/lmblender` is
   the only repo (`lmctlhq/lmblender` redirects to it), with its own `ci.yml`,
   `platforms.yml` and releases (v0.3.138), and no RELEASE_TOKEN or private
-  checkout. So the peer-model cutover below applies only to **lmcad**. For
-  lmcycles the work is the rename, removing the DSL and adding the render-job
-  command.
+  checkout. So the peer-model cutover below applies only to **lmcad**; lmblender
+  needs no repo operation at all.
 
 The closed core's licence gate from [08, owner addition 3](08-consolidation-ResearchSol.md#owner-addition-3--licence-gated-core-and-external-components)
 continues to apply: incompatible or unresolved components stay external. ImageMagick
@@ -212,7 +208,42 @@ imports its mesh then owns the GLB export. Do not gate useful CAD composition on
 adding an unrelated CAD exporter. glTF core animation does not generically encode
 animated camera/light/material properties; the job sidecar carries resolved states.
 
-## Phase 6 — Cycles built into lmvideo (lmcycles as its open-source home)
+## Phase 6 — Cycles built into lmvideo
+
+### Owner follow-up w75d: built-in vs flavour vs separate repo
+
+Measured from lmblender v0.3.138, which is the same Cycles + Embree + OIDN + OIIO/OCIO/EXR + TBB
+closure plus a small DSL:
+
+| Question | Evidence | Assessment |
+|---|---|---|
+| Size added to lmvideo (30.1 MB x64 today) | lmblender binaries: linux-x64 124 MB, linux-arm64 91 MB, macOS 85–90 MB, Windows 71 MB | lmvideo becomes roughly 150 MB (x64) and 120 MB (arm64). **Not a blocker** (owner note w75e). |
+| Build time / CI cost | lmblender `ci.yml`: about 41 min per run with the dependency-prefix cache; the cold cache build is allowed up to 330 min (`timeout-minutes: 330`) | The one real cost. It is handled by a separate cached SDK job (below), so ordinary lmvideo CI only links. |
+| arm64 | lmblender ships linux-arm64 and macOS arm64; OIDN NEON kernels are audited (README THROUGHPUT) | Viable. |
+| Windows | lmblender ships windows-x64; lmvideo has no Windows build today | Not a Cycles issue; it is lmvideo's existing platform gap. |
+| Dependencies | all permissive after 6.0; static; no OCIO config or Python at runtime | Viable. lmvideo already links ICU, HarfBuzz, libpng and libjpeg-turbo; pin one copy of each shared library (OIIO wants PNG/JPEG/TIFF) and check for duplicate symbols at link time. |
+| Startup | a static binary pages in lazily, and the Cycles session, kernels and OIDN are created only on the first `cycles` render. lmblender reports setup/BVH under 1 ms on small scenes | Raster-only runs should not slow down. Gate: `lmvideo --version` and a raster example take at most 1.1× the time of the pre-Cycles binary. |
+| Determinism | fixed seed and samples give repeatable output per machine; Embree and OIDN pick ISA-specific kernels | Same-machine reruns are byte-identical; across CPUs compare by SSIM. Same policy as the raster renderer. |
+
+**Recommendation: (a) built in, the default build.** No new repo, and no separate flavour by
+default:
+- Cycles and its dependencies build from pinned upstream tags in the lmvideo repo
+  (`third_party/cycles/`, the lmblender scripts and patches carried over, minus the GPL parts).
+- A separate `cycles-sdk` workflow in the same repo produces a cached static prefix per platform.
+  It is keyed on pins and patches, like lmblender's `PREFIX_CACHE_VERSION`, and rebuilt only when
+  those change.
+- The normal lmvideo build downloads that prefix and links.
+
+Option (b), an optional `lmvideo-cycles` build flavour in the same repo, is kept only as a fallback
+for a platform where the Cycles build fails, for a real portability reason, never for size. It
+would be the same source with `-DLMVIDEO_CYCLES=OFF`, and `renderer="cycles"` reports "not built
+in". The interim external process goes away once 6.0 lands.
+
+**Effect on lmblender (c):** freeze it as public legacy. Critical fixes only, no features. Keep its
+releases, tags, source archives and GPL source offers (they are owed for released binaries). Its
+examples migrate to lmvideo scripts with `renderer="cycles"`. No rename to lmcycles and no new repo.
+Archiving is an owner decision after migration.
+
 
 ### Cycles in lmvideo: what blocks it and how it is removed
 
@@ -237,9 +268,9 @@ From lmblender `docs/LICENSE_AUDIT.md`, the link closure is:
 With these replaced, the whole closure is permissive and can sit in the closed core,
 with notices. The size of Cycles, Embree and OIDN (on the order of 100 MB) is
 accepted, per the owner. The remaining real costs:
-- **Build time.** Static Cycles, Embree, OIDN, OIIO, OCIO, EXR and TBB take hours. Publish them as
-  a pinned prebuilt static SDK archive from lmcycles CI, exactly as lmvideo consumes a pinned Skia
-  pack, so lmvideo CI only links.
+- **Build time.** Static Cycles, Embree, OIDN, OIIO, OCIO, EXR and TBB take hours cold. The
+  `cycles-sdk` workflow in the lmvideo repo caches them as a pinned static prefix, so ordinary
+  lmvideo CI only links.
 - **Portability.** lmblender already ships Linux, macOS and Windows, so this is no blocker; lmvideo
   itself lacks Windows today.
 - **Determinism.** Cycles is deterministic at a fixed seed and thread-independent sampling. Golden
@@ -247,16 +278,16 @@ accepted, per the owner. The remaining real costs:
 
 | ID | Small item | Acceptance test | Gallery example / fixture |
 |---|---|---|---|
-| 6.0 | Remove the four GPL helpers in lmcycles; publish a permissive static Cycles SDK archive (headers + `.a` + NOTICE set + SBOM) | Link-map audit shows no GPL object; `scripts/licence-gate` passes on the SDK SBOM; existing lmblender render tests reproduce within SSIM ≥ 0.99, except sky and view transforms (compared by eye and documented) | lmblender `cornell-box`, `sky-texture`, `denoise-quality` fixtures |
+| 6.0 | Carry lmblender's Cycles build scripts and patches into lmvideo `third_party/cycles/` without the four GPL helpers; `cycles-sdk` workflow produces the cached permissive static prefix (headers + `.a` + NOTICE set + SBOM) per platform | Link-map audit shows no GPL object; `scripts/licence-gate` passes on the SDK SBOM; existing lmblender render tests reproduce within SSIM ≥ 0.99, except sky and view transforms (compared by eye and documented) | lmblender `cornell-box`, `sky-texture`, `denoise-quality` fixtures |
 
 
 | ID | Small item | Acceptance test | Gallery example / fixture |
 |---|---|---|---|
 | 6.1 | Freeze version-1 capabilities/job/result schemas and frame/colour contracts | JSON schema fixtures accept/reject independently; required feature negotiation, status codes, atomic outputs and cancellation specified | Cornell-box job plus missing/unsupported-backend fixtures |
-| 6.2 | Reduce lmblender into `lmcycles render --job DIR` (standalone CLI on the same SDK; also the interim backend until 6.0 lands) | Fresh public-source build renders a fixed GLB job to PNG; no modelling/drawing DSL in the new command; source/notices audit matches the binary | Migrated blender `cornell-box.lms`, `denoise-quality.lms` rendered through lmvideo |
-| 6.3 | One renderer selection seam in lmvideo (`raster` or `cycles`): **in-process** against the 6.0 SDK by default; the external `lmcycles render --job` process only as the interim or debug path | The in-process and external paths render the same job within SSIM ≥ 0.99; no file round trip in-process; returned frame is an Image and receives 2D overlays/filters; cancellation and thread count honoured | new lmvideo `cycles-product-still.lms`, based on glass/metal fixtures |
+| 6.2 | glTF scene + job translation into Cycles inside lmvideo (port of lmblender's glTF/OBJ importers and Principled BSDF mapping); `lmvideo render-job DIR` debug subcommand for the on-disk job | A fixed GLB job renders to PNG in-process; lmblender v0.3.138 renders the same scene within SSIM ≥ 0.99 (excluding sky and view transforms) | Migrated blender `cornell-box.lms`, `denoise-quality.lms` |
+| 6.3 | One renderer selection seam in lmvideo (`raster` or `cycles`), in-process | The in-memory job and `render-job` on the dumped job give the same image; no file round trip; raster-only startup gate (≤ 1.1×) holds; returned frame is an Image and receives 2D overlays/filters; cancellation and thread count honoured | new lmvideo `cycles-product-still.lms`, based on glass/metal fixtures |
 | 6.4 | Batch resolved frames, geometry reuse and optional passes | Compare batch versus single-frame states; bounded memory, correct indices/seed, cancellation and partial results; EXR only with agreed precision/colour support | Migrated blender `animation-visibility-optics.lms`, `denoise-quality.lms` with an explicit pass request |
-| 6.5 | Finish one multi-host CAD -> lmvideo -> lmcycles gallery story | Actual lmcad geometry handoff, CPU preview, final Cycles Image, Canvas labels and Timeline movie all execute from an empty directory | New lmgallery `cad-final-render.lms` plus committed CPU/final comparison picture |
+| 6.5 | Finish one multi-host CAD -> lmvideo (raster preview + Cycles final) gallery story | Actual lmcad geometry handoff, CPU preview, final Cycles Image, Canvas labels and Timeline movie all execute from an empty directory | New lmgallery `cad-final-render.lms` plus committed CPU/final comparison picture |
 
 The backend receives **data**, not Python, arbitrary commands or a second modelling
 program: `scene.glb`, referenced assets, versioned `job.json`, per-frame resolved
@@ -264,18 +295,14 @@ states and an output manifest. Keep Cycles/Embree/OIDN, rendering settings, BSDF
 translation, image/pass output and one session per job. Drop mesh construction,
 diagrams, layout, editing, fitted-camera authoring and independent keyframe/easing
 logic. In-process, the same job structures are passed in memory; the on-disk job stays the
-format for the standalone CLI, tests and lmcad/outside users. GPL duties exist only for old
-lmblender releases.
+format for `render-job`, tests and bug reports. GPL duties exist only for old lmblender releases.
 
-### Parallel track — lmcycles can start now
+### Parallel track — Cycles can start now
 
-6.1 and 6.2 do not depend on phases 1–5. lmblender already imports glTF 2.0
-(meshes, node transforms, metallic/roughness, external textures) and renders
-Cornell-box fixtures, and its repo is public with working CI. Version 1 of the job
-format can be frozen against hand-written GLB plus `job.json` fixtures, and
-`lmcycles render --job` can ship while lmvideo phases 1–4 proceed. 6.0 (de-GPL and
-the SDK) also runs in this track. Only 6.3–6.5 wait for 5.3/5.4. This puts the external engine on its own public release cadence
-without blocking lmvideo.
+6.0–6.2 do not depend on phases 1–5. The lmblender build scripts, glTF importer and
+Cornell-box fixtures exist. The SDK workflow and the job translation can land in
+lmvideo behind `renderer="cycles"` while phases 1–4 proceed. Only 6.3–6.5 wait for
+5.3/5.4.
 
 ## Phase 7 — migrations and release gates
 
@@ -291,6 +318,11 @@ backported. Keep unsupported legacy Filament material-package operations on thei
 old pinned release/external tool; do not fabricate successful compiled packages.
 
 ## Open-source licensing: lmcad and lmcycles
+
+> **Superseded for lmcycles by owner follow-up w75d (phase 6):** there is no lmcycles repo.
+> Cycles is built into closed lmvideo after item 6.0, with the Apache, BSD and MIT notices in
+> lmvideo's notice set. The lmcycles rows below remain only as the licence analysis behind 6.0;
+> lmblender keeps its GPL licence as a frozen legacy product.
 
 Licences apply to exact files and link closures. Opening a wrapper does not relicense
 its dependencies or remove static-link source/relink requirements.
@@ -375,6 +407,9 @@ are a separate cost decision. Do not trigger them as a side effect of a repo ren
 
 ## Naming and lmblender -> lmcycles
 
+> **Superseded (w75d):** no rename and no lmcycles repo. lmblender stays as is, frozen
+> as public legacy; O5 below is dropped. The text is kept for the record.
+
 The target executable, documentation, install coordinate and new asset prefix are
 `lmcycles`, `github:lmctl-ai/lmcycles@<version>`, and `lmcycles-<os>-<arch>[.exe]`.
 The top-level example is a render job, not `scene.cube(...)` in a second authoring DSL.
@@ -448,7 +483,7 @@ already folded in above:
 - lmblender is already a single public repo; only lmcad needs the peer-model
   cutover (Decisions).
 - Measured 3D baseline and a relative performance gate (phase 3).
-- lmcycles 6.1/6.2 run as a parallel early track (before phase 7).
+- Cycles work (6.0–6.2) runs as a parallel early track (before phase 7).
 
 Further points:
 
@@ -469,7 +504,7 @@ Further points:
   Consider linking glibc dynamically (≥ 2.35, as lmimg does). The LGPL duties
   would then shrink to OCCT alone, and the relink test in CI step 3 gets simpler.
 - **Suggested first merged items:** 0.3 (Image contract), P.1 (asset resolver
-  and cache), 1.1 (arrow and polyline) and 6.1 (job schema v1). They are independent, small and unblock the
+  and cache), 1.1 (arrow and polyline) and 6.0 (`cycles-sdk` prefix without the GPL helpers). They are independent, small and unblock the
   most work.
 
 ## Review and evidence
