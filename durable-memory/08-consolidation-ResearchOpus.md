@@ -13,12 +13,12 @@ The feasibility inventory (ResearchSol) and the API design (ResearchArgon) are s
 
 | Host | Engine | Pixels come from | Binary (linux-x64) | Schema | Examples | Distribution |
 |---|---|---|---|---|---|---|
-| lmvideo | Skia m144 (JetBrains pack), external `ffmpeg` pipe | Skia raster, SVG DOM, PDF | 30.1 MB | 26 types, 201 methods | 19+ README stories | proprietary freeware binary (private source + public peer) |
-| lmdraw | LunaSVG 3.5 + PlutoVG 1.3 + FreeType, **not Skia** | PlutoVG vector rasterizer | 5.6 MB | 6 types, 38 methods | 38 | proprietary freeware |
+| lmvideo | Skia m144 (JetBrains pack), external `ffmpeg` pipe | Skia raster, SVG DOM, PDF | 30.1 MB | 26 types, 205 methods (218 with free overloads) | 19+ README stories | proprietary freeware binary (private source + public peer) |
+| lmdraw | LunaSVG 3.5 + PlutoVG 1.3 + FreeType, **not Skia** | PlutoVG vector rasterizer | 5.6 MB | 6 types, 46 declarations | 38 | proprietary freeware |
 | lmmagnum | Magnum Math, Primitives, MeshTools, Trade (no GL) | **own CPU rasterizer** (`cpp/render.cpp`, ~200 lines: supersampling, shadow map, textures) | 4.0 MB | 7 types, 58 methods | 37 | proprietary freeware |
 | lmfilament | Filament 1.78.1 on the **noop backend** (material compiler, engine, geometry tools) | **own CPU preview rasterizer** (`cpp/preview.cpp`, ~255 lines: 2048² shadow map, 3×3 PCF, linear-light SSAA) | 16.4 MB + glibc relink objects | 7 types, 62 methods | 38 | proprietary freeware; needs `~/toolchains/llvm19` to build |
 | lmcad | OpenCASCADE B-rep (LGPL-2.1 + exception) | own CPU rasterizer (PNG, APNG, STL) | 30.5 MB + OCCT relink objects | 9 types, 62 methods | 38 | proprietary freeware with LGPL relink duties |
-| lmblender | Blender Cycles (CPU, Embree, OIDN) **compiled into one static executable** | Cycles path tracing (GI, glass, emission) | 124 MB | 3 types, 96 methods | 73 | GPL-3.0-or-later binary, stays open source |
+| lmblender | Blender Cycles (CPU, Embree, OIDN) **compiled into one static executable** | Cycles path tracing (GI, glass, emission) | 124 MB | 3 types, 96 methods | 99 example files | GPL-3.0-or-later binary, stays open source |
 
 Corrections to the premise:
 - **lmdraw is not Skia.** It uses LunaSVG and PlutoVG. lmvideo already carries an
@@ -94,7 +94,7 @@ MeshTools, Trade). Do not pick Filament or a Magnum GL renderer as the primary.
 | Criterion | Own CPU rasterizer | Filament (real GPU backend) | Magnum GL |
 |---|---|---|---|
 | Runs headless in CI, containers, any machine | yes | needs a Vulkan/Metal/GL device, or SwiftShader (+ size, slow) | needs GL context or EGL/OSMesa |
-| Deterministic bytes across runs and platforms | yes (proven by the current hosts' golden tests) | driver-dependent | driver-dependent |
+| Deterministic bytes | same-platform reruns: yes; cross-OS byte identity is unmeasured and is a P1 gate, not a fact | driver-dependent | driver-dependent |
 | Static single binary | yes (+~3 MB) | GPU loader and ICDs are dynamic | GL/EGL dynamic |
 | What the gallery needs (Lambert/PBR-lite, shadows, textures, SSAA, ≤1080p) | already implemented three times | far more than needed | more than needed |
 | Speed | 0.21 s per 900×560 scene with shadows (whole run); video at 720p fits CI minutes | fastest with a GPU | fast with a GPU |
@@ -180,6 +180,14 @@ introduces them.
   scripts load.
 - Each subcommand is an adapter: old methods map onto the new engine, with axis, fov, unit, light
   intensity (lmfilament lux to normalised) and material-model mapping.
+- Legacy contexts stay exactly as they are: `scene:Scene` for lmdraw and lmmagnum, `fil:Filament`
+  for lmfilament.
+- Adding types to the default lmvideo schema changes its raw hash. The binary therefore also keeps
+  the fingerprints of previous lmvideo schemas and dispatches old `.dslb` files to them (or the
+  owner accepts a recompile policy).
+- lmfilament's material-compiler API (`material_file`, `Material.save`, compiled packages) cannot
+  be emulated without Filament. Either those calls fail with a clear message in the alias, or
+  lmfilament stays on its frozen last release (open question 2).
 - Acceptance: every example in the lmmagnum, lmfilament and lmdraw repositories runs through the
   adapter and matches its committed README picture within SSIM ≥ 0.97. Known deviations are listed
   per example.
@@ -190,6 +198,12 @@ introduces them.
   ...). The binary dispatches on `argv[0]`, or on a default subcommand baked in at link time.
 - `cli="lmmagnum" install="github:lmctl-ai/lmmagnum@latest"` therefore keeps resolving, and README
   autorun URLs keep working unchanged, because examples stay at their paths in the public repos.
+- Platforms: lmdraw and lmmagnum ship Windows x64 today, but lmvideo and lmfilament do not. An alias
+  replaces a Windows asset only after the unified Windows build passes. Until then the last native
+  Windows release stays the `latest` for that platform.
+- Releases follow the staged path in [06-release-cycle.md](06-release-cycle.md): Linux first, public
+  prerelease verification, then explicit promotion of each alias. Promotion across peers is not
+  atomic, so promote one peer at a time and keep rollback to the previous tag.
 
 **P4 — migrate content mechanically.**
 - A rewriter script (kept in the product repo) converts old-API scripts to the new schema using the
@@ -211,7 +225,7 @@ introduces them.
 | Visual regressions when one rasterizer replaces three | SSIM gates per example in P1 and P2, and per-example deviation notes instead of silent drift. |
 | CPU 3D too slow for long 1080p videos | Measure in P1 (budget ≤ 0.5 s per 720p frame). Tile and thread the rasterizer (it is embarrassingly parallel). An optional GPU flavour is the escape hatch, not v1. |
 | Schema bloat (201 + ~100 methods) makes the API hard to learn and compile | Namespaced types (`canvas`, `scene`, `timeline`, `layout`); the API design note (ResearchArgon) owns the surface. Old schemas live only in compatibility subcommands. |
-| Floating-point differences across platforms break byte determinism | The existing hosts already pin it (no fast-math, fixed SSAA order). Keep golden-image tests on all four platforms; macOS links Skia with system frameworks, so check text rendering there first. |
+| Floating-point differences across platforms break byte determinism | Unmeasured today. Build without fast-math and with a fixed SSAA and tile order. Gate on SSIM across platforms and on byte identity per platform; promise cross-OS byte identity only if it is measured. |
 | Licence contamination | No OCCT, Cycles or libav in the product binary. FFmpeg stays an external process until the LGPL policy in lmvideo 06 is decided. |
 | One larger product, one release pipeline: a 3D change can block 2D releases | One repository with per-area tests and the existing automatic release per push. Area ownership is in module directories (as lmpdf does), not separate products. |
 | Gallery and URL breakage | P3 alias binaries under old asset names; examples keep their paths; CI keeps running the old repos' examples against the alias until P5. |
@@ -228,3 +242,55 @@ introduces them.
    source for one look across the family? It stays a separate binary either way.
 5. **GPU.** Is a GPU flavour ever wanted (long 4K video, interactive preview), or is CPU-only an
    explicit product promise ("runs anywhere, same bytes")?
+
+## 8. Cross-review amendments
+
+The two companion notes were read after this one was written:
+[ResearchSol](08-consolidation-ResearchSol.md) (feasibility inventory) and
+[ResearchArgon](08-consolidation-ResearchArgon.md) (API design). All three agree on the shape:
+- lmvideo is the base;
+- one CPU 3D renderer, rasterized into viewports inside 2D layout;
+- Filament dropped;
+- lmcad and lmblender kept separate;
+- old host names kept as bounded aliases.
+
+Accepted from ResearchSol (folded into §1, §3.3, §5 and §6 above):
+- exact declaration counts;
+- legacy contexts (`scene:Scene`, `fil:Filament`);
+- schema-fingerprint dispatch for old lmvideo bytecode;
+- the Windows asset contract of lmdraw and lmmagnum;
+- the staged Linux-first release path;
+- the Filament material-package APIs as a blocker for an unconditional alias;
+- cross-OS byte identity treated as unmeasured.
+
+Also from ResearchSol: WebP output, glTF export and video-input layers in §3.1 are proposed
+additions, not current lmvideo outputs.
+
+Where this note differs from ResearchArgon:
+- **Magnum subset in v1.** ResearchArgon proposes a zero-dependency core with no Magnum or Corrade,
+  built from lmfilament `cpp/mesh.cpp`. That file includes Filament's
+  `geometry/SurfaceOrientation.h` (line 2) and uses its tangent builders, so it is not
+  dependency-free today. P1 keeps the tested Magnum Math/Primitives/MeshTools subset (MIT,
+  lmmagnum's 4.0 MB build). Removing it is a later size optimisation once primitives are extracted
+  and the SSIM gates pass.
+- **Size estimates.** ResearchArgon's "~18.5 MB total, <400 KB growth" estimate is not a baseline:
+  released lmvideo linux-x64 is already 30.1 MB. Growth is measured in P1 against a ≤ 4 MB budget.
+- **Premises corrected by ResearchSol and confirmed here from the repositories:**
+  - lmdraw is LunaSVG/PlutoVG (5.55 MB), not Skia (15 MB);
+  - lmblender is in-process static Cycles, not `blender -b -P`;
+  - the gallery has 4 lmdraw compositions and 1 lmmagnum composition (`38-product-render-slide`),
+    not 38 lmdraw compositions and no lmmagnum ones.
+
+  So lmmagnum cannot be archived without an alias. ResearchArgon's 2-release lmdraw window is too
+  short for the installer and Windows contracts; all three notes now leave the window to the owner,
+  with 6 releases and 3 months as the proposal.
+- **Frame times.** ResearchArgon's frame times (18 ms at 800×600, 3.4× from threading) are
+  estimates. The only measured figure is the 0.21 s whole-run `shadows` scene in §1. The P1
+  frame-time gate decides.
+
+Agreed with ResearchArgon:
+- degrees everywhere;
+- Skia glyph outlines for 3D text, which needs real tessellation with holes and winding, so it is
+  P1 work and not a one-liner;
+- sorted alpha for transparency;
+- `lmvideo draw|magnum|filament` subcommands with `argv[0]` dispatch.
