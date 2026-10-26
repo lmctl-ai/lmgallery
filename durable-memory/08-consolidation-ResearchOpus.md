@@ -235,7 +235,8 @@ introduces them.
 1. **Name.** Keep `lmvideo` (continuity; 22 gallery compositions, existing users), or rename to a
    neutral product name with `lmvideo` itself as an alias? A rename doubles the alias work in P3.
 2. **Alias window.** Is "6 releases and 3 months" acceptable for lmmagnum, lmfilament and lmdraw,
-   or must old host names live indefinitely as subcommands?
+   or must old host names live indefinitely as subcommands? May lmfilament's material-compiler
+   calls (`material_file`, `Material.save`) stay only on its frozen last release?
 3. **lmblender interop.** Should lmblender gain a glTF + camera import so product scenes can be path
    traced, or does it stay a fully separate authoring host?
 4. **lmcad rendering.** Should lmcad keep its own preview renderer, or adopt the shared renderer
