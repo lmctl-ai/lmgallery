@@ -72,6 +72,56 @@ and metadata policy. Baseline all current lmvideo examples before changing them.
 
 No feature is added to a maintenance-only host while these baselines are captured.
 
+## Phase P — platform primitives: fonts, assets and the cache (owner addition)
+
+These features are small but used by every other phase. P.1–P.3 can start right after
+phase 0, and 1.4 (font import) becomes P.2.
+
+**Facts checked on 2026-10-26:**
+- lmvideo today has only `font(float)`, using the one bundled `assets/fonts/DejaVuSans.ttf`
+  (Bitstream Vera licence).
+- lmctl.com is the public `lmctl-ai/lmctl` repo, deployed to S3 + CloudFront by
+  `scripts/deploy*.sh`. Its prefixes are `/lmctl/` docs, `/tools/`, `/skills/`, `/examples/`,
+  `/quickrun/`, `/autorun/`, `/templates/` and `/lmprobe/`.
+- It serves **no fonts or binary assets** today; `static/` holds only four SVGs. Font hosting is
+  therefore a new prefix and a new deploy script in that repo, not existing content.
+
+**Proposed URL scheme.** Immutable and versioned; content-addressed files never change in place.
+
+```
+https://lmctl.com/assets/v1/index.json             # catalog: kind, name, version, files[], sha256, bytes, licence SPDX, licence URL, source URL
+https://lmctl.com/assets/v1/fonts/<family>/<version>/<file>.ttf
+https://lmctl.com/assets/v1/fonts/<family>/<version>/LICENSE.txt
+https://lmctl.com/assets/v1/{icons,hdri,luts,textures}/...   # later kinds, same rules
+```
+
+- Only licences that permit embedding and redistribution are allowed: OFL-1.1, Apache-2.0,
+  UFL-1.0, CC0, MIT and Bitstream Vera.
+- Candidate first families:
+  - Inter, Noto Sans, Noto Serif, Noto Sans Mono, JetBrains Mono and Source Serif 4 (OFL-1.1);
+  - Roboto (Apache-2.0);
+  - one Noto CJK subset, gated on size.
+- The catalog is generated in CI from the font files plus their licence texts. A file without a
+  licence entry fails the deploy.
+
+| ID | Small item | Acceptance test | Gallery example / fixture |
+|---|---|---|---|
+| P.1 | Shared asset resolver and cache: `file:`, `https:`, `lmctl:` (catalog name) and bundled; cache at `$XDG_CACHE_HOME/lmvideo/assets/<sha256>`; size caps; `--offline` and `LMVIDEO_OFFLINE` | Same bytes from URL, cache and file; a sha256 mismatch is an error, never silently used; offline with an empty cache fails with a clear message, or uses the declared fallback; redirects only to https; concurrent runs do not corrupt the cache | new lmvideo `asset-cache.lms` (local fixture server in the test; no live network in CI unit tests) |
+| P.2 | `font_load(name_or_url_or_path, sha256?)` → `Typeface`, for 2D text, PDF/SVG embedding and video titles; family, weight and style lookup over the catalog; fallback chain ending in bundled DejaVu | Glyph coverage and metrics of a pinned font match its file; a missing glyph falls back and is reported; PDF embeds a subset (checked with `pdffonts`); an offline run with a warm cache is byte-identical to the online one | new lmvideo `font-specimen.lms` (one sheet of catalog families); draw `title-card.lms` migrated |
+| P.3 | Font licence tracking: every output records the fonts it used (family, version, sha256, SPDX); `--notices-used` prints them; video and PDF metadata carry them | One output that uses two fonts lists exactly those two with licences; a font without a known licence (user file) is reported as `unknown`, not omitted | `font-specimen.lms` writes `fonts-used.json` beside the PNG |
+| P.4 | Lift the publication to lmctl.com: `assets/` tree, catalog generator, licence gate and `deploy-assets.sh` in the `lmctl-ai/lmctl` repo | Catalog validates; every file has sha256 and a licence; uploads use immutable cache headers; old versions stay (never deleted) | the catalog itself, plus a specimen page |
+| P.5 | 3D text from any loaded font: glyph outlines via Skia, flattened, holes and winding resolved, triangulated, extruded with optional bevel | Letters with holes (`A B O 8 e`), nested contours and a CJK glyph; watertight check; replaces the 5×7 voxel text of magnum and filament | magnum/filament `text3d` examples migrated; new `logo-extrude.lms` |
+| P.6 | Generalise the resolver to images, SVG icons, HDR environment maps, LUTs and meshes (`image_load`, `env_load`, `mesh_load` accept the same URL, catalog and checksum forms) | Each kind loads from file, URL and catalog with the same checksum and offline rules; licence tracking as in P.3 | new `icon-grid.lms` (Lucide ISC / Material Symbols Apache-2.0 subset); a CC0 HDRI in a 3D scene |
+| P.7 | Content-addressed render cache for video: per-frame hash of resolved scene state → cached Image; rerendering a changed range reuses the rest | Changing frames 40–60 rerenders only those (counted); a cache hit is byte-identical to a fresh render; bounded disk, LRU | `kepler-orbit` video rerender test |
+
+Also counted as platform primitives, owned by existing items rather than new ones:
+- colour management (sRGB/linear tags and ICC embedding in PNG/PDF), item 0.3;
+- text shaping and bidi through HarfBuzz/ICU, already linked, verified in P.2 with an Arabic and a
+  Hebrew line;
+- deterministic seeds for procedural content, 0.2 and 4.5;
+- an audio track muxed into video, through the existing external ffmpeg process (lmaudio output
+  as input).
+
 ## Phase 1 — highest-value lmdraw parity helpers
 
 | ID | Small item | Acceptance test | Gallery example / fixture |
@@ -79,7 +129,7 @@ No feature is added to a maintenance-only host while these baselines are capture
 | 1.1 | Canvas arrow and polyline helpers using canonical Paint/Path | Horizontal/vertical/zero-length/bent geometry, arrowhead direction and clipping checks; migrate one source with unchanged diagram meaning | draw `arrow-helper.lms`; gallery 05 force diagram |
 | 1.2 | Linear axes helper and data-to-pixel mapping | Tick positions, negative ranges, degenerate-range rejection and numeric labels verified independently | draw `chart-bars-lines.lms`, `incline-free-body.lms` |
 | 1.3 | Log/semi-log axes and legend layout | Invalid log domains trap; decade ticks and measured legend boxes do not overlap | draw `kleiber-allometry.lms`, `rc-lowpass.lms` |
-| 1.4 | Import fonts/SVG and map the retained attribute subset actually used by diagrams | Font metrics/glyph coverage, group transforms, inherited attributes and SVG viewBox cases compared; unsupported attributes named explicitly | draw `title-card.lms`, `node-tour.lms`, `render-assets.lms` |
+| 1.4 | Import SVG and map the retained attribute subset actually used by diagrams (font loading is P.2) | Font metrics/glyph coverage, group transforms, inherited attributes and SVG viewBox cases compared; unsupported attributes named explicitly | draw `title-card.lms`, `node-tour.lms`, `render-assets.lms` |
 | 1.5 | Structured lmdraw source migration to the same canonical schema | All 38 public draw example files execute from empty dirs; nested generated source is rewritten structurally; reviewed visual deltas recorded | draw `etl-pipeline.lms`; gallery 02, 05, 11, 13 |
 
 Do not estimate complete parity as five added methods: the old schema has 46
@@ -132,6 +182,14 @@ resolution, supersampling, platform and revision; set budgets after baselining.
 | 4.2 | Image textures, UV origin, wrap/filter/repeat and mipmaps | A processed Image can be a texture; oriented checker tests, sampling edge cases and mip selection checked | magnum `texture-modes.lms`, `textured-triangle.lms` |
 | 4.3 | Shadow map, bias/PCF and supersampling; transparent pass separately | Contact/acne/peter-panning controls; repeat output; documented sorted-alpha limitations and no false order-independent transparency claim | magnum `shadows.lms`, filament `shadowtest.lms` |
 | 4.4 | 3D projection anchors for 2D text/callouts | Offscreen/behind-camera/occluded anchors and viewport changes tested; reuse Canvas typography, not a second bitmap text engine | new lmvideo `molecule-callouts.lms`, based on `caffeine-molecule.lms` |
+| 4.5 | Procedural texture graph compiled to images: checker, gradient, noise (value/Perlin/Worley, seeded), bricks, stripes, ramp, plus Image inputs (any phase 2 Image) combined by math nodes | Each generator matches an analytic or pinned-hash oracle at a fixed seed; tileable outputs wrap seamlessly (edge-difference check); resolution-independent definition, baked at a requested size | filament `texture_checker` examples; new lmvideo `material-swatches.lms` |
+| 4.6 | Material compiler: `material(...)` description (base colour, metallic, roughness, normal or height, AO, emissive, opacity, each a constant, Image or texture graph) compiled into a packed asset with mips: `albedo` RGBA, `orm` (glTF occlusion/roughness/metallic packing), `normal` (from height when needed), `emissive`; `Material.save(path)` writes a `.lmmat` directory (`material.json` + PNGs + sha256) and `material_load` reads it back | Round trip save → load gives identical rasterizer output; the ORM packing matches the glTF spec; the height → normal conversion is checked on an analytic bump; mips are box-filtered in linear light; the CPU rasterizer samples all maps (fixing filament's albedo-only preview) | filament `hellopbr.lms`, `texture` examples migrated; new `material-library.lms` (sphere grid of saved materials) |
+| 4.7 | Export compiled materials to glTF (`pbrMetallicRoughness`, `normalTexture`, `occlusionTexture`, `emissiveTexture`, `KHR_materials_emissive_strength`, `KHR_texture_transform`) for lmcycles and outside tools | The exported GLB passes the Khronos glTF validator; lmcycles renders the same material with base colour and roughness visibly consistent with the CPU preview (SSIM on a matte reference; glossy parts are compared by eye, as Cycles adds GI); lmblender's existing importer reads it | new `material-handoff.lms` (CPU preview vs lmcycles final, side by side) |
+
+Filament compatibility: `material_file("*.mat")` and Filament `.filamat` packages are GPU shader
+programs. The CPU rasterizer cannot execute them, and lmvideo does not compile them. The new
+compiler covers the *texturing and material parameter* role. Scripts that need real Filament shader
+packages stay on the pinned lmfilament release (maintenance only), as already stated in phase 7.
 
 ## Phase 5 — geometry and scene handoff
 
@@ -365,8 +423,8 @@ Further points:
 - **lmcad static glibc.** Relink duties come from both OCCT and static glibc.
   Consider linking glibc dynamically (≥ 2.35, as lmimg does). The LGPL duties
   would then shrink to OCCT alone, and the relink test in CI step 3 gets simpler.
-- **Suggested first three merged items:** 0.3 (Image contract), 1.1 (arrow and
-  polyline) and 6.1 (job schema v1). They are independent, small and unblock the
+- **Suggested first merged items:** 0.3 (Image contract), P.1 (asset resolver
+  and cache), 1.1 (arrow and polyline) and 6.1 (job schema v1). They are independent, small and unblock the
   most work.
 
 ## Review and evidence
