@@ -1,47 +1,60 @@
-# Binary licence options — draft decision, 2026-10-26
+# Binary licence options and EULA lineage — draft, 2026-10-26
 
-Scope: lmaudio, lmcad, lmdraw, lmfilament, lmimg, lmmagnum, lmoffice, lmpdf, lmvideo binaries only; lmplot, lmphysics, lmblender and other open-source repos stay unchanged.
-Intent: free for anyone, including commercial internal use; no Redistribution or third-party Hosting without a commercial licence; use at own risk; the LICENSE accompanying each release governs it.
-Interpretation: running on Your own/rented VMs, containers or private cloud for Your own work is permitted; Hosting means offering the Software/functionality to third parties as a service, platform, API or embedded hosted product, even free of charge.
-The comparison below is a drafting assessment of fit and recognition, not measured adoption or an enforceability opinion; linked primary texts control.
+Scope: lmaudio, lmcad, lmdraw, lmfilament, lmimg, lmmagnum, lmoffice, lmpdf and lmvideo binaries; other repos stay open source.
+Intent: free, as-is use including commercial internal work; commercial permission for Redistribution/third-party Hosting; each release's shipped LICENSE governs it.
+Private own/rented VMs, containers and cloud infrastructure for Your work are permitted. Hosting means offering the tool/functionality to third parties, including embedded hosted products, whether paid or free.
 
-## Comparison
+## Recommendation: an established proprietary freeware/binary EULA family
 
-| Family | Free use, Redistribution and Hosting versus intent | Binary-only / bundled components | Future terms; recognition and principal risk |
-| --- | --- | --- | --- |
-| Custom freeware/binary EULA | Can grant all internal commercial/personal use for free and reserve both Redistribution and Hosting for a paid agreement; can include as-is terms. | Natural binary-only fit; must expressly preserve each component's licences and required LGPL rights/materials. | Can fix each shipped grant and change future owned releases; proprietary EULAs are familiar but this custom text needs review and has no standard-licence recognition. [Obsidian](https://obsidian.md/license) illustrates free commercial use; [JetBrains](https://www.jetbrains.com/legal/docs/toolbox/user/) illustrates product-specific proprietary agreements, not identical pricing/terms. |
-| [Elastic License 2.0](https://www.elastic.co/licensing/elastic-license/) | Royalty-free use, copying, modification **and redistribution**; bans third-party hosted/managed services providing a substantial set of features, not every hosted embedding. Has warranty/liability exclusions. | Can cover object distributions without itself requiring source; third-party obligations still apply. | Recognisable from Elastic; future owned releases can use another licence, existing grants persist subject to their terms. Misses the absolute redistribution ban and broader Hosting intent; altered text should not be represented as ELv2. |
-| [FSL 1.1](https://fsl.software/) | Broad non-competing use and redistribution; competing product/service restriction; converts to Apache/MIT after two years. As-is protection included. | Source-available model; not a natural closed binary-only policy; external components stay separately licensed. | Standardised, newer fair-source family; future-version changes cannot erase the promised conversion of existing versions. Redistribution and eventual unrestricted use defeat the intended permanent restrictions. |
-| [Business Source License 1.1](https://mariadb.com/bsl11/) | Copying, modification and redistribution; non-production use by default, with an Additional Use Grant needed for production/internal business use. Converts by Change Date or four years, whichever earlier; as-is terms. | Designed around available source and eventual open-source licensing; not a good binary-only model. | Established MariaDB-origin alternative; future grants/parameters may differ, but existing conversion commitments remain. Production grant design and conversion conflict with this intent. |
-| [PolyForm Internal Use 1.0.0](https://polyformproject.org/licenses/internal-use/1.0.0) | Closest standard option: internal business use and modifications, no distribution, as-is terms. Its internal-business purpose does not expressly grant every personal use or define the requested service/VM boundary. | No general source-delivery obligation in this text; can cover binaries, with third-party carve-outs/compliance still needed. | Specialist standard rather than a bespoke EULA; future releases may change, existing terms retain their stated rights/cure provisions. Would need careful purpose/Hosting clarification; a modified licence must lose PolyForm branding. |
-| [PolyForm Noncommercial](https://polyformproject.org/licenses/noncommercial/1.0.0) / [Shield](https://polyformproject.org/licenses/shield/1.0.0) | Noncommercial excludes the requested commercial internal use and grants redistribution; Shield allows non-competing uses/redistribution, including some hosting, rather than reserving all Hosting. Both contain as-is provisions. | Binaries possible under their text; no exemption from bundled-component obligations. | Standardised specialist licences; future terms may differ without cancelling existing grants. Wrong permission boundaries; Shield's competition tests add uncertainty unrelated to the two intended restrictions. |
-| [SSPL 1.0](https://www.mongodb.com/legal/licensing/server-side-public-license) / [Commons Clause](https://commonsclause.com/) | SSPL permits distribution and service provision with extensive service-source disclosure; it is not a no-hosting/no-redistribution licence. Commons Clause removes specified paid-value sales/hosting/support rights, but not every free redistribution or free service; disclaimers depend on the base licence. | SSPL executable distribution needs corresponding source, defeating a closed binary-only product. Commons Clause can overlay object code but cannot override third-party rights. | Recognisable, controversial restrictions; future owned releases can change terms, but existing grants/base obligations remain. SSPL's platform-wide disclosure and Commons Clause's broad paid-service test miss this intent. |
-| [MIT](https://opensource.org/license/mit) / [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) plus trademark/service terms | Permit commercial use, redistribution and self-hosted services; include warranty exclusions. Separate service contracts can govern Lattice's own service, not revoke software permissions for unrelated users. | Binary distribution is possible with notices and other component obligations; no first-party source mandate. | Very familiar; Apache grants are expressly irrevocable subject to stated conditions. Future owned versions may be relicensed, but trademark controls cannot impose these functional bans on already-permissively-licensed copies. |
+Use the **Obsidian/JetBrains-style proprietary end-user agreement** family, with original Lattice-specific text in [LICENSE-binaries.md](../scripts/closed-source/templates/LICENSE-binaries.md).
+Public sources studied: [Obsidian terms](https://obsidian.md/terms) and [licence overview](https://obsidian.md/license), [JetBrains User Agreement](https://www.jetbrains.com/legal/docs/toolbox/user/) and [Toolbox individual subscription terms](https://www.jetbrains.com/legal/docs/toolbox/license_personal/).
+These provide a familiar clause structure and vocabulary; Lattice's permissions and wording are original. Recognition/fit below is an assessment, not measured adoption or an enforceability opinion.
+Obsidian permits free commercial use; JetBrains has product-specific trials, freemium modes and subscriptions. Lattice's free-use scope, commercial Hosting/Redistribution triggers and USD 50 cap are its own choices.
+Choosing different terms for a future release of rights the licensor controls is implicit; no terms-change clause is needed. Keep only the neutral release-scope sentence, preserving earlier grants and MIT cutoffs.
 
-For every family, the licensor can choose terms only for rights it controls; existing recipient grants, contributor rights and third-party licences constrain later changes. No option waives component source, notice, object-file or relinking obligations.
+## Clause lineage for counsel
 
-## Recommendation and boundary
+| Lattice clause | Public family structure mirrored; deliberate tailoring |
+| --- | --- |
+| Definitions / Grant | JetBrains User §§2–3 and Toolbox §§2–3; Obsidian License and free-use overview. Lattice permits all internal commercial use, without subscriptions or per-user fees. |
+| Restrictions | Obsidian License/Content and Ownership; JetBrains User §3.5 and Toolbox §3.2(B). Lattice specifies third-party Hosting and preserves private-cloud execution. |
+| Ownership | Obsidian Content and Ownership/Your content; JetBrains User §§4.1–4.2 and Toolbox §3.5. Lattice retains code rights and disclaims ownership of user outputs. |
+| Third-party software | JetBrains User §4.4 and Toolbox §8 distinguish component terms; Lattice adds the explicit LGPL/OCCT relink/debug override. Obsidian's Third Party Services provisions concern integrations, not this bundled-library carve-out. |
+| Release scope / updates | Obsidian Acceptance amendments and JetBrains User §§3.4/10.3 were reviewed. Lattice uses release-local terms; it does not import continued-use amendments, notification/account machinery or service-update promises. |
+| Termination | Obsidian Term and Termination; JetBrains User §8. Lattice uses a short written-breach notice clause; counsel should assess cure rights rather than assume the vendors' periods apply. |
+| Warranty / Liability | Obsidian Disclaimer of Warranties/Limitations of Liability; JetBrains User §§6–7/10.9 and Toolbox §§10–11. Lattice keeps mandatory-law protections and its own cap. |
+| Commercial contact / law | Obsidian's separate Access Agreements and JetBrains subscriptions/contact/legal provisions illustrate separate arrangements. Lattice's required permission and placeholders are original business choices; Obsidian's optional commercial support is different. |
 
-Use the custom **Lattice Systems Binary License 1.0** draft in [LICENSE-binaries.md](../scripts/closed-source/templates/LICENSE-binaries.md); do not call it open source or merely "personal use".
-Choosing terms for a new release of rights the licensor controls is implicit; no terms-change clause is needed. The short draft includes only the neutral line: "This license applies to the release it is distributed with."
-Its four definitions separate internal copying/private cloud execution from third-party redistribution/services; completed client deliverables are allowed, but exposing the tool's functionality is Hosting.
-The overriding carve-out preserves LGPL-2.1 section 6 relinking and reverse engineering for debugging modifications, OCCT's exception, glibc, applicable GCC/libstdc++ exceptions and Apache/BSD/MIT rights.
-Check the actual dependency versions and linkage, not just licence labels: [LGPL-2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html), [OCCT exception](https://github.com/Open-Cascade-SAS/OCCT/blob/master/OCCT_LGPL_EXCEPTION.txt), [GCC runtime exception](https://www.gnu.org/licenses/gcc-exception-3.1.html).
-The draft does not itself supply missing compliance materials; lmcad needs the required source/relinking materials and application objects for **both** architectures, with usable instructions and notices.
-Keep each product's existing MIT cutoff sentence in its README and release notes and its immutable per-release LICENSE; never relicense an old shipped version by overwriting repository text.
-This commit is a draft only: no public product root LICENSE, historical release asset, tag or README is changed. A later approved rollout must update future-facing "Personal Use" labels in the existing boundary/publisher templates, without moving any MIT cutoff or rewriting prior grants.
+## Other realistic families
 
-README footer (one sentence to copy; retain the product's separate MIT cutoff sentence):
+Every family requires separate compliance with bundled-component terms; first-party restrictions cannot narrow those rights. Future owned releases can use new terms, but existing grants and promised conversions remain binding under their terms.
+
+| Family | Fit for the owner intent; binary use and principal risk |
+| --- | --- |
+| Proprietary freeware/binary EULA | Recommended: free internal use and tailored bans; natural binary-only fit. Familiar vendor family, with original provisions requiring counsel review. |
+| [Elastic License 2.0](https://www.elastic.co/licensing/elastic-license/) | Free use and redistribution; hosted/managed-service ban has a feature threshold. Binary-compatible, recognisable from Elastic; redistribution and some hosted embedding remain permitted. |
+| [FSL 1.1](https://fsl.software/) | Free non-competing use and redistribution; Apache/MIT conversion after two years. Standardised fair-source family, source-oriented rather than a binary EULA; permanent restrictions fail. |
+| [Business Source License 1.1](https://mariadb.com/bsl11/) | Non-production default needs an additional production grant; redistribution allowed; conversion within four years. MariaDB-origin source-oriented family; not the desired binary-only/free-internal policy. |
+| [PolyForm Internal Use](https://polyformproject.org/licenses/internal-use/1.0.0) | Internal business use and modifications, no distribution; binary use possible. Close specialist standard, but personal-use and service boundaries need tailoring; modified text must lose PolyForm branding. |
+| [PolyForm Noncommercial](https://polyformproject.org/licenses/noncommercial/1.0.0) / [Shield](https://polyformproject.org/licenses/shield/1.0.0) | Binary use possible; both grant redistribution. Noncommercial excludes commercial internal use; Shield permits non-competing uses/services. Specialist standards with the wrong permission boundaries. |
+| [SSPL](https://www.mongodb.com/legal/licensing/server-side-public-license) / [Commons Clause](https://commonsclause.com/) | SSPL allows service provision with extensive source disclosure, defeating closed binary-only distribution. Commons Clause restricts specified paid-value activities, not all free redistribution/services. Recognisable but mismatched; its disclaimer depends on the base licence. |
+| [MIT](https://opensource.org/license/mit) / [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0) plus trademark/service terms | Familiar, binary-compatible, permitting commercial use, redistribution and hosting. Trademark/service contracts cannot withdraw those software grants; no fit for the intended bans. |
+
+## Deployment boundary and README footer
+
+Preserve each existing MIT cutoff and per-release LICENSE; change no old grant or release asset. This is a draft only, with no product-repo publishing.
+The override covers [LGPL-2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html), [OCCT's exception](https://github.com/Open-Cascade-SAS/OCCT/blob/master/OCCT_LGPL_EXCEPTION.txt), applicable [GCC runtime exceptions](https://www.gnu.org/licenses/gcc-exception-3.1.html) and other components; it does not replace required source, objects, notices or relinking materials for both architectures.
+A later approved rollout must update future-facing Personal Use labels without moving MIT cutoffs. Copy this footer while retaining the product's separate cutoff sentence:
 ```markdown
 Binaries are free for anyone to use, including commercial internal use, under [Lattice Systems Binary License 1.0](LICENSE), with no warranty and a commercial licence required for redistribution or third-party hosting; examples/docs retain their stated licences and third-party rights are preserved.
 ```
 
 ## First five lawyer review priorities
 
-1. Grant, definitions and commercial triggers: internal entity/contractor copies, private VMs, client outputs, free services, hosted embedding and acceptance/enforceability.
-2. Overriding third-party rights: LGPL/OCCT application relinking, reverse engineering, source/object offers, GCC exceptions and all actual bundled-licence compatibility.
-3. Release scope and MIT boundaries: the accompanying LICENSE, ownership/contributor authority and existing permissions; no express terms-change clause is needed.
-4. Warranty/liability exclusions and USD 50 cap: mandatory consumer protections, negligence/intentional harm exceptions, termination notice and cure choices.
-5. Governing law, forum/mandatory-law treatment and licensor/contact identification: replace `[JURISDICTION]` and `[BUSINESS CONTACT]` before adoption.
+1. Grant/Hosting/Redistribution definitions, internal staff copies, private cloud, client outputs and acceptance/enforceability.
+2. Third-party compatibility, LGPL relinking/debugging, OCCT exceptions and required source/object delivery.
+3. Release scope, immutable MIT grants and ownership/contributor authority; future-release choice remains implicit.
+4. Warranty, USD 50 cap, mandatory protections and breach notice/cure.
+5. Governing law and licensor/contact identification: resolve `[JURISDICTION]` and `[BUSINESS CONTACT]`.
 
 This is a model-drafted template and technical comparison, not legal advice; obtain qualified legal review before adopting or distributing it.
