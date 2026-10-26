@@ -8,6 +8,9 @@
 > - alias timing is deferred, and lmdraw, lmmagnum, lmfilament and lmimg get critical fixes only;
 > - Image keeps lmimg's mutable semantics;
 > - old bytecode is recompiled rather than handled by fingerprint dispatch.
+> - owner note w75e: size is never a reason to keep anything external. Cycles is built into lmvideo
+>   once the four GPL Blender helpers are replaced (09, item 6.0); the §3.5 external process is only
+>   the interim and debug path.
 
 Scope: lmvideo, lmdraw, lmmagnum, lmfilament, lmcad and lmblender. One product should draw 2D and
 3D and produce images and video, with lmvideo as the base. This note covers the target
