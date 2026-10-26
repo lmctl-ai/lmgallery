@@ -23,7 +23,7 @@ backend. A real GPU implementation is a later, separately measured product decis
 | lmfilament | **Merge preview features, retire standalone product conditionally** | Reuse CPU preview work. Drop Filament from the ordinary rendering path. Its material compiler/package APIs need a separate compatibility decision; dropping that library cannot preserve all 62 declarations automatically. |
 | lmcad | **Keep separate** | Exact B-Rep/OCCT, booleans, fillets, chamfers, hollowing and volumes remain CAD. Exchange tessellated meshes; do not burden every chart/movie user with OCCT. |
 | lmimg | **Merge image processing, then retire standalone authoring host** | One Image/Frame type owns filters, geometry, compositing and measurements for every producer; no separate img context in the target schema. |
-| lmblender | **Keep external** | Existing in-process Cycles renderer is a GPL binary, not a subprocess wrapper. Preserve path tracing/EXR/passes/imports in its own process/product. A future external Blender bridge is a different implementation. |
+| lmblender | **Shrink to an optional external render engine** | Keep Cycles path tracing/denoising/passes; remove modelling/drawing authoring from its target interface. The unified product builds one Scene and receives backend frames as the same Image type. Historical authoring binaries remain pinned for migration. |
 
 lmimg is explicitly in scope by owner addition 2. lmplot remains outside this decision. Do not add OCCT, Cycles, a second public scene model or an in-process
 FFmpeg distribution to the first consolidation milestone.
@@ -141,6 +141,93 @@ lmplot/lmdraw compositions and relative assets; preserve those raw autorun paths
 independent authoring schema/engine pipeline after parity gates. Keep `lmimg` as a
 canonical-schema alias for the proposed N=6-release/three-month transition; retain
 old pinned binaries for old source/bytecode. No new distinct img schema is embedded.
+
+## Owner addition — lmblender becomes a render engine only
+
+This supersedes the original keep-separate-authoring verdict. The product owns all
+2D drawing, mesh construction/import, scene modelling, cameras/lights/material
+parameters, layout, image processing and timeline evaluation. lmblender is only
+one selectable **external final-render backend**, with its current Cycles/GPL
+closure outside the closed core. lmcad remains the optional exact B-Rep producer;
+its tessellated result becomes an ordinary mesh in the product's Scene.
+
+### Interface placement and ownership
+
+One internal `Renderer` seam sits below the canonical Scene/Viewport and Timeline
+APIs and above image composition. Conceptually, a future `Scene.render(...,
+render="raster" | "cycles") -> Image` selects an implementation, not another
+host/schema. `raster` is the in-core CPU renderer; `cycles` submits a render job to
+an optional executable. This API notation is a design sketch, not current lmcode
+syntax or an implemented method.
+
+A Timeline evaluates animation once in the product and sends resolved per-frame
+scene states to a batch job. The backend must not implement a second easing/model
+or invent camera framing. It may reuse geometry/BVH and update transforms between
+frames, but changing topology requires explicit versioned mesh references. Its
+returned frame becomes the canonical Image; the product then performs 2D labels,
+filters, compositing, layout and video encoding. lmblender does not encode the
+final movie or duplicate the product's Canvas/Timeline engine.
+
+### Scene/job export to Cycles
+
+Use **glTF 2.0 GLB plus a versioned JSON job sidecar**, not generated Python,
+arbitrary scripts or the old lmblender modelling DSL. The existing glTF mesh
+importer is useful groundwork; full camera/light/material-extension fidelity and
+the new job CLI remain implementation work, not capabilities inferred from it.
+
+| Job entry | Required contract |
+|---|---|
+| `scene.glb` | Triangle meshes, stable node/mesh/material IDs, hierarchy/transforms, normals/UVs, embedded/referenced textures, metallic/roughness materials and cameras. Canonical units/axis convention is explicit; convert CAD units and camera angles in the product exporter. |
+| Required extension list | Negotiate `KHR_lights_punctual` and any material extensions such as transmission/IOR/emissive strength before submission. Unsupported required features fail explicitly; they never become default grey materials. |
+| `job.json` | Protocol version, scene/asset hashes, requested camera, width/height, frame indices/times, samples, seed, bounces, denoiser, CPU/device choice, output format, alpha/colour/view-transform contract, requested passes and resource/time budgets. Area lights, environment maps, procedural/material features not represented by the chosen GLB profile use documented typed sidecar fields. |
+| Frame-state records | Product-evaluated node transforms/visibility, camera optics, lights and material changes, keyed by stable IDs. GLB core animation covers node TRS/morph weights; camera/light/material property animation is **not** a generic core glTF channel. Use these sidecar records or a separately negotiated extension. |
+| Output manifest | One result entry per requested frame/pass with index, path, size, checksum, dimensions, channel/colour/alpha metadata, timing and structured error. Atomically publish completed files and distinguish partial/cancelled jobs. |
+| Frames | Baseline PNG RGBA8 with defined sRGB/straight-alpha semantics, decoded to the same core Image. Scene-linear EXR is optional only when the core advertises a permissive decoder and matching Image precision/colour handling; current RGBA8 editing is not an implicit HDR pipeline. Apply display tone mapping exactly once. |
+
+This follows the actual [glTF animation target contract](https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/animation.channel.target.schema.json)
+and [punctual-light extension](https://github.com/KhronosGroup/glTF/blob/main/extensions/2.0/Khronos/KHR_lights_punctual/README.md).
+Area lights, environment/world state and arbitrary Cycles shader graphs are not
+claimed to be fully portable core glTF. A versioned limited procedural/material
+profile may preserve selected looks; unsupported features remain explicit errors.
+lmcad currently exports STL/OBJ, not GLB: import those into the product and let
+its one exporter generate the render job; adding CAD glTF export is optional.
+
+Proposed backend CLI: `lmblender --render-capabilities` returns protocol versions,
+formats, supported required extensions, passes and available devices;
+`lmblender render --job DIR` consumes one bounded job and emits one final result
+JSON. Proposed exits: 0 complete, 2 invalid job, 3 unsupported capability, 4 render
+failure/cancelled job (with a distinct structured reason). The core resolves an
+explicit backend path or user-installed tool, invokes argv without a shell, and
+handles timeouts, cancellation and logs. Missing Cycles or an incompatible job
+version is a clear failure; no silent preview fallback. The backend reports only
+actual devices: selecting Cycles does not promise a GPU implementation.
+
+### What lmblender keeps and drops
+
+| Keep in the render engine | Drop from its target product surface / move into the unified product |
+|---|---|
+| Cycles session/integrator, Embree traversal, OIDN denoising, sampling/seed/bounce controls | Mesh primitives, tubes, labels, arrows, procedural modelling, instancing authoring and transform construction |
+| Material-to-BSDF translation and supported texture/procedural decoding | A second public material-construction/model-building DSL; material authoring belongs to the one Scene model, with capability-checked backend parameters |
+| Camera/light/world/environment rendering and explicitly supplied frame states | Fitted-camera helpers, user-authored camera/transform/light keyframes and a second timeline/easing evaluator |
+| PNG/EXR/pass output, batch rendering and geometry/BVH reuse | 2D drawing, diagrams, image filters, montage/layout, final movie encoding and modelling/gallery authoring presets |
+| Import/asset decoding needed by the declared job profile; source offers/notices/relink compliance for its actual binary | The 96-method lmscript schema as an active authoring interface. Its current inventory remains historical evidence, not a target API. |
+
+Migrate the 99 current public lmblender example files into product-owned scripts
+that construct a Scene and select Cycles where required; preserve raw URL paths by
+updating their contents and keeping immutable old release pins. Do not claim all
+99 need path tracing or that all current procedural looks fit the first job profile.
+For the proposed N=6-release/three-month window, old authoring releases stay
+available; any temporary source-migration launcher stays outside the one core
+schema. The render engine remains a separately versioned optional dependency.
+
+Acceptance: compare supported legacy scenes at fixed geometry/camera/material
+states and render settings; test transparency/colour, passes, frame indices,
+unsupported features, missing backend, cancellation and partial outputs. Verify
+batch frame state versus individually rendered frames, and measure reuse/RSS.
+Same-pinned-build reproducibility is a test, not a cross-device/Cycles-version
+promise. The GPL source/notice obligations still apply to a separately shipped
+backend; file exchange is not a waiver. The closed core's permissive CPU renderer
+continues to work without downloading the external engine.
 
 ## Host/schema inventory
 
@@ -269,7 +356,7 @@ build selection; the historical size inventory above is not an approved link clo
 | Magnum / Corrade | MIT | No licence problem | **In-core** where required; optional replacement is extracted/reimplemented MIT-authored mesh primitives plus Skia math. Removing a dependency remains a build-tested optimization, not an assumed zero-cost edit. |
 | Filament / material compiler | Apache-2.0 plus dependency notices | No inherent licence conflict; noop rendering/size is an architectural issue | Ordinary core uses own MIT CPU renderer. **External optional** legacy `lmfilament --dsl FILE` for real `.filamat` compilation/package operations if preserving that API; exchange material packages/OBJ/PNG, do not fake them. |
 | OCCT B-Rep kernel | LGPL-2.1 + Open CASCADE exception | **Yes** under the owner's no-static-relink-duty rule | **External** `lmcad --dsl FILE`, exchanging OBJ/STL plus explicit units/appearance metadata. **Core replacement:** own MIT triangle scene and **Manifold (Apache-2.0)** for optional mesh booleans. Neither replaces exact OCCT B-Rep, fillets or topology; those remain external. |
-| Current Blender/Cycles combined closure | GPL-3.0-or-later binary, including GPL Blender helpers/LUT; Cycles itself Apache-2.0 | **Yes** for the audited combined executable | **External** existing `lmblender --dsl FILE`, with file-based scene input and PNG/EXR/frame outputs. **Core replacement:** own MIT CPU preview plus permissive Magnum geometry, not GI/refraction. Any later standalone permissive Cycles build requires removing/replacing and re-auditing GPL inputs first. |
+| Current Blender/Cycles combined closure | GPL-3.0-or-later binary, including GPL Blender helpers/LUT; Cycles itself Apache-2.0 | **Yes** for the audited combined executable | **External render-only backend** `lmblender render --job DIR`, with a versioned scene job and PNG/EXR/frame outputs; the old authoring CLI remains only in frozen historical binaries. **Core replacement:** own MIT CPU preview plus permissive Magnum geometry, not GI/refraction. Any later standalone permissive Cycles build requires removing/replacing and re-auditing GPL inputs first. |
 | FFmpeg/libav linked into core | Usually LGPL-2.1+; optional GPL components/configuration change the result | **Yes**, including LGPL relink duties even without GPL codecs | **External user-installed FFmpeg**, argv process accepting width/height/fps/pixel format and raw RGBA stdin, returning output files, status and stderr. **Core replacement:** **libvpx (BSD-3-Clause)** + **libwebm (BSD-3-Clause)** for an optional reviewed VP9/WebM encoder/muxer. Core can initially emit PNG sequences instead; this new codec path is not implemented today. |
 | x264/x265, H.264/HEVC output | GPL-2.0+ implementations or separate commercial terms; patent questions are independent | **Yes / unresolved by a code licence alone** | **External**, explicitly selected user-installed encoder; no mandatory bundle or silent fallback. **Core replacement:** reviewed libvpx VP9/WebM as above, or PNG sequences. No H.264/HEVC-equivalent compatibility claim or royalty-free guarantee. |
 | PNG/JPEG and image helpers | libpng/zlib; selected stb helpers MIT option; exact JPEG implementation notices vary | Normally no; inspect selected files/build | **In-core** PNG via libpng/zlib or stb's MIT option. Prefer PNG baseline; optional JPEG via a separately audited permissive implementation, not an assumed FFmpeg codec import. |
@@ -370,8 +457,8 @@ frame-time/RSS budgets; one small still-scene run cannot establish throughput.
 
 Use current OBJ/STL exchange from lmcad first, with explicit unit/appearance/camera
 metadata alongside the mesh. Add glTF export only as a separate scoped feature;
-CAD currently has none. Existing lmblender glTF import can be a consumer, but arbitrary
-shared scene fidelity and camera/material interchange still require a schema.
+CAD currently has none. The render-only lmblender backend consumes the product exporter's versioned GLB/job profile; its existing glTF import alone does not establish
+complete camera/material fidelity.
 
 **Hard compatibility limits:** lmdraw's arbitrary SVG-style attributes, gradients,
 embedded fonts and imported SVG need adapters and image tests, not a CLI rename.
@@ -417,7 +504,7 @@ verify each fresh-cache installer/hash, then promote with rollback to previous r
 Record one core source SHA plus canonical-schema/migration-tool versions in every release manifest.
 
 Remove independent build/release entries for retired engines only after the common
-pipeline publishes their tested compatibility assets. Keep CAD and Blender separate.
+pipeline publishes their tested compatibility assets. Keep CAD separate and lmblender as the optional render-only process.
 A new product slug is optional; retaining lmvideo avoids a new repo identity and another
 install-coordinate migration. No repository creation, visibility change, history rewrite
 or force-push is part of this design.
