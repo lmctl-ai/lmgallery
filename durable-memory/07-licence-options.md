@@ -1,7 +1,7 @@
 # Binary licence options — draft decision, 2026-10-26
 
 Scope: lmaudio, lmcad, lmdraw, lmfilament, lmimg, lmmagnum, lmoffice, lmpdf, lmvideo binaries only; lmplot, lmphysics, lmblender and other open-source repos stay unchanged.
-Intent: free for anyone, including commercial internal use; no Redistribution or third-party Hosting without a commercial licence; use at own risk; future-release terms may change while shipped-version terms stay fixed.
+Intent: free for anyone, including commercial internal use; no Redistribution or third-party Hosting without a commercial licence; use at own risk; the LICENSE accompanying each release governs it.
 Interpretation: running on Your own/rented VMs, containers or private cloud for Your own work is permitted; Hosting means offering the Software/functionality to third parties as a service, platform, API or embedded hosted product, even free of charge.
 The comparison below is a drafting assessment of fit and recognition, not measured adoption or an enforceability opinion; linked primary texts control.
 
@@ -23,6 +23,7 @@ For every family, the licensor can choose terms only for rights it controls; exi
 ## Recommendation and boundary
 
 Use the custom **Lattice Systems Binary License 1.0** draft in [LICENSE-binaries.md](../scripts/closed-source/templates/LICENSE-binaries.md); do not call it open source or merely "personal use".
+Choosing terms for a new release of rights the licensor controls is implicit; no terms-change clause is needed. The short draft includes only the neutral line: "This license applies to the release it is distributed with."
 Its four definitions separate internal copying/private cloud execution from third-party redistribution/services; completed client deliverables are allowed, but exposing the tool's functionality is Hosting.
 The overriding carve-out preserves LGPL-2.1 section 6 relinking and reverse engineering for debugging modifications, OCCT's exception, glibc, applicable GCC/libstdc++ exceptions and Apache/BSD/MIT rights.
 Check the actual dependency versions and linkage, not just licence labels: [LGPL-2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html), [OCCT exception](https://github.com/Open-Cascade-SAS/OCCT/blob/master/OCCT_LGPL_EXCEPTION.txt), [GCC runtime exception](https://www.gnu.org/licenses/gcc-exception-3.1.html).
@@ -39,7 +40,7 @@ Binaries are free for anyone to use, including commercial internal use, under [L
 
 1. Grant, definitions and commercial triggers: internal entity/contractor copies, private VMs, client outputs, free services, hosted embedding and acceptance/enforceability.
 2. Overriding third-party rights: LGPL/OCCT application relinking, reverse engineering, source/object offers, GCC exceptions and all actual bundled-licence compatibility.
-3. Release-specific grants and future changes: no retroactive changes, immutable MIT boundaries, ownership/contributor authority and survival of existing permissions.
+3. Release scope and MIT boundaries: the accompanying LICENSE, ownership/contributor authority and existing permissions; no express terms-change clause is needed.
 4. Warranty/liability exclusions and USD 50 cap: mandatory consumer protections, negligence/intentional harm exceptions, termination notice and cure choices.
 5. Governing law, forum/mandatory-law treatment and licensor/contact identification: replace `[JURISDICTION]` and `[BUSINESS CONTACT]` before adoption.
 
