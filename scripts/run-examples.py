@@ -33,7 +33,7 @@ def main():
         assert not list(work.iterdir()), "verification directory is not empty"
         target = "https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/" + e["file"] if args.urls else str(ROOT / e["file"])
         print(f"RUN {target}\n  empty directory: {work}", flush=True)
-        result = subprocess.run(["lmctl", "autorun", target], cwd=work, capture_output=True, text=True, timeout=900)
+        result = subprocess.run(["lmctl", target], cwd=work, capture_output=True, text=True, timeout=900)
         (work / "autorun.log").write_text(result.stdout + result.stderr)
         if result.returncode:
             raise SystemExit(f"FAILED {e['file']} (exit {result.returncode}); log: {work / 'autorun.log'}\n{result.stdout[-1500:]}\n{result.stderr[-1500:]}")

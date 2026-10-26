@@ -1269,7 +1269,7 @@ def check_readme(repo_path, repo_name):
 
   broken_autorun = []
   autorun_matches = re.findall(
-      r'lmctl autorun\s+(https://raw\.githubusercontent\.com/lmctl-ai/([^/]+)/([^/]+)/([^\s`\"\'\)<>]+))',
+      r'lmctl(?: autorun)?\s+(https://raw\.githubusercontent\.com/lmctl-ai/([^/]+)/([^/]+)/([^\s`\"\'\)<>]+))',
       text,
   )
   for url, rname, branch, file_path in autorun_matches:

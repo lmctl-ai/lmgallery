@@ -41,7 +41,7 @@ PUBLIC_TEXT_SUFFIXES = {".md", ".lms", ".txt", ".json", ".svg", ".html", ".xml",
 DATA_LITERAL = re.compile(r"[\"']([^\"']+\.(?:csv|json|txt|wav|mp3|png|jpe?g|svg|html|md|ttf|webp|zip|stl|obj|mtl|glb|gltf|mp4|gif|xml|pdf))[\"']", re.I)
 MD_LINK = re.compile(r"(?P<image>!)?\[(?P<label>[^\]]*)\]\((?P<target>[^)\s]+)(?P<tail>[^)]*)\)")
 HTML_SRC = re.compile(r"(?P<left>\bsrc=[\"'])(?P<target>[^\"']+)(?P<right>[\"'])", re.I)
-RAW_AUTORUN = re.compile(r"lmctl\s+autorun\s+(https?://[^\s`<>]+)", re.I)
+RAW_AUTORUN = re.compile(r"lmctl(?:\s+autorun)?\s+(https?://[^\s`<>]+)", re.I)
 PRIVATE_TOKEN = re.compile(r"(?<![A-Za-z0-9])(?:\.\.?/)*(?:cpp|src|schema|tests|scripts|durable-memory|\.github|build|third_party|target)/[A-Za-z0-9_.\-/]+", re.I)
 TOKEN_PATTERNS = (
     re.compile(r"gh[pousr]_[a-z0-9]{30,}", re.I),

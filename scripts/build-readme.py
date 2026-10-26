@@ -37,7 +37,7 @@ def documents():
         hosts_line = " → ".join(e["hosts"])
         show_cards.append(f'<a href="{e["file"]}"><img src="{e["image"]}" width="420" '
                           f'alt="{e["title"]}"></a><br>**{e["title"]}** · {hosts_line}'
-                          f'<br><sub><code>lmctl autorun {RAW}{e["file"]}</code></sub>')
+                          f'<br><sub><code>lmctl {RAW}{e["file"]}</code></sub>')
     readme = f'''# lmgallery
 
 {len(hosts)} scripting hosts, {len(examples)} runnable compositions: compute a result, then turn it into a picture.
@@ -59,7 +59,7 @@ Install the [lmctl runner](https://github.com/lmctl-ai/lmctl), then copy a capti
 
 ```sh
 npm install -g @lmctl-ai/lmctl
-lmctl autorun {RAW}{examples[0]["file"]}
+lmctl {RAW}{examples[0]["file"]}
 ```
 
 Each program installs its declared hosts on first use, executes every DSL block, and writes its picture to `images/` in the current directory. Data and bytecode are generated locally; no checkout or sibling files are needed. Host downloads require internet access; `GITHUB_TOKEN` can help with GitHub API download limits. Each program prints its output path and stops if computation or rendering fails.
@@ -97,7 +97,7 @@ MIT for this gallery and its scripts; see [LICENSE](LICENSE). Copied artwork and
         index.append("| " + " | ".join(f'<a href="#{e["title"].lower().replace(" ", "-").replace(":", "").replace(",", "")}"><img src="../{e["image"]}" width="400" alt="{e["title"]}"></a><br>{e["title"]}' for e in pair) + (" | |" if len(pair) == 1 else " |"))
     index.append("")
     for e in examples:
-        index += [f'## {e["title"]}', "", e["description"], "", f'Hosts: {" → ".join(e["hosts"])}. Output: `{e["output"]}`.', "", "```sh", f'lmctl autorun {RAW}{e["file"]}', "```", ""]
+        index += [f'## {e["title"]}', "", e["description"], "", f'Hosts: {" → ".join(e["hosts"])}. Output: `{e["output"]}`.', "", "```sh", f'lmctl {RAW}{e["file"]}', "```", ""]
     return {"README.md": readme, "docs/ATTRIBUTION.md": "\n".join(attribution), "examples/README.md": "\n".join(index)}
 
 

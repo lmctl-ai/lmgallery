@@ -24,7 +24,7 @@ Keep each existing `examples/*.lms` path and its committed picture. Captions
 include the raw public URL, for example:
 
 ```text
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/<product>/main/examples/<example>.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/<product>/main/examples/<example>.lms
 ```
 
 ## License and support

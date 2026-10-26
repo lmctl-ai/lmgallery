@@ -135,7 +135,8 @@ def check(network=False):
         assert "savedsl(" in source and "dsl_cli(" in source and "system" in source, f"compile-only script: {e['file']}"
         assert e["output"].startswith("images/") and e["output"] in source, f"invalid output: {e['file']}"
         assert Path(e["output"]).suffix == Path(e["image"]).suffix, f"preview format differs from output: {e['file']}"
-        assert f'lmctl autorun {RAW}{e["file"]}' in readme, f"missing autorun caption: {e['file']}"
+        caption = re.compile(rf'lmctl(?: autorun)? {re.escape(RAW + e["file"])}')
+        assert caption.search(readme), f"missing autorun caption: {e['file']}"
         assert showcase_width_ok(ROOT / e["image"]), f"showcase must be 900px wide (animations 600–900): {e['image']}"
         images.append(e["image"])
     assert len(set(images)) == len(images), "duplicate image destination"

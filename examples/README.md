@@ -37,7 +37,7 @@ lmnum integrates a damped second-order oscillator with CVODE and checks the endp
 Hosts: lmnum → lmplot. Output: `images/showcase-01-oscillator.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/01-oscillator-ode-plot.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/01-oscillator-ode-plot.lms
 ```
 
 ## Discounted project cashflows
@@ -47,7 +47,7 @@ lmfinance discounts project cashflows continuously at 8%; lmnum reads those comp
 Hosts: lmfinance → lmnum → lmdraw. Output: `images/showcase-02-finance-cashflows.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/02-finance-cashflows-draw.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/02-finance-cashflows-draw.lms
 ```
 
 ## Shallow-water gravity pulse
@@ -57,7 +57,7 @@ lmweather evolves a Gaussian shallow-water pulse; lmplot overlays four snapshots
 Hosts: lmweather → lmplot. Output: `images/showcase-03-weather-pulse.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/03-weather-pulse-plot.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/03-weather-pulse-plot.lms
 ```
 
 ## Hohmann transfer: equal-time markers
@@ -67,7 +67,7 @@ lmspace propagates a Hohmann transfer from a 7000 km orbit to geostationary radi
 Hosts: lmspace → lmcad. Output: `images/showcase-04-space-orbit-cad.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/04-space-orbit-cad.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/04-space-orbit-cad.lms
 ```
 
 ## Cargo-ramp force balance
@@ -77,7 +77,7 @@ lmphysics measures acceleration of a six-kilogram cargo block on a 24-degree ram
 Hosts: lmphysics → lmdraw. Output: `images/showcase-05-physics-free-body.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/05-physics-free-body.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/05-physics-free-body.lms
 ```
 
 ## Finite-element Poisson field
@@ -87,7 +87,7 @@ lmfluid solves a manufactured Poisson problem and lmplot renders the sampled fie
 Hosts: lmfluid → lmplot. Output: `images/showcase-06-fluid-poisson-plot.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/06-fluid-poisson-plot.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/06-fluid-poisson-plot.lms
 ```
 
 ## Michaelis-Menten from mechanism
@@ -97,7 +97,7 @@ lmbio integrates the elementary reactions E + S <-> ES -> E + P at ten substrate
 Hosts: lmbio → lmplot. Output: `images/showcase-07-enzyme-response.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/07-enzyme-response.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/07-enzyme-response.lms
 ```
 
 ## Cell growth and motility
@@ -107,7 +107,7 @@ lmcell evolves two motile populations with different cycle and death rates; lmpl
 Hosts: lmcell → lmplot. Output: `images/showcase-08-cell-pattern.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/08-cell-pattern.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/08-cell-pattern.lms
 ```
 
 ## Photon attenuation and build-up in water
@@ -117,7 +117,7 @@ lmparticle runs seeded Monte Carlo histories of 662 keV photons through six wate
 Hosts: lmparticle → lmplot. Output: `images/showcase-09-photon-transport.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/09-photon-transport.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/09-photon-transport.lms
 ```
 
 ## Water dimer: hydrogen bond in 3D
@@ -127,7 +127,7 @@ lmmolecule minimizes two flexible TIP3P molecules into the hydrogen-bonded dimer
 Hosts: lmmolecule → lmcad → lmplot. Output: `images/showcase-10-molecule-dimer-cad.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/10-molecule-dimer-cad.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/10-molecule-dimer-cad.lms
 ```
 
 ## Shielding by mass: lead, aluminum, water
@@ -137,7 +137,7 @@ lmparticle transports 662 keV photons through lead, aluminum and water slabs of 
 Hosts: lmparticle → lmdraw → lmplot. Output: `images/showcase-11-particle-shield-layout.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/11-particle-shield-layout.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/11-particle-shield-layout.lms
 ```
 
 ## Geostrophic adjustment, animated
@@ -147,7 +147,7 @@ lmweather releases a 600 km Gaussian height bump at rest on an f-plane: inertia-
 Hosts: lmweather → lmplot. Output: `images/showcase-12-weather-adjustment.gif`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/12-weather-adjustment-gif.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/12-weather-adjustment-gif.lms
 ```
 
 ## Dosing regimen inside a therapeutic window
@@ -157,7 +157,7 @@ lmbio integrates a one-compartment oral model for 800 mg a day given as 400 mg e
 Hosts: lmbio → lmdraw → lmplot. Output: `images/showcase-13-bio-dosing-regimen.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/13-bio-dosing-regimen.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/13-bio-dosing-regimen.lms
 ```
 
 ## Damping-ratio sweep as a contact sheet
@@ -167,7 +167,7 @@ lmnum integrates the unit-step response of a second-order system for six damping
 Hosts: lmnum → lmplot → lmimg. Output: `images/showcase-14-num-sweep-contact-sheet.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/14-num-sweep-contact-sheet.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/14-num-sweep-contact-sheet.lms
 ```
 
 ## Equalizer: designed versus measured
@@ -177,7 +177,7 @@ lmaudio designs a three-band equalizer as biquads (low shelf, presence peak, hig
 Hosts: lmaudio → lmplot. Output: `images/showcase-15-audio-eq-measurement.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/15-audio-eq-measurement.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/15-audio-eq-measurement.lms
 ```
 
 ## Kepler orbit energy check
@@ -187,7 +187,7 @@ lmspace propagates an eccentric orbit (perigee 7000 km, apogee 15000 km) for two
 Hosts: lmspace → lmplot. Output: `images/showcase-16-kepler-conservation.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/16-kepler-conservation.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/16-kepler-conservation.lms
 ```
 
 ## Driven oscillator: transient to steady state
@@ -197,7 +197,7 @@ lmnum integrates a damped oscillator driven near resonance from rest, with the f
 Hosts: lmnum → lmplot. Output: `images/showcase-17-oscillator-driven.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/17-oscillator-driven-transient.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/17-oscillator-driven-transient.lms
 ```
 
 ## Intermediate-axis tumble of a free plate
@@ -207,7 +207,7 @@ lmphysics spins a free plate at 10 rad/s about its intermediate principal axis, 
 Hosts: lmphysics → lmplot. Output: `images/showcase-18-rigid-body-intermediate-axis.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/18-rigid-body-intermediate-axis.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/18-rigid-body-intermediate-axis.lms
 ```
 
 ## Finite-element error against a known answer
@@ -217,7 +217,7 @@ lmfluid solves a Poisson problem on an 8 x 8 mesh with linear and quadratic elem
 Hosts: lmfluid → lmplot. Output: `images/showcase-19-fem-poisson-error.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/19-fem-poisson-error.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/19-fem-poisson-error.lms
 ```
 
 ## Heat conduction in x and t
@@ -227,7 +227,7 @@ lmnum integrates one-dimensional heat conduction by the method of lines with its
 Hosts: lmnum → lmplot. Output: `images/showcase-20-heat-spacetime.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/20-heat-spacetime.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/20-heat-spacetime.lms
 ```
 
 ## Forecast with a 95 % prediction band
@@ -237,7 +237,7 @@ lmnum fits a trend with annual harmonics to 60 months of demand by least squares
 Hosts: lmnum → lmplot. Output: `images/showcase-21-forecast-band.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/21-forecast-prediction-band.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/21-forecast-prediction-band.lms
 ```
 
 ## Seasonal decomposition by least squares
@@ -247,7 +247,7 @@ lmnum fits a quadratic trend with annual and semi-annual harmonics to eight year
 Hosts: lmnum → lmplot. Output: `images/showcase-22-seasonal-decomposition.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/22-seasonal-decomposition.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/22-seasonal-decomposition.lms
 ```
 
 ## Regression diagnostics: predicted, actual and residuals
@@ -257,7 +257,7 @@ lmnum fits a linear model to 120 observations that contain a quadratic term it d
 Hosts: lmnum → lmplot. Output: `images/showcase-23-regression-residuals.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/23-regression-residuals.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/23-regression-residuals.lms
 ```
 
 ## Daily sign-ups on a date axis
@@ -267,7 +267,7 @@ lmnum generates a seeded year of daily sign-ups with a trend and a weekend effec
 Hosts: lmnum → lmplot. Output: `images/showcase-24-signups-date-axis.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/24-signups-date-axis.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/24-signups-date-axis.lms
 ```
 
 ## Call-centre queue over one day
@@ -277,7 +277,7 @@ lmnum evaluates the M/M/c Erlang-C formula for eight agents at each hour of a da
 Hosts: lmnum → lmplot. Output: `images/showcase-25-queue-erlang-c.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/25-queue-erlang-c.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/25-queue-erlang-c.lms
 ```
 
 ## Quarterly business review deck with lmvideo charts
@@ -287,7 +287,7 @@ lmvideo draws three Skia charts (quarterly revenue, operating margin, regional m
 Hosts: lmvideo → lmoffice. Output: `images/showcase-26-qbr-deck.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/26-qbr-deck-charts.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/26-qbr-deck-charts.lms
 ```
 
 ## Sales report with a chart per section
@@ -297,7 +297,7 @@ lmvideo draws three Skia charts (revenue by region, by product line, and the mon
 Hosts: lmvideo → lmoffice. Output: `images/showcase-27-sales-report.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/27-sales-report-docx.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/27-sales-report-docx.lms
 ```
 
 ## Forecast workbook with a native chart
@@ -307,7 +307,7 @@ lmnum fits a linear trend to 24 months of sales by least squares and checks the 
 Hosts: lmnum → lmvideo → lmoffice. Output: `images/showcase-28-forecast-workbook.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/28-forecast-workbook-chart.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/28-forecast-workbook-chart.lms
 ```
 
 ## Invoice with a generated logo and payment glyph
@@ -317,7 +317,7 @@ lmvideo draws a logo and a deterministic 21 x 21 QR-like glyph as PNG images; lm
 Hosts: lmvideo → lmoffice. Output: `images/showcase-29-invoice-logo.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/29-invoice-logo-glyph.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/29-invoice-logo-glyph.lms
 ```
 
 ## Resume with a skills bar chart
@@ -327,7 +327,7 @@ lmvideo draws six horizontal skill bars with their levels on a Skia canvas as a 
 Hosts: lmvideo → lmoffice. Output: `images/showcase-30-resume-skills.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/30-resume-skills-bars.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/30-resume-skills-bars.lms
 ```
 
 ## Science report: damping recovered from simulated peaks
@@ -337,7 +337,7 @@ lmnum integrates a damped oscillator at three damping ratios with CVODE, refines
 Hosts: lmnum → lmvideo → lmoffice. Output: `images/showcase-31-science-report.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/31-science-report-damping.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/31-science-report-damping.lms
 ```
 
 ## Annual revenue bars with currency ticks
@@ -347,7 +347,7 @@ lmnum builds 11 years of revenue from a seeded 17 % compound growth model with 2
 Hosts: lmnum → lmplot. Output: `images/showcase-32-revenue-bars.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/32-revenue-bars-currency.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/32-revenue-bars-currency.lms
 ```
 
 ## Standing waves on a membrane, animated
@@ -357,7 +357,7 @@ lmnum discretizes the Laplacian of a square membrane, takes its eigenvalues and 
 Hosts: lmnum → lmvideo. Output: `images/showcase-33-wave-2d.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/33-wave-2d-animation.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/33-wave-2d-animation.lms
 ```
 
 ## Image pipeline with a before/after contact sheet
@@ -367,7 +367,7 @@ lmimg builds a procedural landscape, runs levels, unsharp and colour-curve steps
 Hosts: lmimg → lmoffice. Output: `images/showcase-34-image-pipeline.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/34-image-pipeline-contact-sheet.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/34-image-pipeline-contact-sheet.lms
 ```
 
 ## Rates and options desk pack: curve, option table and memo
@@ -377,7 +377,7 @@ lmfinance bootstraps a six-pillar zero-rate curve and prices a one-year at-the-m
 Hosts: lmfinance → lmvideo → lmoffice. Output: `images/showcase-35-rates-options.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/35-finance-curve-option-workbook.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/35-finance-curve-option-workbook.lms
 ```
 
 ## HTML link-check report with a terminal picture
@@ -387,7 +387,7 @@ lmhtml loads a three-page site, checks every internal link and writes a report t
 Hosts: lmhtml → lmvideo → lmoffice. Output: `images/showcase-36-link-check.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/36-html-link-check-report.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/36-html-link-check-report.lms
 ```
 
 ## Certificate inventory from lmssl
@@ -397,7 +397,7 @@ lmssl parses two service certificates (fixed test certificates inlined in the sc
 Hosts: lmssl → lmvideo → lmoffice. Output: `images/showcase-37-cert-inventory.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/37-cert-inventory-docx.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/37-cert-inventory-docx.lms
 ```
 
 ## Product slide with a lmmagnum 3D render
@@ -407,7 +407,7 @@ lmmagnum builds a sensor housing from primitives (box body, teal cap, lens, moun
 Hosts: lmmagnum → lmoffice. Output: `images/showcase-38-product-render.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/38-product-render-slide.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/38-product-render-slide.lms
 ```
 
 ## Audio harmonics slide with a WAV file
@@ -417,7 +417,7 @@ lmaudio synthesises a 220 Hz sawtooth, saves it as a WAV file, and measures its 
 Hosts: lmaudio → lmvideo → lmoffice. Output: `images/showcase-39-audio-harmonics.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/39-audio-harmonics-slide.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/39-audio-harmonics-slide.lms
 ```
 
 ## Predator-prey lab report with an lmvideo figure
@@ -427,7 +427,7 @@ lmbio builds the coupled prey and predator model from its mass-action reactions,
 Hosts: lmbio → lmvideo → lmoffice. Output: `images/showcase-40-predator-prey.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/40-bio-predator-prey-report.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/40-bio-predator-prey-report.lms
 ```
 
 ## Gravity-wave speed from a shallow-water pulse
@@ -437,7 +437,7 @@ lmweather releases a 1 m Gaussian pulse on a 1000 m deep channel and tracks the 
 Hosts: lmweather → lmvideo → lmoffice. Output: `images/showcase-41-gravity-wave-speed.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/41-weather-gravity-wave-speed.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/41-weather-gravity-wave-speed.lms
 ```
 
 ## Cell growth lab report with an lmvideo figure
@@ -447,7 +447,7 @@ lmcell seeds 2000 dividing cells on a 2D nutrient grid and records the live-cell
 Hosts: lmcell → lmvideo → lmoffice. Output: `images/showcase-42-cell-growth.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/42-cell-growth-report.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/42-cell-growth-report.lms
 ```
 
 ## Physics lab report: friction on a ramp, measured and checked
@@ -457,7 +457,7 @@ lmphysics runs a 6 kg block on a 24 degree ramp with friction 0.3 and records it
 Hosts: lmphysics → lmoffice → lmpdf → lmvideo. Output: `images/showcase-43-physics-lab.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/43-physics-lab-report.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/43-physics-lab-report.lms
 ```
 
 ## Observing plan: Word and slides from one Markdown body
@@ -467,7 +467,7 @@ lmspace propagates a satellite in an eccentric orbit for two periods; the script
 Hosts: lmspace → lmoffice → lmpdf → lmvideo. Output: `images/showcase-44-observing-plan.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/44-astronomy-observing-plan.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/44-astronomy-observing-plan.lms
 ```
 
 ## Finance memo: bond price, duration and a workbook
@@ -477,7 +477,7 @@ lmfinance bootstraps a zero curve, prices a 5-year 4 % bond and a one-year call,
 Hosts: lmfinance → lmoffice → lmpdf → lmvideo. Output: `images/showcase-45-finance-bond-memo.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/45-finance-bond-memo.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/45-finance-bond-memo.lms
 ```
 
 ## Network audit report: certificates and site links
@@ -487,7 +487,7 @@ lmssl parses two service certificates (key, expiry, self-signed status, name mat
 Hosts: lmssl → lmhtml → lmoffice → lmpdf → lmvideo. Output: `images/showcase-46-network-audit.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/46-network-audit-report.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/46-network-audit-report.lms
 ```
 
 ## Weather briefing deck: gravity-wave speed by depth
@@ -497,7 +497,7 @@ lmweather computes the gravity-wave speed of a shallow channel at 100, 400 and 1
 Hosts: lmweather → lmoffice → lmvideo. Output: `images/showcase-47-weather-briefing.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/47-weather-briefing-slides.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/47-weather-briefing-slides.lms
 ```
 
 ## SIR epidemic: results workbook and report
@@ -507,7 +507,7 @@ lmbio simulates an SIR epidemic from mass-action reactions for 120 days, checks 
 Hosts: lmbio → lmoffice → lmvideo. Output: `images/showcase-48-sir-epidemic.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/48-bio-epidemic-workbook.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/48-bio-epidemic-workbook.lms
 ```
 
 ## Infrastructure change report from applied state
@@ -517,7 +517,7 @@ lmcloud runs OpenTofu in-process on three terraform_data resources, applies them
 Hosts: lmcloud → lmoffice → lmpdf → lmvideo. Output: `images/showcase-49-cloud-plan.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/49-cloud-plan-report.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/49-cloud-plan-report.lms
 ```
 
 ## Data-quality report from a logger CSV
@@ -527,5 +527,5 @@ The script generates a 48-minute logger export with planted defects (blank cells
 Hosts: lmnum → lmoffice → lmpdf → lmvideo. Output: `images/showcase-50-data-quality.png`.
 
 ```sh
-lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/50-data-quality-report.lms
+lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/50-data-quality-report.lms
 ```
