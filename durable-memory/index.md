@@ -14,7 +14,7 @@ Technical documentation, design notes, and operational procedures for `lmgallery
 | [05-closed-source-peer-model.md](05-closed-source-peer-model.md) | Final private/public peer model, licensing obligations, staged-tree workflow, and gated flip process |
 | [06-release-cycle.md](06-release-cycle.md) | Central registry-driven release cycle and preserved workflow facts |
 | [07-licence-options.md](07-licence-options.md) | Binary licence comparison, owner intent, recommended draft and legal review priorities |
-| [08-consolidation-ResearchOpus.md](08-consolidation-ResearchOpus.md) | Consolidating lmdraw/lmmagnum/lmfilament into lmvideo: one scene model, own CPU 3D rasterizer, lmcad/lmblender kept separate, phased aliases |
+| [08-consolidation-ResearchOpus.md](08-consolidation-ResearchOpus.md) | Consolidating lmdraw/lmimg/lmmagnum/lmfilament into one product on lmvideo (Image/Canvas/Scene/Layout/Timeline): one scene model, own CPU 3D rasterizer, lmcad/lmblender kept separate, phased aliases |
 | [08-consolidation-ResearchArgon.md](08-consolidation-ResearchArgon.md) | Unified lmvideo v3 language/schema design (2D + Scene3D + project_x/y + Panel + Video), zero-dep C++17 3D core, 6 example scripts, and migration shims |
 | [closed-source-pin-inventory.md](closed-source-pin-inventory.md) | Local versioned install/release-tag consumers for the nine in-scope products |
 | [closed-source-staging-inventory.md](closed-source-staging-inventory.md) | Staged public-tree SHAs, validation, active-team gates, and source sync status |

@@ -51,8 +51,70 @@ lmcad in 2, lmmagnum in 1, and lmfilament and lmblender in none. Each host READM
 | **lmcad** | **Keep separate** | The OCCT B-rep kernel is the product: booleans, fillets, offsets, volumes. Merging it would put LGPL relink obligations and 25 MB on every image and video user. Interoperate through mesh files. |
 | **lmblender** | **Keep separate** | GPL-3.0 binary: it cannot be linked into the proprietary product, and it is open source by owner decision. Its 124 MB size and hours-long CI do not fit a fast image/video host. Path-traced quality stays its niche. |
 
-Out of scope and unchanged: lmplot (gnuplot charts; lmvideo's `Plot` overlaps but lmplot stays open
-source) and lmimg (image processing).
+| **lmimg** | **Merge (owner addition 2, §3.0), then retire behind an alias** | Its `Image` becomes the one pixel type shared by drawing, 3D renders and video frames. ImageMagick's licence is permissive, so licence rules do not force it out. |
+
+Out of scope and unchanged: lmplot (gnuplot charts; lmvideo's `Plot` overlaps, but lmplot stays open
+source and separate).
+
+## 3.0 One coherent product: a single model, not renamed hosts
+
+Owner addition 2: one binary, one schema and one mental model. The compatibility subcommands in §5
+exist only to run old scripts. They are hidden from the product documentation, and new examples use
+only the single schema.
+
+**The mental model in one sentence:** everything produces an `Image`, a `Timeline` turns time into
+Images, and outputs write Images (or vector recordings) to files.
+
+| Core type | What it is | Produced by | Consumed by |
+|---|---|---|---|
+| `Image` | RGBA pixels (8- or 16-bit, sRGB or linear tag), immutable value; ops return new Images | `open(file)`, `Canvas.snapshot()`, `Scene.render(camera, w, h)`, `Video.frame(t)`, `Layout.render()` | filters, composite, measure, `Canvas.image()`, 3D textures, outputs |
+| `Canvas` | 2D drawing surface (Skia); records vectors when its target is SVG or PDF | `canvas(w, h)` or `image.edit()` | yields an `Image` or a vector `Picture` |
+| `Scene` | 3D nodes, meshes, materials, lights, cameras | `scene()`, mesh import (lmcad STL/glTF) | `render() -> Image`; viewport layers |
+| `Layout` | Panels, grids and layers (2D, 3D viewport, Image) | `panel(...)` | `render() -> Image` or `Picture` |
+| `Timeline` | frame clock, keyframes and tracks; a function from t to an Image | `timeline(fps, duration)` | `Video`, GIF, APNG and WebP writers, contact sheets |
+
+Image operations are first-class on `Image`, whatever produced it:
+- geometry: resize, crop, rotate, flip, perspective, lens;
+- tone and colour: levels, curves, LUT/CLUT, HSL, channel mix, grayscale, threshold, equalize;
+- filters: blur, sharpen, unsharp, edges, morphology, median, vignette, tilt-shift, heal;
+- composite: blend modes, masks, layers;
+- measure: mean, stddev, histogram, SSIM, PSNR, pixel.
+
+So the same `blur` works on a photo, a rendered 3D frame or one video frame inside the timeline, for
+example a depth-of-field-like pass or a grade applied per frame.
+
+**Mapping lmimg (6 types, 48 Image methods; 8.9 MB; ImageMagick plus original MIT code; 4 gallery
+compositions) onto that model:**
+
+| lmimg | Unified product |
+|---|---|
+| `Image` (filters, tone, geometry, measure, `save`) | `Image`, one-to-one names |
+| `Image.rect/circle/line/text` | `image.edit()` returns a `Canvas`, with Skia text instead of stb_truetype |
+| `Img.open/canvas/pattern` | top-level `open`, `canvas`, `pattern` |
+| `Curve`, `Img.curve/hald` | `Curve`, `lut(...)` |
+| `Layers` (`add`, `masked`, `render`) | `Layout` layers with blend mode, opacity and mask (the same layer stack as 2D and 3D) |
+| `Montage`, `Img.panel` | `Layout` grid panel |
+| `Animation` (GIF frames) | `Timeline` + GIF/APNG/WebP writer |
+| `Img.eval/assert_close/assert_true/print` | shared script helpers for all areas |
+
+**Engine choice for Image operations:**
+- P1 links ImageMagick statically, as lmimg does now with all delegates off. Its licence is
+  permissive, it is about 5 MB, and it reproduces lmimg's pixels exactly for the alias.
+- Operations that Skia already does identically (resize, blend modes, colour matrix, blur, morphology,
+  perspective) then move to Skia one by one, gated on SSIM against lmimg's README pictures.
+- ImageMagick is dropped only if nothing needs it any more (TIFF and the exotic codecs are the likely
+  holdouts). This is an implementation choice, invisible in the schema.
+
+**Name candidates:**
+- Keep **`lmvideo`**: zero install churn, but it undersells stills and image editing.
+- **`lmframe`**: matches the core model, an Image that a frame clock animates. It is short and free in
+  the lm* family.
+- **`lmvis`** or **`lmmedia`**: `lmmedia` invites confusion with lmaudio.
+- Avoid **`lmstudio`**: it collides with the existing "LM Studio" LLM desktop application.
+
+Recommendation: `lmframe` as the product name if the owner accepts one rename. lmvideo then becomes
+an alias exactly like lmdraw, lmimg, lmmagnum and lmfilament, so the extra alias work is one more
+entry in the same mechanism.
 
 ## 3. Target architecture
 
@@ -201,8 +263,8 @@ introduces them.
   - binary growth ≤ 4 MB.
 
 **P2 — compatibility subcommands.**
-- The one executable embeds the old schemas unchanged: `lmvideo magnum`, `lmvideo filament` and
-  `lmvideo draw`, the same multi-schema pattern as `lmoffice docx|xlsx|pptx`.
+- The one executable embeds the old schemas unchanged: `magnum`, `filament`, `draw` and `img`
+  subcommands (plus `video` if the product is renamed), the same multi-schema pattern as `lmoffice docx|xlsx|pptx`.
 - Bytecode compiled against an old schema keeps its schema hash, so existing `.dslb` files and
   scripts load.
 - Each subcommand is an adapter: old methods map onto the new engine, with axis, fov, unit, light
@@ -259,9 +321,9 @@ introduces them.
 
 ## 7. Open questions for the owner
 
-1. **Name.** Keep `lmvideo` (continuity; 22 gallery compositions, existing users), or rename to a
-   neutral product name with `lmvideo` itself as an alias? A rename doubles the alias work in P3.
-2. **Alias window.** Is "6 releases and 3 months" acceptable for lmmagnum, lmfilament and lmdraw,
+1. **Name.** Keep `lmvideo` (continuity; 22 gallery compositions), or rename to `lmframe` (§3.0),
+   with lmvideo as one more alias in the same mechanism?
+2. **Alias window.** Is "6 releases and 3 months" acceptable for lmmagnum, lmfilament, lmdraw and lmimg,
    or must old host names live indefinitely as subcommands? May lmfilament's material-compiler
    calls (`material_file`, `Material.save`) stay only on its frozen last release?
 3. **lmblender interop.** Should lmblender gain a glTF + camera import so product scenes can be path
