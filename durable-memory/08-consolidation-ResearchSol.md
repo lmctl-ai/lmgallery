@@ -160,6 +160,54 @@ link changes; do not assume a merged executable is obligation-free because wrapp
 were MIT. A static ELF can still load external resources; noop rendering here is a
 build choice, not proof that every static program is categorically unable to use a GPU.
 
+## Owner addition 3 — licence-gated core and external components
+
+The closed all-in-one **core must exclude any selected component whose licence or
+unresolved patent conditions create the owner's stated problem**, including static
+LGPL relinking obligations. Keep that functionality optional in a separately
+licensed process/repo or user-installed tool with an explicit interface. The table
+names concrete permissive alternatives; replacement means the stated core capability,
+not a promise of identical B-Rep, shader or path-tracing behaviour. This rule changes
+build selection; the historical size inventory above is not an approved link closure.
+
+| Component | Licence / selected-build condition | Problem? | In-core / external / replacement |
+|---|---|---|---|
+| Skia 2D raster/SVG/PDF | BSD-3-Clause plus audited component notices | No inherent closed-source conflict; unverified pack contents are not approved automatically | **In-core**, after rebuilding/auditing the exact dependency/runtime closure. Replacement for LunaSVG is Skia's SVG DOM; retain legacy SVG behaviour only through accepted adapters or an optional external legacy host. |
+| Magnum / Corrade | MIT | No licence problem | **In-core** where required; optional replacement is extracted/reimplemented MIT-authored mesh primitives plus Skia math. Removing a dependency remains a build-tested optimization, not an assumed zero-cost edit. |
+| Filament / material compiler | Apache-2.0 plus dependency notices | No inherent licence conflict; noop rendering/size is an architectural issue | Ordinary core uses own MIT CPU renderer. **External optional** legacy `lmfilament --dsl FILE` for real `.filamat` compilation/package operations if preserving that API; exchange material packages/OBJ/PNG, do not fake them. |
+| OCCT B-Rep kernel | LGPL-2.1 + Open CASCADE exception | **Yes** under the owner's no-static-relink-duty rule | **External** `lmcad --dsl FILE`, exchanging OBJ/STL plus explicit units/appearance metadata. **Core replacement:** own MIT triangle scene and **Manifold (Apache-2.0)** for optional mesh booleans. Neither replaces exact OCCT B-Rep, fillets or topology; those remain external. |
+| Current Blender/Cycles combined closure | GPL-3.0-or-later binary, including GPL Blender helpers/LUT; Cycles itself Apache-2.0 | **Yes** for the audited combined executable | **External** existing `lmblender --dsl FILE`, with file-based scene input and PNG/EXR/frame outputs. **Core replacement:** own MIT CPU preview plus permissive Magnum geometry, not GI/refraction. Any later standalone permissive Cycles build requires removing/replacing and re-auditing GPL inputs first. |
+| FFmpeg/libav linked into core | Usually LGPL-2.1+; optional GPL components/configuration change the result | **Yes**, including LGPL relink duties even without GPL codecs | **External user-installed FFmpeg**, argv process accepting width/height/fps/pixel format and raw RGBA stdin, returning output files, status and stderr. **Core replacement:** **libvpx (BSD-3-Clause)** + **libwebm (BSD-3-Clause)** for an optional reviewed VP9/WebM encoder/muxer. Core can initially emit PNG sequences instead; this new codec path is not implemented today. |
+| x264/x265, H.264/HEVC output | GPL-2.0+ implementations or separate commercial terms; patent questions are independent | **Yes / unresolved by a code licence alone** | **External**, explicitly selected user-installed encoder; no mandatory bundle or silent fallback. **Core replacement:** reviewed libvpx VP9/WebM as above, or PNG sequences. No H.264/HEVC-equivalent compatibility claim or royalty-free guarantee. |
+| PNG/JPEG and image helpers | libpng/zlib; selected stb helpers MIT option; exact JPEG implementation notices vary | Normally no; inspect selected files/build | **In-core** PNG via libpng/zlib or stb's MIT option. Prefer PNG baseline; optional JPEG via a separately audited permissive implementation, not an assumed FFmpeg codec import. |
+| Restricted/GPL or unlicensed system font files | GPL/exception or commercial font terms vary by exact bytes | **Yes** if the selected font fails the owner's rule or lacks redistribution rights; embedding exceptions are not family-wide guarantees | **External user-supplied font assets**, never silently redistributed. **Core replacement:** pinned **Roboto 2 (Apache-2.0)** font files from its Apache-licensed repository. Coverage/metrics differ; do not promise replacement of every math/CJK face. |
+| Current Noto/DejaVu assets | SIL-OFL / Bitstream Vera-derived terms, depending on exact file | No automatic proprietary-software conflict; notices, naming and font redistribution rights remain separate | Keep only explicitly approved font bytes with full terms, or use the Apache Roboto 2 default above and make additional fonts **external assets**. Documents are not relicensed merely because OFL fonts are embedded. |
+| FreeType/text shaping dependencies | FreeType FTL-or-GPL choice; HarfBuzz MIT-style; ICU Unicode terms | **Yes if a GPL-only selection**; permissive alternatives need attribution | Select FreeType's **permissive FTL** option and audited shaping dependencies. If that selected closure is rejected, use **stb_truetype (MIT)** for the limited core glyph path, keeping advanced font processing external; do not claim shaping/hinting equivalence. |
+| Statically bundled glibc | LGPL-2.1+ | **Yes** under this owner rule, even with OCCT absent | **Replace in-core** with **musl (MIT)** on Linux and rebuild Skia/dependencies for that toolchain. A user-installed dynamic system libc is an **external OS dependency** alternative, with a clearly changed static-binary promise. The current prebuilt glibc-oriented Skia pack cannot be assumed musl-compatible. |
+| GCC C++ runtime / LLVM replacement | libstdc++/libgcc GPL + GCC runtime exception; LLVM libc++/libc++abi/compiler-rt Apache-2.0 + LLVM exceptions | GCC runtime exception can permit closed distribution; not the same restriction as ordinary GPL; audit exact inputs | Prefer **in-core LLVM runtimes** for the permissive closure; retain applicable exception/notice texts. Exclude any runtime input that fails this audit rather than treating an exception as a blanket approval. |
+| Later MPL-2.0 candidate | MPL file-level source duties, no blanket whole-product source release | Conditional; owner explicitly allows MPL | **In-core only if** the covered-file source/notice obligation is accepted and fulfilled; otherwise **external** or replace the specific functionality with the MIT/BSD/Apache alternatives above. Do not describe MPL as obligation-free. |
+
+Primary licence evidence: [FFmpeg build-dependent licensing](https://github.com/FFmpeg/FFmpeg/blob/master/LICENSE.md),
+[OCCT exception](https://github.com/Open-Cascade-SAS/OCCT/blob/master/OCCT_LGPL_EXCEPTION.txt),
+[stb's MIT option](https://github.com/nothings/stb/blob/master/LICENSE),
+[Roboto 2 Apache licence](https://github.com/googlefonts/roboto-2/blob/main/LICENSE),
+[libvpx licence/patent files](https://github.com/webmproject/libvpx),
+[libwebm BSD licence](https://github.com/webmproject/libwebm/blob/main/LICENSE.TXT),
+[musl copyright](https://git.musl-libc.org/cgit/musl/tree/COPYRIGHT),
+[LLVM runtime licence](https://github.com/llvm/llvm-project/blob/main/libcxx/LICENSE.TXT)
+and the exact local/public host audits already cited. Pin versions and retain full
+texts when implementing; these names are candidates, not a new shipped dependency set.
+
+**Patent/closure gate:** a permissive copyright licence and a patent grant do not
+establish universal patent clearance. If the chosen codec/font still has an unresolved
+problem under the owner's rule, it stays external and the always-available core
+outputs remain raw frames/PNG sequences. Out-of-process use does not erase licence,
+patent, redistribution or source obligations of a separately shipped component.
+Do not relabel an in-process plugin as an external process. Record executable/version,
+input/output format, unit/colour conventions, timeouts, errors and independent notices
+for each optional interface. Existing MP4 examples may continue to use user-installed
+FFmpeg; no new core codec or musl build is claimed by this documentation amendment.
+
 ## Gallery, autorun and compatibility contracts
 
 The checked-in gallery contains 50 showcase records. Impact from `showcases.json`:
