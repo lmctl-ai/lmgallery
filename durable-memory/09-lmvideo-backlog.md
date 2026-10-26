@@ -7,6 +7,7 @@ code, repository visibility, repository name, release or licence grant.
 
 ## Decisions and product boundaries
 
+- **CPU reference only for now:** Skia raster, our 3D rasterizer and Cycles CPU; no GPU implementation or GPU work is scheduled.
 - **lmvideo is the product name and implementation focus.** One executable, one
   canonical authoring schema and one model: Image/Frame, Canvas, Scene, Layout,
   Timeline. No separately branded draw/img/Magnum/Filament modes or schema bundles.
@@ -54,6 +55,13 @@ tests compare against (a GPU path would be gated by SSIM against it). The GPU no
 background only.
 
 ## Model and acceptance rules
+
+**Surface/Renderer interface:** keep backend storage, command submission and render
+execution behind internal interfaces returning the same canonical Image/Frame and
+using the same scene/material contracts. A later GPU backend must require no DSL
+or schema change and must be justified by a real need; none is planned now. Pinned
+CPU outputs remain the deterministic reference (same-environment hashes, documented
+cross-CPU image tolerances), independent of future backend implementation details.
 
 Image is the shared pixel object, whether decoded, drawn, processed, rendered in
 3D or evaluated at a timeline time. A frame adds index/time metadata to an Image;
@@ -226,8 +234,7 @@ baked into an equivalent texture; support a declared subset and diagnose other n
 Define the versioned `.lmmat` logical pack in phase 4 (`material.json` plus PNG/mip resources and hashes; an optional single-file archive must preserve the same deterministic payload), containing a manifest, source/IR hash, compiler/profile version, scalar
 PBR parameters, texture bindings/samplers, baked image/mip resources, channel/colour
 metadata, checksums and source/licence provenance. Require deterministic ordering,
-fixed metadata and resource limits. A native GPU blob may be an optional tagged
-payload, never the only portable representation. Distinguish source-file loading
+fixed metadata and resource limits. The pack remains renderer-neutral; no GPU shader-payload compiler is scheduled. Distinguish source-file loading
 from loading a compiled pack by explicit API/format magic. Legacy `.filamat` gets an
 explicit import/conversion capability or clear unsupported-format diagnostic; never
 reinterpret its bytes as the new portable pack.
@@ -454,9 +461,8 @@ booleans) are new lmvideo work only if wanted:
 - CPU with Embree and OIDN CPU denoise is the default everywhere, and deterministic per machine.
 - GPU backends all exist in standalone Cycles and are all OFF: CUDA/OptiX (NVIDIA toolkit to
   build, driver at runtime), HIP (AMD), Metal (Apple Silicon), oneAPI (Intel).
-- Metal on macOS arm64 is the cheapest later addition: no extra runtime, and a GPU on every Mac.
-  CUDA/OptiX adds large kernel binaries and an NVIDIA driver dependency. Both are later,
-  build-flag-only options, not v1.
+- No GPU platform is prioritized, built or scheduled. Hardware acceleration is only
+  a possible later need, hidden behind Surface/Renderer without changing the DSL/schema.
 - The OptiX denoiser is NVIDIA-only, so OIDN stays the denoiser.
 - **arm64:** Cycles CPU (via sse2neon), Embree 4 and OIDN 2 (NEON) all support it; lmblender
   already ships linux-arm64 and macOS arm64.
