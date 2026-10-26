@@ -86,7 +86,7 @@ phase 0, and 1.4 (font import) becomes P.2.
 - lmctl.com is the public `lmctl-ai/lmctl` repo, deployed to S3 + CloudFront by
   `scripts/deploy*.sh`. Its prefixes are `/lmctl/` docs, `/tools/`, `/skills/`, `/examples/`,
   `/quickrun/`, `/autorun/`, `/templates/` and `/lmprobe/`.
-- It serves **no fonts or binary assets** today; `static/` holds only four SVGs. Font hosting is
+- No font catalog or tracked font files were found; existing homepage binary/video assets do not establish a font service. Font hosting is
   therefore a new prefix and a new deploy script in that repo, not existing content.
 
 **Proposed URL scheme.** Immutable and versioned; content-addressed files never change in place.
@@ -102,7 +102,7 @@ https://lmctl.com/assets/v1/{icons,hdri,luts,textures}/...   # later kinds, same
   UFL-1.0, CC0, MIT and Bitstream Vera.
 - Candidate first families:
   - Inter, Noto Sans, Noto Serif, Noto Sans Mono, JetBrains Mono and Source Serif 4 (OFL-1.1);
-  - Roboto (Apache-2.0);
+  - Roboto 2 from its Apache-2.0-licensed repository, pinned by exact bytes (do not assume every later Roboto release has the same licence);
   - one Noto CJK subset, gated on size.
 - The catalog is generated in CI from the font files plus their licence texts. A file without a
   licence entry fails the deploy.
@@ -113,17 +113,138 @@ https://lmctl.com/assets/v1/{icons,hdri,luts,textures}/...   # later kinds, same
 | P.2 | `font_load(name_or_url_or_path, sha256?)` → `Typeface`, for 2D text, PDF/SVG embedding and video titles; family, weight and style lookup over the catalog; fallback chain ending in bundled DejaVu | Glyph coverage and metrics of a pinned font match its file; a missing glyph falls back and is reported; PDF embeds a subset (checked with `pdffonts`); an offline run with a warm cache is byte-identical to the online one | new lmvideo `font-specimen.lms` (one sheet of catalog families); draw `title-card.lms` migrated |
 | P.3 | Font licence tracking: every output records the fonts it used (family, version, sha256, SPDX); `--notices-used` prints them; video and PDF metadata carry them | One output that uses two fonts lists exactly those two with licences; a font without a known licence (user file) is reported as `unknown`, not omitted | `font-specimen.lms` writes `fonts-used.json` beside the PNG |
 | P.4 | Lift the publication to lmctl.com: `assets/` tree, catalog generator, licence gate and `deploy-assets.sh` in the `lmctl-ai/lmctl` repo | Catalog validates; every file has sha256 and a licence; uploads use immutable cache headers; old versions stay (never deleted) | the catalog itself, plus a specimen page |
-| P.5 | 3D text from any loaded font: glyph outlines via Skia, flattened, holes and winding resolved, triangulated, extruded with optional bevel | Letters with holes (`A B O 8 e`), nested contours and a CJK glyph; watertight check; replaces the 5×7 voxel text of magnum and filament | magnum/filament `text3d` examples migrated; new `logo-extrude.lms` |
+| P.5 | 3D text from any loaded font: glyph outlines via Skia, flattened, holes and winding resolved, triangulated, extruded with optional bevel | Letters with holes (`A B O 8 e`), nested contours and a CJK glyph; watertight check; replaces the 5×7 voxel text of magnum and filament | magnum/filament `text.lms` examples migrated; new `logo-extrude.lms` |
 | P.6 | Generalise the resolver to images, SVG icons, HDR environment maps, LUTs and meshes (`image_load`, `env_load`, `mesh_load` accept the same URL, catalog and checksum forms) | Each kind loads from file, URL and catalog with the same checksum and offline rules; licence tracking as in P.3 | new `icon-grid.lms` (Lucide ISC / Material Symbols Apache-2.0 subset); a CC0 HDRI in a 3D scene |
 | P.7 | Content-addressed render cache for video: per-frame hash of resolved scene state → cached Image; rerendering a changed range reuses the rest | Changing frames 40–60 rerenders only those (counted); a cache hit is byte-identical to a fresh render; bounded disk, LRU | `kepler-orbit` video rerender test |
 
 Also counted as platform primitives, owned by existing items rather than new ones:
 - colour management (sRGB/linear tags and ICC embedding in PNG/PDF), item 0.3;
-- text shaping and bidi through HarfBuzz/ICU, already linked, verified in P.2 with an Arabic and a
-  Hebrew line;
+- text shaping/bidi verified through the actual selected Skia shaping path in P.2 with Arabic/Hebrew; merely linking HarfBuzz/ICU is not proof that a primitive shaper uses them;
 - deterministic seeds for procedural content, 0.2 and 4.5;
 - an audio track muxed into video, through the existing external ffmpeg process (lmaudio output
   as input).
+
+### Primitive implementation details and acceptance subitems
+
+The P.F subitems refine P.2/P.3/P.5, P.M refines 4.5–4.7, and P.A refines P.1/P.6/P.7. They are not separate products or duplicate authoring APIs.
+These are lmvideo core capabilities, not new features for the frozen sibling hosts.
+Implement the common asset resolver early (with 0.3/1.4), font loading before unified
+text/3D text, and portable texture/material compilation with phase 4 before finalizing
+the phase-5 GLB/backend bridge. One resolver, cache and provenance record serves every
+consumer; do not create separate font/image/3D/video download stacks.
+
+### Website source findings and proposed font publication
+
+Inspected public [lmctl-ai/lmctl](https://github.com/lmctl-ai/lmctl) main commit
+`3eb6ed805062312f68c756640b27494e057faa77`: `DEPLOY.md`, `docusaurus.config.ts`,
+`homepage/assets/style.css`, `src/css/custom.css`, `docs/license.md`,
+`scripts/deploy-homepage.sh` and `scripts/tools/static-site.py`, plus the recursive
+Git tree. This is the lmctl.com homepage/docs/static-content repository, not the
+private compiler monorepo. It currently serves the root homepage, Docusaurus docs
+under `/lmctl/`, and separately published `/tools/`, `/examples/`, `/skills/` and
+other static prefixes through S3/CloudFront. The current tree contains **no tracked
+TTF/OTF/WOFF font assets or font catalog**; homepage CSS uses a system-ui font stack.
+Do not infer redistribution permission for installed Segoe UI/Arial/etc from that CSS.
+The site's lmctl binary licence page is not a licence for future third-party fonts.
+
+Proposed new, **not-yet-served** URL contract:
+
+- `https://lmctl.com/assets/v1/index.json`: versioned catalog with stable face
+  IDs/family aliases, style/weight/variation metadata, font URL, SHA-256, size,
+  source/version, copyright, licence identifier, licence-text URL/hash and relevant
+  reserved-name/embedding/redistribution conditions.
+- `https://lmctl.com/assets/v1/fonts/<family>/<version>/<face>.ttf` (or `.otf`) plus
+  version-pinned licence texts with recorded hashes. Prefer raw TTF/OTF for Skia portability; WOFF2
+  support is an explicit decoder/build capability, not assumed from web-font usage.
+- A future website change must add the font MIME types and managed inventory to
+  the actual publisher: its current extension allowlist does not include font
+  suffixes. Use exact-prefix asset publishing, immutable caching for version-pinned asset paths,
+  revalidation/version pinning for the index, and the existing managed-manifest
+  deletion discipline. Check live status, MIME, byte hash and licence links.
+  Do not upload fonts or deploy the website as part of this documentation task.
+
+Name resolution uses the pinned catalog's family/face IDs, never an implicit scan
+of arbitrary OS fonts. Explicit file/URL sources remain possible. Resolve styles
+and axes deterministically; record the resolved face hash in render provenance.
+Use approved bundled fonts for an offline fallback and ship their exact licence
+texts. A strict/pinned job fails on missing or corrupt required bytes; a requested
+fallback policy may select the bundled face and must report which face was used.
+A checksum mismatch is not silently accepted as another font. External-font licences
+stay separate from the lmvideo binary licence; exact-byte provenance matters more
+than a family name. Keep notices with exports where the applicable font terms require
+it; embedding a font does not generally relicense an entire document.
+
+### First-class font load backlog
+
+| ID | Small item | Acceptance test | Gallery example / fixture |
+|---|---|---|---|
+| P.F1 | Common Font resolver for catalog name, HTTPS URL and local file, returning the same Skia-backed Font used by Canvas and Timeline | Name/URL/file resolving to identical bytes produce equal metrics/glyph IDs; unknown face, unreadable file, invalid font and unsupported axes fail clearly | New lmvideo `font-source-triptych.lms`; draw `title-card.lms` as migration seed |
+| P.F2 | Content-addressed font cache, checksum verification, pinned metadata and offline fallback | Cold/warm cache, offline verified hit, missing cache, bad hash, interrupted download and concurrent loads tested; default bundled fallback is recorded and strict mode rejects substitution | New lmvideo `font-offline-poster.lms` with test-local HTTP fixtures and network-disabled rerun |
+| P.F3 | Website font catalog/assets and per-face licence ledger, coordinated with the website maintainer | Every catalog entry has matching font/licence hashes and permitted hosting/redistribution; live MIME/URL checks; no system font copied from CSS assumptions | New lmvideo `font-license-specimen.lms` with face/source/licence caption; website catalog example |
+| P.F4 | Reuse loaded face/shaped glyph runs for 2D text, 3D outline extrusion and every video frame | Same face/axes and baseline metrics across consumers; holes/winding/flattening and glyph fallback tested; shaping/RTL coverage explicitly tested or reported unsupported | New lmvideo `font-2d-3d-turntable.lms`; magnum `text.lms` and img `poster_text.lms` as seeds |
+
+Font cache blobs can share the generic asset store below; glyph/shape caches also
+include face hash, size/axes, shaping configuration and relevant library version.
+No per-frame font fetching or duplicate font loading inside the Cycles process.
+Extruded geometry/texture-baked text travels as ordinary scene assets; backend text
+rendering does not get a separate untracked font-resolution policy.
+
+### First-class texturing/material compilation backlog
+
+Current-source fact: lmfilament `cpp/main.cpp:116–138` parses Filament material
+source through `matp::MaterialParser`/`filamat::MaterialBuilder`; `material_file`
+reads source text, and `Material.save` writes the resulting package bytes. Its
+texture/checker/file/pixel/filter/wrap/repeat operations are useful migration seeds.
+Those `.filamat` bytes are Filament shader packages, **not** portable CPU texture/PBR
+assets and not a format glTF/Cycles can consume directly.
+
+Carry over the **first-class workflow** into the one lmvideo schema:
+`material_file`/source construction -> compile/validate -> Material/texture asset ->
+`Material.save` -> reload/reuse -> CPU rendering and GLB export. Use a versioned
+renderer-neutral material description/IR and deterministic baking of supported
+procedural/image graphs; reuse the canonical Image/filter operations. Keep normal
+compilation in the one binary. Apache-licensed Filament parser/compiler pieces may
+be reused where useful after a closure audit, but a noop Filament engine is not
+required to generate CPU pixels. Do not claim arbitrary view-dependent GLSL can be
+baked into an equivalent texture; support a declared subset and diagnose other nodes.
+
+Define the versioned `.lmmat` logical pack in phase 4 (`material.json` plus PNG/mip resources and hashes; an optional single-file archive must preserve the same deterministic payload), containing a manifest, source/IR hash, compiler/profile version, scalar
+PBR parameters, texture bindings/samplers, baked image/mip resources, channel/colour
+metadata, checksums and source/licence provenance. Require deterministic ordering,
+fixed metadata and resource limits. A native GPU blob may be an optional tagged
+payload, never the only portable representation. Distinguish source-file loading
+from loading a compiled pack by explicit API/format magic. Legacy `.filamat` gets an
+explicit import/conversion capability or clear unsupported-format diagnostic; never
+reinterpret its bytes as the new portable pack.
+
+| ID | Small item | Acceptance test | Gallery example / fixture |
+|---|---|---|---|
+| P.M1 | `material_file` and source constructor with one typed material/texture IR, validation and compiler diagnostics | File versus equivalent inline source compile to identical IR; missing textures, bad parameters, unsupported graph nodes and source locations tested | Migrate filament `compile-sample-materials.lms`, `material_sandbox.lms`; new lmvideo `material-compiler-workbench.lms` |
+| P.M2 | Procedural/image texture compilation using shared Images: checker/gradient/seeded noise, colour transforms, mipmaps and samplers | Same seed/settings reproduce resources; changing an Image or graph input invalidates cache; UV origin/wrap/repeat and sRGB versus linear channels verified | Migrate filament `texture-modes.lms`, `textured-primitives.lms`; img `gradient_studio.lms` |
+| P.M3 | Portable `Material.save` pack and loader, reusable by the CPU rasterizer | Byte-identical pack for identical inputs; round-trip render equals direct material; corrupt/version-incompatible pack rejected; one pack reused across instances/frames without recompile | New lmvideo `packed-material-turntable.lms` with a compile-once/offline-reload test |
+| P.M4 | Export compiled PBR/textures to standard glTF plus the Cycles material profile | Base colour/emissive sRGB, linear occlusion/roughness/metallic channel packing, tangent-space normals and alpha verified; CPU and Cycles decode the same resource hashes; unsupported material features fail explicitly | New lmvideo `material-cpu-cycles-compare.lms`; blender `material-maps.lms`/`gltf-emission.lms` as asset fixtures |
+| P.M5 | Dependency-keyed compiled-material cache and bounded bake scheduling | Changes in source, included file, image hash, profile/compiler, dimensions or seed invalidate results; warm loads avoid recompilation; atomic cache writes and bake-memory limits tested | New lmvideo `material-cache-proof.lms` with cold/warm/modified-input captions |
+
+This addition replaces the earlier plan to leave all material-compilation operations
+on a frozen host. The new portable compilation workflow is first-class lmvideo work;
+unsupported **legacy binary/shader semantics** may remain on the old external tool
+until an explicit converter/profile exists. Avoid a misleading success when a material
+only carries uploaded maps that the CPU shader does not actually sample. Track feature
+coverage through compile, CPU shading, GLB export and the selected Cycles backend capability profile. This does not undo the newer w75d decision above to keep Cycles in lmvideo after its permissive-only closure gate; glTF remains an interchange format for the same packed material data.
+
+### Other shared platform primitives worth adding
+
+| ID | Small item | Acceptance test | Gallery example / fixture |
+|---|---|---|---|
+| P.A1 | Common file/URL/embedded asset loading and content-addressed byte cache for Images/SVG/meshes/fonts/material packs | Same verified asset resolves once across consumers; bounded redirects/download sizes/timeouts, atomic cache writes, path/base-URL rules and offline behaviour tested; no shell command construction | New lmvideo `asset-source-dashboard.lms`, combining loaded Image, SVG and textured Scene |
+| P.A2 | Asset dependency graph, provenance and reproducible job lock | Export lists every resolved source/hash/licence, transitive texture/font/material input and backend profile; changing an input invalidates only dependents; clean offline rerender succeeds from the lock/cache | New lmvideo `locked-scene-offline.lms` with an asset/provenance panel |
+| P.A3 | Shared decoded-resource pool and async prefetch/cancellation at job boundaries | Bounded Image/font/mesh/mipmap memory, eviction of unused resources, no eviction of live handles, cancellation cleanup and no per-frame network access | New lmvideo `cached-texture-animation.lms`, cold/warm timing and peak-memory assertions |
+
+These items provide useful primitives without adding a second authoring model.
+Choose pixel/colour conversion, URI/base-path resolution, capability/error reporting
+and temporary-file lifecycle once across image processing, textures, exports and
+external render jobs. No website asset, material-pack implementation or new dependency
+has been published by this plan amendment.
 
 ## Phase 1 — highest-value lmdraw parity helpers
 
@@ -189,10 +310,12 @@ resolution, supersampling, platform and revision; set budgets after baselining.
 | 4.6 | Material compiler: `material(...)` description (base colour, metallic, roughness, normal or height, AO, emissive, opacity, each a constant, Image or texture graph) compiled into a packed asset with mips: `albedo` RGBA, `orm` (glTF occlusion/roughness/metallic packing), `normal` (from height when needed), `emissive`; `Material.save(path)` writes a `.lmmat` directory (`material.json` + PNGs + sha256) and `material_load` reads it back | Round trip save → load gives identical rasterizer output; the ORM packing matches the glTF spec; the height → normal conversion is checked on an analytic bump; mips are box-filtered in linear light; the CPU rasterizer samples all maps (fixing filament's albedo-only preview) | filament `hellopbr.lms`, `texture` examples migrated; new `material-library.lms` (sphere grid of saved materials) |
 | 4.7 | Export compiled materials to glTF (`pbrMetallicRoughness`, `normalTexture`, `occlusionTexture`, `emissiveTexture`, `KHR_materials_emissive_strength`, `KHR_texture_transform`) for lmcycles and outside tools | The exported GLB passes the Khronos glTF validator; lmcycles renders the same material with base colour and roughness visibly consistent with the CPU preview (SSIM on a matte reference; glossy parts are compared by eye, as Cycles adds GI); lmblender's existing importer reads it | new `material-handoff.lms` (CPU preview vs lmcycles final, side by side) |
 
-Filament compatibility: `material_file("*.mat")` and Filament `.filamat` packages are GPU shader
-programs. The CPU rasterizer cannot execute them, and lmvideo does not compile them. The new
-compiler covers the *texturing and material parameter* role. Scripts that need real Filament shader
-packages stay on the pinned lmfilament release (maintenance only), as already stated in phase 7.
+Material compilation is first-class in lmvideo: canonical `material_file` reads the declared
+portable material/texture source profile; `Material.save` writes the reusable `.lmmat` pack.
+Legacy Filament `.mat` source is a different source language and `.filamat` contains GPU shader
+package bytes. The CPU rasterizer cannot execute arbitrary Filament shader programs. Convert the
+supported source subset explicitly; unsupported legacy semantics stay on the pinned external
+release until a real converter exists. Do not fake compatibility by relabelling package bytes.
 
 ## Phase 5 — geometry and scene handoff
 
@@ -314,8 +437,9 @@ lmvideo behind `renderer="cycles"` while phases 1–4 proceed. Only 6.3–6.5 wa
 
 Retirement/alias deadlines are not acceptance criteria yet. Maintain old host names
 minimally for critical fixes until the owner supplies timing. No new features are
-backported. Keep unsupported legacy Filament material-package operations on their
-old pinned release/external tool; do not fabricate successful compiled packages.
+backported. Implement first-class portable material/texture compilation via P.M1–P.M5.
+Unsupported legacy Filament binary/shader semantics remain explicitly external
+until converted; never fabricate a successful portable material from opaque bytes.
 
 ## Open-source licensing: lmcad and lmcycles
 
