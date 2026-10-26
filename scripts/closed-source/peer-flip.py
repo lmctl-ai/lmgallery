@@ -1022,7 +1022,7 @@ def _wait_for_private_workflow(product: str, attempts: int = 30) -> None:
 
 def _run_publish_test(product: str, private_sha: str) -> dict:
     raise FlipError(
-        "private Actions dispatch is disabled by owner decision; use release-cycle.sh --dry-run "
+        "private Actions dispatch is disabled by owner decision; use lmctl-mono-test/release-cycle.sh --all --dry-run "
         "or re-enable manually with: gh api repos/lmctlhq/%s/actions/permissions -X PUT -F enabled=true"
         % product
     )
