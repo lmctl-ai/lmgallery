@@ -20,6 +20,9 @@ code, repository visibility, repository name, release or licence grant.
   legacy GPL product:** no new features, releases and source offers kept, and its
   authoring examples migrate to lmvideo. Archiving is an owner decision once
   migration is done.
+- **Owner addition 2 (w75):** lmblender, lmfilament, lmmagnum, lmimg, lmcad and lmdraw return to
+  **public open source as real standalone repos**, not aliases of lmvideo, with minimal maintenance;
+  see "Six standalone open-source repos". lmvideo alone keeps the private/public peer model.
 - **lmdraw, lmmagnum, lmfilament and lmimg are maintenance-only:** critical fixes,
   no new features. Alias/retirement timing is **deferred to the owner**. There is no
   approved six-release, three-month or two-release deadline. Existing pins, raw
@@ -725,6 +728,118 @@ as part of this task.
 - **lmgallery:** edit catalog/showcase manifests and regenerate README/attribution;
   update install coordinates only after tested releases exist. Preserve public image
   attribution and source snapshots until deliberately replaced.
+
+## Six standalone open-source repos (owner addition 2, plan only)
+
+Scope: lmblender, lmfilament, lmmagnum, lmimg, lmcad and lmdraw become ordinary public
+open-source repos. Each has its own source, CI and releases, and is maintained minimally (critical
+fixes, dependency security updates, no features). None is an lmvideo alias. lmvideo keeps its
+private/public peer model and does not depend on them; the code it took over is copied into
+lmvideo, not linked. **Nothing below has been flipped or pushed.**
+
+### State on 2026-10-26
+
+| Repo | Private source twin | Public `lmctl-ai/<name>` today | Saved pre-flip public history (`/home/mma/staging/closed-source/`) | Private commits since the flip |
+|---|---|---|---|---|
+| lmblender | none (`lmctlhq/lmblender` redirects) | full source, GPL-3.0-or-later, own CI and releases (v0.3.138) | n/a | n/a |
+| lmfilament | `lmctlhq/lmfilament`, 26 commits, root LICENSE MIT | 4-commit orphan main: README, docs, examples; root LICENSE = binary licence after v0.3.20 | `lmfilament-public-history-*.git` (main c5f32a2, 22 commits) | 4 |
+| lmmagnum | `lmctlhq/lmmagnum`, 20, MIT | orphan; binary licence after v0.2.14 | `lmmagnum-public-history-*.git` (41a7d85, 17) | 3 |
+| lmimg | `lmctlhq/lmimg`, 69, MIT | orphan; binary licence after v0.1.3 | `lmimg-public-history-*.git` (656b23b, 66) | 3 |
+| lmcad | `lmctlhq/lmcad`, 143, MIT | orphan; binary licence after v0.1.72 | `lmcad-public-history-*.git` (87cbb33, 140) | 3 |
+| lmdraw | `lmctlhq/lmdraw`, 49, MIT | orphan; binary licence after v0.2.6 | `lmdraw-public-history-*.git` (9452958, 46) | 3 |
+
+For all five private twins, the saved pre-flip public `main` **is an ancestor of the private
+HEAD**. The private history is the old public history plus 3–4 commits made since the flip. Those
+few commits are the only history that has never been public.
+
+### Licence per repo
+
+Our code stays **MIT**, matching every private root LICENSE and the pre-flip public grant.
+Dependency notices and duties ship with each release.
+
+| Repo | Our code | Dependencies and duties |
+|---|---|---|
+| lmblender | MIT per file | Combined binary **GPL-3.0-or-later** (Blender intern sky, guardedalloc, libc_compat, `view_luts.h`); source archive and source offer per release, as today. Cycles, Embree, OIDN and TBB: Apache-2.0; OIIO, OCIO and EXR: BSD. Optionally de-GPL it later by moving to standalone `blender/cycles` (phase 6 analysis); not required for open source. |
+| lmfilament | MIT | Filament 1.78.1 Apache-2.0 (NOTICE); stb (public domain/MIT); static glibc → LGPL-2.1 text plus relink objects (as now); libc++ Apache-2.0 with LLVM exception |
+| lmmagnum | MIT | Magnum and Corrade MIT; stb; static runtimes (glibc relink objects if static) |
+| lmimg | MIT | ImageMagick licence (Apache-2.0 style) with all delegates off; zlib, libpng, libjpeg-turbo, libtiff, libwebp; stb_truetype; Roboto Apache-2.0; dynamic glibc (no relink duty) |
+| lmcad | MIT | OCCT 8.0.1 **LGPL-2.1 + OCCT exception**: relink objects, `OCCT-RELINKING.md` and recipe per architecture (as now); build123d Apache-2.0 + NOTICE; PyVista MIT; static glibc LGPL |
+| lmdraw | MIT | LunaSVG and PlutoVG MIT; FreeType FTL (credit); static runtimes |
+
+With source public, the LGPL relink duty is easier to meet: the source and build scripts are
+right there. The relink-object assets still ship for static builds.
+
+### Restoring public source: history route
+
+Recommended route: **restore the original lineage, not a new orphan.**
+1. Audit the 3–4 post-flip private commits, plus the full current tree:
+   - `gitleaks`/`trufflehog` over all private refs;
+   - grep for tokens, internal hostnames and `lmctlhq` paths;
+   - remove closed-only files: `scripts/release-to-public.sh`, private-CI publisher steps that use
+     `RELEASE_TOKEN`, staging manifests, and binary-licence texts as root LICENSE.
+2. The earlier history needs only a quick re-scan; it was public until 2026-10-25.
+3. Add one "return to open source" commit on top of private HEAD:
+   - root `LICENSE` MIT;
+   - `LICENSE-examples` kept;
+   - a README licence section explaining the release eras: MIT up to vA, binary licence vA+1…vB,
+     MIT again from vB+1, or MIT for all if the owner relicenses the binary-era releases, which as
+     sole copyright holder they can;
+   - the public-only files of the 4 orphan commits (README and images), merged in.
+4. Point public `main` at that commit, so the history is again pre-flip public history, then
+   private, then the restore commit.
+5. Keep the 4 orphan commits reachable as tag `binary-licence-era`, so nothing is lost.
+6. Restore the saved pre-flip tags and branches from the backup mirrors.
+
+Fallback: if the audit finds something unpublishable in the post-flip commits, squash only those
+3–4 commits into the reviewed restore commit. The pre-flip history stays intact, and no full orphan
+is needed. lmblender needs no history work.
+
+### CI and release in a single public repo
+
+- One `ci.yml`, built from the private twin's (all five have one):
+  - build, test and `lmscript --check` examples on push and pull requests;
+  - release job on `workflow_dispatch` or a version tag;
+  - `permissions: contents: write` only in the release job, using `GITHUB_TOKEN`;
+  - no `RELEASE_TOKEN`, no cross-repo checkout, no `release-to-public.sh`.
+- Public repos get **free standard-runner minutes**, which removes the private Actions budget block
+  for these six.
+- Platforms: keep exactly the set each repo shipped last; lmdraw, lmmagnum and lmcad include
+  Windows. Asset names stay unchanged (`<name>-<os>-<arch>`, `SHA256SUMS`) so `install=` pins and
+  `@latest` keep working.
+- Minimal maintenance: a monthly scheduled CI run to catch toolchain rot, Dependabot for Actions
+  only, and releases only for fixes.
+- Release registry (`lmctlhq/lmctl-mono-test/releases.json`): point these six at their own public
+  workflows; remove them from the private publisher inventory and from `scripts/closed-source`
+  split lists. The registry maintainer applies this after the owner approves.
+
+### README and gallery state
+
+- Each README keeps its picture gallery and autorun captions (raw paths unchanged) and adds:
+  - "Status: maintained (critical fixes only). New 2D/3D/image work happens in lmvideo";
+  - a link to the matching lmvideo examples;
+  - a build-from-source section;
+  - the licence table above.
+- lmgallery: the showcase entries and pins keep working unchanged, because asset names and
+  `@latest` are preserved. Update `closed-source-pin-inventory.md` and `05-closed-source-peer-model.md`
+  to list only lmvideo (plus the products outside this change) as closed peers, and mark the six as
+  open source.
+
+### Ordered steps (owner-only actions in **bold**; nothing done here)
+
+| # | Step | Who |
+|---|---|---|
+| 1 | Approve MIT for our code, the history route (restore lineage vs squash fallback) and the release-era wording; decide whether binary-era releases are relicensed MIT | **OWNER** |
+| 2 | Secret and closed-only audit of each private twin; prepare the restore commit and the new public `ci.yml` on a branch; dry-run CI on a fork-free branch | agent |
+| 3 | **Force-with-lease public `main` to the audited restore commit** (public history rewrite: reverses the 2026-10-25 orphan reset); push tag `binary-licence-era`; restore saved tags | **OWNER** authorizes, then runs or delegates |
+| 4 | **Replace the root binary-licence text** (part of step 3's commit) and edit binary-era release notes with the licence statement | **OWNER** approves the wording |
+| 5 | **Enable Actions / workflow permissions** on the public repo if disabled; first public CI run | **OWNER** |
+| 6 | **Re-publish: first MIT release** from public CI under the same asset names; verify fresh-cache install, `SHA256SUMS`, notices and relink assets | **OWNER** approves promotion to latest |
+| 7 | **Revoke `RELEASE_TOKEN`** and private publisher secrets; switch the registry entries | **OWNER** / registry maintainer |
+| 8 | **Archive the private twin** `lmctlhq/<name>` (read-only, not deleted) once public CI rebuilds from source alone. No visibility flip of the twin is needed, since the public repo already exists | **OWNER** |
+| 9 | lmblender: README "maintained (critical fixes)" note only; no repo operation (rename to lmcycles only if the owner still wants it) | agent; rename **OWNER** |
+
+Order across repos: start with lmdraw (smallest, has Windows, 4 gallery compositions), then lmimg,
+lmmagnum, lmfilament, and lmcad last (largest, with LGPL relink assets to verify).
 
 ## Review amendments (ResearchOpus)
 
