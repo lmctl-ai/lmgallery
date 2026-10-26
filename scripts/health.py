@@ -701,11 +701,12 @@ def check_release(repo_name, is_closed=False, private_path=None):
       'tagName,publishedAt,name',
   ])
   if res.returncode != 0 or not res.stdout.strip():
-    is_red = repo_name not in NON_BINARY_REPOS and repo_name not in UNRELEASED_HOSTS
+    non_binary = repo_name in NON_BINARY_REPOS or repo_name.endswith('-sample')
+    is_red = not non_binary and repo_name not in UNRELEASED_HOSTS
     return {
         'tag': None,
         'display': 'n/a (SDK/gallery)'
-        if repo_name in NON_BINARY_REPOS
+        if non_binary
         else 'none',
         'is_red': is_red,
         'assets': [],
@@ -740,11 +741,12 @@ def check_release(repo_name, is_closed=False, private_path=None):
     }
 
   if not rels:
-    is_red = repo_name not in NON_BINARY_REPOS and repo_name not in UNRELEASED_HOSTS
+    non_binary = repo_name in NON_BINARY_REPOS or repo_name.endswith('-sample')
+    is_red = not non_binary and repo_name not in UNRELEASED_HOSTS
     return {
         'tag': None,
         'display': 'n/a (SDK/gallery)'
-        if repo_name in NON_BINARY_REPOS
+        if non_binary
         else 'none',
         'is_red': is_red,
         'assets': [],
@@ -1383,6 +1385,9 @@ def check_git(repo_path, public_path=None):
 def check_durable_memory(repo_path, is_closed=False):
   # In closed-source peer model, durable-memory is in private repo only
   dm = os.path.join(repo_path, 'durable-memory')
+  if not os.path.exists(dm) and os.path.basename(repo_path.rstrip('/')).endswith('-sample'):
+    # sample repos are teaching projects: their README is the documentation
+    return {'exists': False, 'index_exists': False, 'unindexed': [], 'display': 'n/a (sample)', 'is_red': False}
   if not os.path.exists(dm):
     return {
         'exists': False,
