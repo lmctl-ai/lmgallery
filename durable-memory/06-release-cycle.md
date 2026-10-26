@@ -101,4 +101,3 @@ resolve to the throwaway tag in a fresh isolated cache; cleanup then removed the
 release and tag and restored `v0.2.1`. Evidence is recorded at
 `~/.local/state/lmctl/closed-source-releases/manual-lmaudio-20261026T011149/rehearsal.json`.
 Earlier non-semver and slash-version tags were rejected and cleaned up.
-
