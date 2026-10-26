@@ -49,7 +49,7 @@ lmcad in 2, lmmagnum in 1, and lmfilament and lmblender in none. Each host READM
 | **lmfilament** | **Merge its features, drop Filament, retire** | Keep the preview rasterizer's PBR shading, shadow map, textures and point lights. Drop the Filament dependency: no pixels, 4 s startup, 12 MB, LLVM 19. |
 | **lmdraw** | **Merge (vocabulary already in lmvideo), then retire** | LunaSVG/PlutoVG duplicate Skia's SVG DOM and rasterizer. The 38 examples migrate to the Skia implementation behind the old schema. |
 | **lmcad** | **Keep separate** | The OCCT B-rep kernel is the product: booleans, fillets, offsets, volumes. Merging it would put LGPL relink obligations and 25 MB on every image and video user. Interoperate through mesh files. |
-| **lmblender** | **Keep separate** | GPL-3.0 binary: it cannot be linked into the proprietary product, and it is open source by owner decision. Its 124 MB size and hours-long CI do not fit a fast image/video host. Path-traced quality stays its niche. |
+| **lmblender** | **Keep separate, shrunk to a render backend** (§3.5) | It is a GPL-3.0 binary, so it stays outside the proprietary product. It loses its modelling and drawing DSL and becomes the external `renderer="cycles"` backend: it receives the scene the product builds and returns frames. Its 96-method authoring schema is frozen behind the alias window, then retired. |
 
 | **lmimg** | **Merge (owner addition 2, §3.0), then retire behind an alias** | Its `Image` becomes the one pixel type shared by drawing, 3D renders and video frames. ImageMagick's licence is permissive, so licence rules do not force it out. |
 
@@ -184,7 +184,7 @@ volume demands it. It is not part of the merge.
 | 3D still | CPU rasterizer → SkImage layer | yes | no | yes |
 | Mixed 2D+3D still | layers composited by Skia | yes | no | yes |
 | Video (MP4, GIF, APNG) | per-frame raster → ffmpeg pipe (in-process libav evaluated in lmvideo 06; LGPL policy pending) | yes | no | yes (frames); container bytes depend on the ffmpeg version |
-| Path-traced still or clip | **lmblender** (separate host) | yes | no (CPU Cycles) | yes at fixed samples and seed |
+| Path-traced still or clip | `renderer="cycles"` → external lmblender process (§3.5) | yes | no (CPU Cycles) | yes at fixed samples and seed |
 | Exact B-rep geometry | **lmcad** (separate host), exported as mesh | yes | no | yes |
 
 ### 3.4 Where CAD fits
@@ -202,8 +202,71 @@ This keeps OCCT's LGPL relink duties and 25 MB inside lmcad. lmcad may later del
 render calls to the shared renderer source (MIT, our code) to share look and conventions; that is
 code reuse, not a merged binary.
 
-lmblender uses the same pattern: the unified host can export a scene (glTF + camera JSON) for
-path tracing. Whether lmblender gains an import is an owner decision (open question 3).
+### 3.5 lmblender as a render backend (owner addition)
+
+The product owns all drawing, scene building and animation. lmblender keeps only final path-traced
+rendering.
+
+**Where the interface sits.** It sits at one seam in the core: a `Renderer` interface that the
+scene, viewport and timeline call. The core does not call Cycles directly.
+
+```
+Scene.render(camera, w, h, renderer: "raster" | "cycles", quality...) -> Image
+Viewport3D(scene, camera, renderer: ...)          // layer inside Layout
+Timeline.render(..., renderer: "cycles")          // batches all frames into one job
+```
+
+- `raster` is the in-core CPU rasterizer (§3.2) and is the default.
+- `cycles` serialises the scene snapshot into a render job and runs the user's `lmblender` as a
+  separate process, located through PATH or `install=` like any host.
+- The backend reads the returned frames back as `Image` values, so 2D overlays, image ops, layout
+  and video encoding all happen in the product exactly as for raster frames.
+- If `cycles` is not installed, the product fails with a clear message. It never silently falls back
+  to `raster`.
+- The process boundary with file exchange keeps the GPL binary at arm's length from the proprietary
+  core (§4a).
+
+**Job format.** A versioned job directory or archive:
+
+| File | Content | Notes |
+|---|---|---|
+| `scene.glb` | glTF 2.0 binary: node hierarchy, triangle meshes with normals and UVs, metallic/roughness materials and textures, cameras, `KHR_lights_punctual` (point, spot, directional), `KHR_materials_emissive_strength`, `KHR_materials_transmission`, `KHR_materials_ior` | lmblender's glTF importer exists. P1 adds reading of cameras, punctual lights and those three material extensions. |
+| `animation` inside the GLB | glTF animation channels for node TRS, camera and light parameters, sampled at the timeline's fps | Avoids one GLB per frame. Material animation goes in the job sidecar as per-frame overrides. |
+| `job.json` | schema version; frame list; size; samples; seed; bounces; denoise quality; view transform (Standard/Filmic/AgX); world (colour, sky, environment map path); area lights (glTF has none); requested passes; output format (PNG 8/16-bit or EXR linear) | Everything glTF cannot say, and nothing else. |
+| `out/` | `frame-%05d.{png,exr}`, optional passes `frame-%05d-{depth,normal,albedo}.exr`, and `result.json` (per-frame timings, structured errors) | The product imports the frames as Images. Scene-linear EXR lets the product do the grading. |
+
+Not Cycles XML: it is Cycles' internal standalone format, unversioned, and needs a parallel exporter.
+glTF is a standard that lmcad and outside tools also write, so the same `lmblender render` command
+renders an lmcad export directly.
+
+**CLI contract.**
+- `lmblender render --job DIR [--threads N]` with exit codes: 0 ok, 2 job invalid, 3 unsupported
+  feature (named in `result.json`), 4 render failure.
+- `lmblender --render-capabilities` prints the job-schema version and supported extensions, so the
+  product refuses an incompatible pair up front.
+
+**What lmblender keeps:**
+- static Cycles, Embree and OIDN;
+- glTF, OBJ, STL and PLY importers;
+- mapping onto the Principled BSDF;
+- world colour, sky and environment maps;
+- point, spot, sun and area lights;
+- render settings, presets and view-transform LUTs;
+- PNG/EXR, passes and sequence rendering, with one session per job (BVH reused across frames
+  where only transforms change);
+- the GPL source offer and relinking documentation.
+
+**What it drops:**
+- the lmscript authoring DSL as a product surface: mesh creation and transforms, instancing,
+  ground/backdrop helpers, fitted camera, the diagram presets and the homepage diagram clips;
+- its 99 example files as authoring examples. They migrate to product scripts with
+  `renderer="cycles"`; examples that need Cycles-only material nodes (checker, noise, ramp, bump)
+  carry those as job material extensions (`lm_cycles_procedural` in `job.json`), not as DSL calls;
+- the BlenderCLI bridge example;
+- the DSL schema itself, which stays only as a frozen compatibility alias for the alias window
+  (§5, P3), then is removed.
+
+The lmcad `compose` pipeline becomes lmcad → glTF → product scene → `cycles`.
 
 ## 4. What not to merge, and what to drop
 
@@ -238,7 +301,7 @@ user-installed), and the core uses a permissive replacement.
 | x264 / x265 | GPL-2.0+ | **yes** | **external** only (through the user's ffmpeg) |
 | H.264 / HEVC / AAC codecs, any implementation | patent pools (MPEG LA / Access Advance / Via) | **yes** (patents, even with BSD code such as a self-built OpenH264) | **external** (user's ffmpeg). Core default video: VP9/AV1 in WebM, plus GIF/APNG/WebP |
 | OpenCASCADE (lmcad) | LGPL-2.1 + OCCT exception | **yes**: static relink duties | **external**: lmcad stays its own binary, exchanging STL/OBJ/glTF meshes. Permissive core replacement if mesh-level CSG is ever wanted: Manifold (Apache-2.0); not B-rep |
-| Blender sources and lmblender's combined binary | GPL-3.0-or-later | **yes** | **external**: lmblender stays its own GPL binary, exchanging glTF + camera JSON. Standalone Cycles + Embree + OIDN are Apache-2.0, so a permissive path-tracer plug-in is possible later, but its size (100+ MB) keeps it out of the core |
+| Blender sources and lmblender's combined binary | GPL-3.0-or-later | **yes** | **external**: lmblender stays its own GPL binary as the `cycles` render backend, invoked as a process with a glTF + `job.json` job (§3.5). Standalone Cycles + Embree + OIDN are Apache-2.0, so a permissive path-tracer plug-in is possible later, but its size (100+ MB) keeps it out of the core |
 | glibc, linked statically (current Linux hosts) | LGPL-2.1+ | **yes**: relink objects shipped today | **replace**: link musl (MIT) statically, or link glibc dynamically. libstdc++/libgcc (GPL + runtime exception) and libc++ (Apache-2.0 + LLVM exception) have no problem |
 
 The core binary therefore carries only permissive notices. Each external piece keeps its own
@@ -326,8 +389,8 @@ introduces them.
 2. **Alias window.** Is "6 releases and 3 months" acceptable for lmmagnum, lmfilament, lmdraw and lmimg,
    or must old host names live indefinitely as subcommands? May lmfilament's material-compiler
    calls (`material_file`, `Material.save`) stay only on its frozen last release?
-3. **lmblender interop.** Should lmblender gain a glTF + camera import so product scenes can be path
-   traced, or does it stay a fully separate authoring host?
+3. **Cycles install.** Should `renderer="cycles"` auto-install lmblender through lmctl on first use
+   (124 MB download), or require an explicit user install, to keep the GPL piece clearly opt-in?
 4. **lmcad rendering.** Should lmcad keep its own preview renderer, or adopt the shared renderer
    source for one look across the family? It stays a separate binary either way.
 5. **GPU.** Is a GPU flavour ever wanted (long 4K video, interactive preview), or is CPU-only an
