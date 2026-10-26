@@ -13,10 +13,10 @@ code, repository visibility, repository name, release or licence grant.
   Timeline. No separately branded draw/img/Magnum/Filament modes or schema bundles.
 - **lmcad** remains an external exact OCCT B-Rep product, suitable for public open
   source. It exports geometry; it is not linked into the closed lmvideo core.
-- **Cycles is a built-in render backend of lmvideo (`renderer="cycles"`);
-  no lmcycles repo has been created** (owner follow-up w75d). The new standalone-SDK
-  repository recommendation in phase 6 is conditional on a subsequent owner decision; it does not change the built-in default. Cycles and its
-  dependencies are built from pinned upstream sources inside the lmvideo repo,
+- **Cycles CPU is built into default lmvideo (`renderer="cycles"`); no separate
+  lmcycles repo or rename is planned** (owner follow-up w75d). The earlier public-SDK
+  repository recommendation is withdrawn. Cycles and its dependencies are pinned,
+  built and cached inside the same lmvideo repo,
   after the four GPL Blender helpers are replaced. **lmblender is frozen as a public
   legacy GPL product:** no new features, releases and source offers kept, and its
   authoring examples migrate to lmvideo. Archiving is an owner decision once
@@ -360,18 +360,17 @@ animated camera/light/material properties; the job sidecar carries resolved stat
 
 ### Owner follow-up w75d: built-in vs flavour vs separate repo
 
-Measured from lmblender v0.3.138, which is the same Cycles + Embree + OIDN + OIIO/OCIO/EXR + TBB
-closure plus a small DSL:
+Historical baseline: lmblender v0.3.138 already embeds CPU Cycles/Embree/OIDN and image/runtime dependencies without Blender GUI/Python. The new standalone-source merged build is not yet measured; figures below are viability evidence and estimates, not prototype results:
 
 | Question | Evidence | Assessment |
 |---|---|---|
-| Size added to lmvideo (30.1 MB x64 today) | lmblender binaries: linux-x64 124 MB, linux-arm64 91 MB, macOS 85–90 MB, Windows 71 MB | lmvideo becomes roughly 150 MB (x64) and 120 MB (arm64). **Not a blocker** (owner note w75e). |
-| Build time / CI cost | lmblender `ci.yml`: about 41 min per run with the dependency-prefix cache; the cold cache build is allowed up to 330 min (`timeout-minutes: 330`) | The one real cost. It is handled by a separate cached SDK job (below), so ordinary lmvideo CI only links. |
+| Size added to lmvideo (~30 MB x64 baseline) | Released lmblender x64 ~124 MB and arm64 ~91 MB include a similar renderer closure; shared image/runtime libraries can deduplicate | A roughly 120–160 MB total is an order-of-magnitude planning estimate, not a measured merged binary or exact additive cost. **Size is not a blocker and cannot justify a new repo/flavour alone.** |
+| Build time / CI cost | Prior host notes report ~40 min cached CI; cold dependency builds may take hours; 330 min is a timeout, not an observed duration | Viable with a same-repo cached `cycles-sdk` job keyed by all inputs. Measure cold/warm minutes and cache size; rebuild dependencies only when pins/toolchain/flags change. Actual lmvideo private-budget availability remains an operational prerequisite, not permission to enable private Actions here. |
 | arm64 | lmblender ships linux-arm64 and macOS arm64; OIDN NEON kernels are audited (README THROUGHPUT) | Viable. |
 | Windows | lmblender ships windows-x64; lmvideo has no Windows build today | Not a Cycles issue; it is lmvideo's existing platform gap. |
-| Dependencies | all permissive after 6.0; static; no OCIO config or Python at runtime | Viable. lmvideo already links ICU, HarfBuzz, libpng and libjpeg-turbo; pin one copy of each shared library (OIIO wants PNG/JPEG/TIFF) and check for duplicate symbols at link time. |
-| Startup | a static binary pages in lazily, and the Cycles session, kernels and OIDN are created only on the first `cycles` render. lmblender reports setup/BVH under 1 ms on small scenes | Raster-only runs should not slow down. Gate: `lmvideo --version` and a raster example take at most 1.1× the time of the pre-Cycles binary. |
-| Determinism | fixed seed and samples give repeatable output per machine; Embree and OIDN pick ISA-specific kernels | Same-machine reruns are byte-identical; across CPUs compare by SSIM. Same policy as the raster renderer. |
+| Dependencies | Standalone Cycles root is Apache-2.0, but known GPL-bearing atomic headers and every transitive/runtime/asset input still need clearance | Built-in closed distribution is viable **only after** 6.0 audit/replacement gates. Share compatible Skia/Cycles codecs and C++ runtime; reject duplicate/incompatible ABI inputs and unreviewed auto-discovered delegates. |
+| Startup | Old tiny-scene BVH/session timings are not process-startup measurements | Initialize Cycles/OIDN only on first use; measure `--version`, schema discovery and CPU-raster cold/warm runs against baseline. A proposed ≤1.1x raster-startup budget is a test target, not a proved property. |
+| Determinism | Fixed seed/settings plus pinned renderer/denoiser/ISA can repeat on one environment; SIMD and OIDN dispatch can differ across CPUs | CPU remains the reference: test same-environment hashes, pin colour/denoise/metadata, and compare across CPUs with documented image/semantic tolerances. No universal cross-ISA byte guarantee. |
 
 **Recommendation: (a) built in, the default build.** No new repo, and no separate flavour by
 default:
@@ -382,10 +381,14 @@ default:
   those change.
 - The normal lmvideo build downloads that prefix and links.
 
-Option (b), an optional `lmvideo-cycles` build flavour in the same repo, is kept only as a fallback
-for a platform where the Cycles build fails, for a real portability reason, never for size. It
-would be the same source with `-DLMVIDEO_CYCLES=OFF`, and `renderer="cycles"` reports "not built
-in". The interim external process goes away once 6.0 lands.
+**Option (b), contingency only:** if a measured build-time constraint cannot be solved
+by caching, or a genuine platform/toolchain failure prevents default linkage, use
+one optional `lmvideo-cycles` full build flavour (or later internal plugin interface)
+in this **same repo**. It keeps the same DSL/schema and capability contract. A build
+without Cycles reports "not built in" on explicit selection; no silent preview
+fallback. This is not scheduled merely because the executable grows. A plugin does
+not bypass GPL/LGPL obligations: the permissive-closure gate applies to every
+closed-product packaging form. GPU work remains unscheduled.
 
 **Effect on lmblender (c):** freeze it as public legacy. Critical fixes only, no features. Keep its
 releases, tags, source archives and GPL source offers (they are owed for released binaries). Its
@@ -393,18 +396,15 @@ examples migrate to lmvideo scripts with `renderer="cycles"`. No rename to lmcyc
 Archiving is an owner decision after migration.
 
 
-### Owner question: a new lean public lmcycles repo using standalone Cycles
+### Standalone Cycles source: no new repo; default built-in backend
 
-**Recommendation: YES to an owner-created, public, build-only/render-SDK component
-repo, not a second authoring product.** It owns the audited standalone source pin,
-small MIT adapters/patches, dependency builds, renderer tests and cached static SDK
-artifacts. lmvideo **still links that SDK into its default single binary** and owns
-all drawing, modelling and Timeline work. A tiny `render --job` driver can test the
-SDK/importer independently, not become a mandatory plugin/process or separate
-modelling DSL. This is a licence/provenance and expensive-build-reuse recommendation,
-**not a size argument**. It changes the earlier no-new-repo recommendation for the
-owner to consider; no repository creation or identity change has been performed.
-The already approved CPU-only/reference and built-in-default decisions stay intact.
+**Resolved recommendation: (a) YES, built into default lmvideo; NO separate lmcycles
+repo.** Use the standalone `blender/cycles` source and small project-authored
+adapters inside lmvideo, with a same-repo `cycles-sdk` build/cache workflow. This
+withdraws the earlier public component-repo recommendation. Shared ABI/pin/notice
+management and one product release outweigh another repository/SDK release train;
+no size-based split is proposed. Licence clearance and measured CPU portability,
+not the root Apache label alone, determine when default linkage can ship.
 
 #### What was checked, and GPL that remains
 
@@ -452,13 +452,12 @@ tracer, Embree, OIDN weights, OIIO or multi-ISA kernels.
 | Existing CI and build configuration | Existing notes report roughly 40 minutes for cached host CI; cold dependency builds can take hours, with a 330-minute workflow timeout. A timeout is **not** a measured duration. Record actual cold/warm job time before budgeting. |
 | New standalone-source CPU-only build | **Not built/measured in this docs task.** Its stripped binary/SDK size, cold/warm minutes, RSS and startup are unknown until a pinned prototype is built on each target. No 20 MB or fixed speedup claim is justified. |
 
-Do not make size a gate or choose a separate flavour to save download bytes. The
-public SDK repo is justified only if publishing the auditable renderer component
-and caching heavy dependency builds independently is useful. It adds CI/version/ABI
-coordination; it is not automatically faster than a `cycles-sdk` job in lmvideo.
-If that publishing/build-reuse benefit is not wanted, keep exactly the same pinned
-module/cache in lmvideo's repo and create no repo. Either route keeps Cycles built in
-by default after the licence gate and constructs the session lazily.
+Do not make size a gate or choose a separate flavour to save download bytes.
+Keep the audited module/cache in lmvideo's repo and lazily construct render sessions.
+Build reuse is handled by the same-repo cached SDK workflow, not a new repo. Measure
+cold/warm dependency builds, normal relinks, startup and CPU frame throughput before
+claiming cost savings. Only the real build-time/portability contingency in option (b)
+can justify an optional same-repo packaging variant.
 
 #### Scene input, feature boundary and supported execution
 
@@ -500,33 +499,32 @@ scene/world parity and was discarded; its current sequence creates a new session
 frame. BVH/session reuse is therefore a future measured task, not a demonstrated
 benefit of the new repo. Validate transforms/world/material updates before enabling it.
 
-#### Migration sequence and outcome
+#### Migration sequence and lmblender outcome
 
-1. Owner decides whether the public component-build/reuse benefit warrants **new
-   lmcycles**. Creation is owner-only and **not performed**; do not rename lmblender
-   or consume its old repo identity as the new SDK.
-2. Pin standalone source/dependencies/toolchain and the explicit CPU-only feature
-   matrix; inventory source/header/asset licences, replace the atomic blocker and
-   exclude old GPL helpers/LUTs. Keep newly authored adapter code MIT and upstream
-   code under its own licences. Do not announce permissive status before this passes.
-3. Prototype clean cold/warm builds and a small public test driver on Linux x64 and
-   arm64; measure size/minutes/RSS/startup and render/denoise correctness. Cache SDKs
-   by source/dependency/patch/compiler/ABI/target/ISA hashes; check archive manifests,
-   checksums, required symbols and licence notices before reuse.
-4. Reuse/complete the MIT glTF importer and scene adapter. Test Cornell, a textured
-   scene, a CAD mesh, transparency and fixed-frame animation; reject unsupported
-   features instead of silently altering materials or camera state.
-5. Link the audited static SDK into **default lmvideo**, respecting the common Skia/
-   image-codec/C++-runtime ABI and avoiding duplicate dependencies. The same canonical
-   Image/Scene/Timeline feeds CPU raster and Cycles. Test rendering, startup and frame
-   memory; do not make an external CLI mandatory for ordinary users.
-6. Publish a public component repo/SDK only after the owner-authorized identity
-   operation if chosen; otherwise retain the module in lmvideo. Maintain source,
-   build scripts, patches, tests and notices, not another modelling schema/gallery.
-7. **lmblender stays public frozen legacy**, critical fixes only, with tags/releases/
-   GPL sources and raw URLs preserved. Migrate its examples into lmvideo at their
-   actual feature/capability boundary. No new modelling features or automatic
-   archival deadline; source/history and release licences are never overwritten.
+1. Pin standalone Cycles/dependencies/toolchain in lmvideo; explicitly configure CPU
+   Embree/OIDN/TBB, no GPU, no GUI/Python, and only required optional libraries.
+2. Complete 6.0: resolve/replace atomic-header GPL issues, exclude old GPL helpers/LUT,
+   and audit source, link map, embedded assets and runtimes. Keep exact notices and
+   independently authored adapter provenance; do not link an unresolved closure into
+   the closed product or pretend a plugin removes that obligation.
+3. Add same-repo per-platform `cycles-sdk` build/cache artifacts keyed by source,
+   dependencies, patches, compiler, ABI, target and ISA. Verify archive hashes and
+   manifests; measure cold/warm CI minutes, stripped size and RSS. No new repo is
+   needed or created; no private Actions are enabled by this documentation task.
+4. Reuse/complete the MIT glTF importer and Cycles scene adapter behind Renderer.
+   Test Cornell, textures, CAD geometry, transparent/material cases and resolved frame
+   states. Keep the canonical Image/Scene/Timeline and CPU deterministic reference.
+5. Link into **default lmvideo**; lazily initialize Cycles/OIDN, share compatible
+   codecs/runtime libraries, and test version/schema/startup, raster regressions,
+   CPU denoise and arm64 dispatch. Do not claim session/BVH reuse until parity passes.
+6. If a demonstrable unsolved build-time/portability constraint exists, record it and
+   use option (b) in the same repo; a ~200 MB-scale binary alone is not that constraint.
+7. **Retire lmblender as an active feature target, keep it public as a real legacy
+   standalone repo** with critical fixes only, its working APIs/galleries/CI/releases,
+   immutable GPL sources/notices and old pins. Do not rename/delete it, create
+   lmcycles, or turn it into an lmvideo alias. Migrate new authoring examples to
+   lmvideo; any eventual archival timing remains the owner's decision. The six-repo
+   open-source restoration plan is otherwise unchanged.
 
 ### Cycles in lmvideo: what blocks it and how it is removed
 
