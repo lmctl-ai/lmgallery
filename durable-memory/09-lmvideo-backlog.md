@@ -13,7 +13,7 @@ code, repository visibility, repository name, release or licence grant.
   Timeline. No separately branded draw/img/Magnum/Filament modes or schema bundles.
 - **lmcad** remains an external exact OCCT B-Rep product, suitable for public open
   source. It exports geometry; it is not linked into the closed lmvideo core.
-- **Cycles is a built-in render backend of lmvideo (`renderer="cycles"`); there is
+- **Cycles is a built-in render backend of lmvideo (`renderer="cycles"`);
   no lmcycles repo has been created** (owner follow-up w75d). The new standalone-SDK
   repository recommendation in phase 6 is conditional on a subsequent owner decision; it does not change the built-in default. Cycles and its
   dependencies are built from pinned upstream sources inside the lmvideo repo,
@@ -25,7 +25,7 @@ code, repository visibility, repository name, release or licence grant.
   **public open source as real standalone repos**, not aliases of lmvideo, with minimal maintenance;
   see "Six standalone open-source repos". lmvideo alone keeps the private/public peer model.
 - **lmdraw, lmmagnum, lmfilament and lmimg are maintenance-only:** critical fixes,
-  no new features. Alias/retirement timing is **deferred to the owner**. There is no
+  no new features. They remain real standalone repos, not lmvideo aliases; any future retirement timing is **deferred to the owner**. There is no
   approved six-release, three-month or two-release deadline. Existing pins, raw
   example URLs and working downloads stay available while migration is incomplete.
 - lmvideo keeps its private-source/public-demo-release peer arrangement. lmcad
@@ -34,8 +34,7 @@ code, repository visibility, repository name, release or licence grant.
   outside this change. lmblender already has this shape: `lmctl-ai/lmblender` is
   the only repo (`lmctlhq/lmblender` redirects to it), with its own `ci.yml`,
   `platforms.yml` and releases (v0.3.138), and no RELEASE_TOKEN or private
-  checkout. So the peer-model cutover below applies only to **lmcad**; lmblender
-  needs no repo operation at all.
+  checkout. The expanded peer-model cutover applies to the **five currently private-source twins**; lmblender already has public source. Any lmcycles rename/extraction remains owner-only.
 
 The closed core's licence gate from [08, owner addition 3](08-consolidation-ResearchSol.md#owner-addition-3--licence-gated-core-and-external-components)
 continues to apply: incompatible or unresolved components stay external. ImageMagick
@@ -592,17 +591,19 @@ lmvideo behind `renderer="cycles"` while phases 1–4 proceed. Only 6.3–6.5 wa
 
 | ID | Small item | Acceptance test | Gallery example / fixture |
 |---|---|---|---|
-| 7.1 | Structured source migrations and diagnostics, one old API family per change | Review actual argument/unit/type transformations; all new aliases discover exactly the same schema; no claim that renaming a binary fixes old bytecode hashes | draw `etl-pipeline.lms`, img `pipeline_diagram.lms`, magnum `model-viewer.lms` |
+| 7.1 | Structured source migrations and diagnostics, one old API family per change | Review actual argument/unit/type transformations; lmvideo exposes one canonical schema while each standalone repo retains its own real host/schema; no claim that renaming a binary fixes old bytecode hashes | draw `etl-pipeline.lms`, img `pipeline_diagram.lms`, magnum `model-viewer.lms` |
 | 7.2 | Migrate public manifests/autorun sources and retain old pins | All 50 gallery compositions execute; 31 currently affected compositions produce their declared outputs; raw URLs and historical tags still install | Existing galleries 02/05/11/13, 14/34, 38 and 22 lmvideo compositions |
 | 7.3 | Stage/release lmvideo with the unified link closure and public examples | Linux x64/arm64 minimum staged checksums, version/schema, notice audit and fresh-cache install; desktop platform changes explicitly approved, not silently removed | lmvideo image, image-processing, CPU scene and optional-Cycles smoke examples |
 
-Retirement/alias deadlines are not acceptance criteria yet. Maintain old host names
-minimally for critical fixes until the owner supplies timing. No new features are
+The six restored open-source hosts are independent standalone products, not aliases.
+Maintain them minimally for critical fixes; no retirement deadline is set. No new features are
 backported. Implement first-class portable material/texture compilation via P.M1–P.M5.
 Unsupported legacy Filament binary/shader semantics remain explicitly external
 until converted; never fabricate a successful portable material from opaque bytes.
 
-## Open-source licensing: lmcad and lmcycles
+## Earlier two-product open-source plan (historical scope)
+
+> **Scope superseded by the six-repo section below.** Its licence analysis remains useful, but the old two-product publication/rename/O1–O9 instructions are not the active cutover plan. Use the six-repo owner-only sequence instead.
 
 > **Superseded for lmcycles by owner follow-up w75d (phase 6):** there is no lmcycles repo.
 > Cycles is built into closed lmvideo after item 6.0, with the Apache, BSD and MIT notices in
@@ -766,7 +767,7 @@ Scope: lmblender, lmfilament, lmmagnum, lmimg, lmcad and lmdraw become ordinary 
 open-source repos. Each has its own source, CI and releases, and is maintained minimally (critical
 fixes, dependency security updates, no features). None is an lmvideo alias. lmvideo keeps its
 private/public peer model and does not depend on them; the code it took over is copied into
-lmvideo, not linked. **Nothing below has been flipped or pushed.**
+lmvideo through audited provenance. **No source-publication, visibility or release mutation is performed by this plan.**
 
 ### State on 2026-10-26
 
@@ -783,96 +784,155 @@ For all five private twins, the saved pre-flip public `main` **is an ancestor of
 HEAD**. The private history is the old public history plus 3–4 commits made since the flip. Those
 few commits are the only history that has never been public.
 
-### Licence per repo
+### Licence per repo and release scope
 
-Our code stays **MIT**, matching every private root LICENSE and the pre-flip public grant.
-Dependency notices and duties ship with each release.
+Keep **MIT for project-authored code**, matching existing per-file/root grants;
+Apache-2.0 is a valid choice for newly authored code but no blanket relicense is
+needed. Preserve files copied from upstream under their own licences. "Open source"
+does not mean every linked binary is MIT or that LGPL obligations disappear.
 
-| Repo | Our code | Dependencies and duties |
+| Standalone public lineage | Our code / public source licence | Dependency and release requirements |
 |---|---|---|
-| lmblender | MIT per file | Combined binary **GPL-3.0-or-later** (Blender intern sky, guardedalloc, libc_compat, `view_luts.h`); source archive and source offer per release, as today. Cycles, Embree, OIDN and TBB: Apache-2.0; OIIO, OCIO and EXR: BSD. Optionally de-GPL it later by moving to standalone `blender/cycles` (phase 6 analysis); not required for open source. |
-| lmfilament | MIT | Filament 1.78.1 Apache-2.0 (NOTICE); stb (public domain/MIT); static glibc → LGPL-2.1 text plus relink objects (as now); libc++ Apache-2.0 with LLVM exception |
-| lmmagnum | MIT | Magnum and Corrade MIT; stb; static runtimes (glibc relink objects if static) |
-| lmimg | MIT | ImageMagick licence (Apache-2.0 style) with all delegates off; zlib, libpng, libjpeg-turbo, libtiff, libwebp; stb_truetype; Roboto Apache-2.0; dynamic glibc (no relink duty) |
-| lmcad | MIT | OCCT 8.0.1 **LGPL-2.1 + OCCT exception**: relink objects, `OCCT-RELINKING.md` and recipe per architecture (as now); build123d Apache-2.0 + NOTICE; PyVista MIT; static glibc LGPL |
-| lmdraw | MIT | LunaSVG and PlutoVG MIT; FreeType FTL (credit); static runtimes |
+| **lmblender (lmcycles naming option)** | Original MIT files remain MIT; current aggregate package/root GPL-3.0-or-later description remains explicit while its audited GPL closure remains | Current combined binary includes GPL Blender helpers and view LUT; retain corresponding-source archives/offers and licence texts. Cycles/Embree/OIDN/modern TBB are Apache-2.0; OIIO/OCIO/EXR notices depend on pinned versions. A renamed or standalone-source build is not automatically GPL-free: the phase-6 atomic-header/LUT/link-closure audit still applies. Opening this existing GPL source repo needs no de-GPL feature project. |
+| **lmfilament** | MIT original wrapper code and SDK | Filament 1.78.1 Apache-2.0 + NOTICE; stb MIT/public-domain choices; LLVM runtime notices/exceptions. Static glibc carries LGPL-2.1+ obligations: retain tested source/relink materials, not merely the Apache Filament licence. |
+| **lmmagnum** | MIT original wrapper code and SDK | Magnum/Corrade MIT, stb notices; exact runtime licences and GCC exception texts. If glibc is static, ship sufficient source/object/build materials for compliant relinking and test them; do not infer an existing binary is compliant from a short notice alone. |
+| **lmimg** | MIT original image-processing algorithms and wrapper | Permissive ImageMagick licence with delegates/modules disabled as pinned; selected zlib/PNG/JPEG/TIFF/WebP, stb_truetype and exact Roboto-font notices. Do not copy unused GPL font/tool/delegate source into a purported permissive link closure. External dynamic system glibc does not need a static application-object bundle, but applicable LGPL/distribution duties are not universally waived. |
+| **lmcad** | MIT original wrapper code; preserve Apache build123d reference examples and MIT PyVista notices | OCCT 8.0.1 LGPL-2.1 + exception, exact source/patches/flags and architecture-specific link objects or equivalent sufficient rebuild/relink materials; OCCT-RELINKING and runtime notices. Public wrapper source alone does not prove a shipped static binary can be relinked. |
+| **lmdraw** | MIT original wrapper/SDK and LunaSVG/PlutoVG inputs under their notices | Retain FreeType-derived FTL attribution, stb notices and embedded Noto Sans/Math SIL-OFL texts/copyrights. Current Linux build uses external dynamic glibc plus static GCC runtimes with exceptions, not a blanket fully-static-runtime licence assumption. |
 
-With source public, the LGPL relink duty is easier to meet: the source and build scripts are
-right there. The relink-object assets still ship for static builds.
+For the five former closed peers, replace the **current source tree's** proprietary
+root binary-licence text with the scoped MIT source licence, README release-era
+explanation and complete third-party notices. Preserve a historical copy/link for
+releases governed by it. For the GPL lmblender package, do not replace its aggregate
+GPL licence with a misleading "all MIT" statement; identify original MIT files
+separately. The same rule applies if an owner-approved new name lmcycles is used.
 
-### Restoring public source: history route
+**Open release/re-publication:** publish a newly versioned open-source release from
+the public source commit with exact matching source/notices/relink assets, binary
+checksums and a clear licence statement. A combined GPL binary stays GPL; LGPL
+library rights and source/relink duties remain. Do not silently overwrite immutable
+old tags/assets or apply MIT to upstream GPL code. If the owner wants an additional
+permissive grant for first-party portions of binary-era releases, record it explicitly
+in new release metadata without misrepresenting dependencies or deleting prior
+licence records. First-party ownership/contribution authority must be checked rather
+than assumed for every historical file.
 
-Recommended route: **restore the original lineage, not a new orphan.**
-1. Audit the 3–4 post-flip private commits, plus the full current tree:
-   - `gitleaks`/`trufflehog` over all private refs;
-   - grep for tokens, internal hostnames and `lmctlhq` paths;
-   - remove closed-only files: `scripts/release-to-public.sh`, private-CI publisher steps that use
-     `RELEASE_TOKEN`, staging manifests, and binary-licence texts as root LICENSE.
-2. The earlier history needs only a quick re-scan; it was public until 2026-10-25.
-3. Add one "return to open source" commit on top of private HEAD:
-   - root `LICENSE` MIT;
-   - `LICENSE-examples` kept;
-   - a README licence section explaining the release eras: MIT up to vA, binary licence vA+1…vB,
-     MIT again from vB+1, or MIT for all if the owner relicenses the binary-era releases, which as
-     sole copyright holder they can;
-   - the public-only files of the 4 orphan commits (README and images), merged in.
-4. Point public `main` at that commit, so the history is again pre-flip public history, then
-   private, then the restore commit.
-5. Keep the 4 orphan commits reachable as tag `binary-licence-era`, so nothing is lost.
-6. Restore the saved pre-flip tags and branches from the backup mirrors.
+### Restore public source: audit first, choose lineage or snapshot
 
-Fallback: if the audit finds something unpublishable in the post-flip commits, squash only those
-3–4 commits into the reviewed restore commit. The pre-flip history stays intact, and no full orphan
-is needed. lmblender needs no history work.
+The dated table above is a starting inventory, not permission to publish every ref.
+Before cutover, record current private/public SHAs and every proposed reachable ref;
+scan **all history being exposed**, including tags, earlier-public commits and the
+current tree, for secrets, private/closed-only files, unrelated products, user data,
+third-party licence/provenance gaps and private publisher configuration. Prior public
+exposure is not proof of safe redistribution. Removing a file from HEAD does not
+remove it from the history being published. Rotate any actual exposed credential
+through its owner; never include credentials in an audit report or backup commit.
 
-### CI and release in a single public repo
+Preferred route when the relevant history is clean: preserve the private source
+lineage **and** the current public README/example history by merging the reviewed
+source branch into the existing public main, resolving unrelated-history/content
+conflicts explicitly. Retain public-only gallery changes as authoritative. Publish
+with a normal forward update; do not overwrite public main merely to put its current
+orphan-era commits behind an archival tag. Import only reviewed historical tags,
+namespace collisions, and never mirror arbitrary private refs or replace old assets.
 
-- One `ci.yml`, built from the private twin's (all five have one):
-  - build, test and `lmscript --check` examples on push and pull requests;
-  - release job on `workflow_dispatch` or a version tag;
-  - `permissions: contents: write` only in the release job, using `GITHUB_TOKEN`;
-  - no `RELEASE_TOKEN`, no cross-repo checkout, no `release-to-public.sh`.
-- Public repos get **free standard-runner minutes**, which removes the private Actions budget block
-  for these six.
-- Platforms: keep exactly the set each repo shipped last; lmdraw, lmmagnum and lmcad include
-  Windows. Asset names stay unchanged (`<name>-<os>-<arch>`, `SHA256SUMS`) so `install=` pins and
-  `@latest` keep working.
-- Minimal maintenance: a monthly scheduled CI run to catch toolchain rot, Dependabot for Actions
-  only, and releases only for fixes.
-- Release registry (`lmctlhq/lmctl-mono-test/releases.json`): point these six at their own public
-  workflows; remove them from the private publisher inventory and from `scripts/closed-source`
-  split lists. The registry maintainer applies this after the owner approves.
+If history cannot be safely exposed, add a reviewed **source snapshot commit on top
+of existing public main**, with AUTHORS/provenance and reproducible pinned dependency
+records. This is the default sanitized alternative; it preserves current public
+identity/history without leaking private commits. Keep an offline audited history
+backup. A fresh orphan public history is an **owner-only exceptional option**, with
+explicit history-loss/URL implications and backups; it is not necessary for the
+recommended restore and no history rewrite/force-push is performed by this task.
+If only post-flip commits are problematic, sanitize those without exposing them;
+do not assume a squash automatically removes secrets from other reachable refs.
 
-### README and gallery state
+Prepare a reviewable restore branch per product: source, schema, SDK/dependency
+pins, tests, build scripts, public README/assets/examples and source licence. Remove
+or neutralize closed-only publication scripts, split manifests and private-checkout
+assumptions. Script text containing a secret variable name is not itself a secret,
+but the obsolete cross-peer publication path should not remain the active release
+mechanism. lmblender already has public source: preserve it; naming is a separate
+owner identity decision, not a prerequisite for reopening the other five.
 
-- Each README keeps its picture gallery and autorun captions (raw paths unchanged) and adds:
-  - "Status: maintained (critical fixes only). New 2D/3D/image work happens in lmvideo";
-  - a link to the matching lmvideo examples;
-  - a build-from-source section;
-  - the licence table above.
-- lmgallery: the showcase entries and pins keep working unchanged, because asset names and
-  `@latest` are preserved. Update `closed-source-pin-inventory.md` and `05-closed-source-peer-model.md`
-  to list only lmvideo (plus the products outside this change) as closed peers, and mark the six as
-  open source.
+### One public source repo, CI and releases per standalone
 
-### Ordered steps (owner-only actions in **bold**; nothing done here)
+- Each standalone repo owns its source, schema/CLI, examples, tests, pinned build,
+  CI and releases. It must run without installing lmvideo and is **not** a symlink,
+  schema alias or thin launcher for lmvideo. lmvideo may reuse permissive code or
+  audited libraries but keeps independent source/release ownership and its own peer
+  model; there is no runtime dependency on these standalone authoring hosts.
+- Public push/PR jobs build/test the same source/example commit, exercise schema/
+  compiler parity, representative deterministic output and failure paths, notices
+  and platform linkage. Cache large dependencies by exact pins/toolchain/flags.
+  Do not add feature work or upgrade legacy APIs just to reopen a repo.
+- Release jobs run on an explicit tag/dispatch with `contents:write` limited to the
+  release job and the **same repo's GITHUB_TOKEN**. No private `RELEASE_TOKEN`,
+  cross-peer checkout or private Actions run is required. PR jobs cannot publish.
+- Preserve each product's last supported release platforms and existing asset names:
+  lmdraw/lmimg/lmmagnum/lmcad/lmblender have Linux x64/arm64, macOS x64/arm64 and
+  Windows x64 releases; lmfilament has Linux/macOS pairs, no released Windows host.
+  Any platform reduction is explicit owner policy, not a side effect of reopening.
+- A new open release includes `<name>-<os>-<arch>[.exe]`, SHA256SUMS, source/build
+  provenance and all required notices/source/relink materials. Check version/tag,
+  every checksum, a real executable, the public examples and fresh-cache install.
+  lmcad/other static-LGPL builds include an actual relink/rebuild acceptance test;
+  GPL lmblender includes its corresponding-source package, not just GitHub's auto ZIP.
+- Remove these **six lineages** from closed-source split/flip/publisher inventories
+  after verified cutover. Change the release registry to public workflows for each
+  actual repo; lmblender already uses that shape. Keep lmvideo's private/public
+  entries independent and leave unrelated products outside this decision unchanged.
+- Minimal maintenance means critical correctness/security/build fixes and necessary
+  dependency security updates; no new features. A lightweight scheduled smoke check
+  is optional, not a newly mandated feature programme. Preserve stage/test/promote
+  semantics and avoid tag collisions when public workflow numbering differs.
 
-| # | Step | Who |
+### README/gallery state and naming
+
+Every public repo keeps a **real standalone** quick start, build-from-source steps,
+its own schema/CLI documentation, licence/component table, historical release-era
+statement, current maintenance policy and working screenshot/autorun gallery. Link
+to lmvideo for new development without describing the repo as an alias or replacing
+its examples with calls to another host. Preserve relative data/font/image inputs,
+raw example URLs, versioned install pins and source-image attribution.
+
+Keep lmblender's published GPL sources/tags/assets and existing name working. If the
+owner chooses **lmcycles** as a rename or extraction, first select the history/identity
+route, test raw/API/release redirects and old asset-prefix selection, and then update
+banners/docs/install/catalog/release entries. No new name or repo is created here;
+no automatic duplicate repo is created at an old slug that would break redirects.
+A new renderer-only SDK and default built-in Cycles in lmvideo are the separate
+phase-6 design; reopening the six standalone histories does not authorize that
+implementation or erase their current APIs.
+
+Update lmgallery catalog/showcase manifests, health classification, the closed-peer
+inventory and documentation after each tested open release. Existing gallery pins
+should keep resolving to actual standalone binaries; they are not rewritten to
+lmvideo aliases. Images/captions change only when an intentional example migration
+is separately accepted.
+
+### Ordered owner-only cutover plan (nothing performed)
+
+| Order | Prepared evidence / next step | Operation reserved for OWNER |
 |---|---|---|
-| 1 | Approve MIT for our code, the history route (restore lineage vs squash fallback) and the release-era wording; decide whether binary-era releases are relicensed MIT | **OWNER** |
-| 2 | Secret and closed-only audit of each private twin; prepare the restore commit and the new public `ci.yml` on a branch; dry-run CI on a fork-free branch | agent |
-| 3 | **Force-with-lease public `main` to the audited restore commit** (public history rewrite: reverses the 2026-10-25 orphan reset); push tag `binary-licence-era`; restore saved tags | **OWNER** authorizes, then runs or delegates |
-| 4 | **Replace the root binary-licence text** (part of step 3's commit) and edit binary-era release notes with the licence statement | **OWNER** approves the wording |
-| 5 | **Enable Actions / workflow permissions** on the public repo if disabled; first public CI run | **OWNER** |
-| 6 | **Re-publish: first MIT release** from public CI under the same asset names; verify fresh-cache install, `SHA256SUMS`, notices and relink assets | **OWNER** approves promotion to latest |
-| 7 | **Revoke `RELEASE_TOKEN`** and private publisher secrets; switch the registry entries | **OWNER** / registry maintainer |
-| 8 | **Archive the private twin** `lmctlhq/<name>` (read-only, not deleted) once public CI rebuilds from source alone. No visibility flip of the twin is needed, since the public repo already exists | **OWNER** |
-| 9 | lmblender: README "maintained (critical fixes)" note only; no repo operation (rename to lmcycles only if the owner still wants it) | agent; rename **OWNER** |
+| S1 | Freeze source/public SHAs, refs/tags/releases/assets/checksums and URLs; choose per-repo history/import route and licence wording | **Approve publication scope, first-party licence authority and any explicit lmcycles identity change** |
+| S2 | Full proposed-history/tree secrets, closed-only content and licence audit; prepare safe source/CI/README restore branches and offline backups | **Authorize any private source/history becoming public**; do not expose unreviewed refs |
+| S3 | Prefer source import into existing public `lmctl-ai/<name>` so public identity, tags/releases and content remain | **Any visibility flip, transfer, repo creation, rename or replacement/orphan public-history route is OWNER-only** if chosen instead; resolve existing-name collisions before action |
+| S4 | Merge the approved restore into public main by forward update; restore only audited non-conflicting historical refs if needed | **Approve the source publication and retirement of the root binary-only licence text for future open releases**; retain historical licence records |
+| S5 | Prepare same-repo public CI/releases, exact supported-platform artifacts and public examples; preserve public Actions security boundaries | **Enable/change repository Actions/workflow permissions where necessary**; never enable budget-blocked private Actions as an incidental step |
+| S6 | Build/test staged open releases; verify checksums, fresh installs, GPL source assets and LGPL relinking from shipped materials | **Approve re-publication as a new open-source release and latest promotion**; no silent overwrite/relicensing of old combined artifacts |
+| S7 | Switch release registry, health/docs and split inventories; prove no public build reads the old private twin or needs its publisher token | **Revoke obsolete cross-peer publisher credentials/disable private release workflows** after successful public cutover |
+| S8 | Confirm a clean public clone suffices for build/release and preserve the offline audited backup | **Retire/archive/delete each private twin only by owner decision**; no active private source/build twin remains |
+| S9 | Keep all six standalone repos minimally maintained, with real binaries/schema/galleries | **Any later rename or retirement deadline remains an owner decision**, not an alias-window timer |
 
-Order across repos: start with lmdraw (smallest, has Windows, 4 gallery compositions), then lmimg,
-lmmagnum, lmfilament, and lmcad last (largest, with LGPL relink assets to verify).
+Suggested low-priority order: lmdraw, lmimg, lmmagnum, lmfilament, lmcad; lmblender
+already has public source and needs only a maintenance/documentation audit unless
+a naming decision is made. This work must not divert feature development from
+lmvideo. No repository visibility, source publication, credential, release or
+history operation in this sequence has been executed by this document.
 
 ## Review amendments (ResearchOpus)
+
+Historical review of the earlier two-product scope; the six-standalone section above now governs publication, CI, history and maintenance policy.
 
 Reviewed against the repos on 2026-10-26. The plan is accepted with these changes,
 already folded in above:
