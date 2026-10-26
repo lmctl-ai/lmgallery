@@ -155,6 +155,33 @@ path tracing. Whether lmblender gains an import is an owner decision (open quest
 | lmblender-only features in the merged schema (GI, glass, emission materials) | **Do not fake** | The merged host draws what its rasterizer can draw; captions point to lmblender for path-traced looks. |
 | Per-host conventions (Z-up, radians, horizontal fov) | **Drop from the new schema; keep only in compatibility adapters** | One convention set (Y-up, degrees, vertical fov) in the new schema. |
 
+## 4a. Licence table for the closed all-in-one core
+
+Rule: a component whose licence or patents burden a closed static binary does not go into the core.
+It becomes an optional external piece (own repo or binary with a documented interface, or
+user-installed), and the core uses a permissive replacement.
+
+| Component | Licence | Problem for the closed core? | Placement / replacement |
+|---|---|---|---|
+| Skia (+ SVG module, PDF backend) | BSD-3-Clause | no | **in-core** |
+| FreeType | FTL (BSD-style, credit clause) / GPL-2 dual | no (take FTL) | **in-core** |
+| HarfBuzz, ICU, Expat, libpng, zlib, libjpeg-turbo, libwebp | MIT / Unicode / MIT / libpng / zlib / IJG+BSD / BSD-3 | no | **in-core** |
+| DejaVu Sans (bundled font) | Bitstream Vera / public domain | no | **in-core** |
+| Own 3D rasterizer, mesh primitives, exporters | own code | no | **in-core** |
+| stb_image / stb_image_write, cgltf | public domain or MIT / MIT | no | **in-core** |
+| Magnum Math, Primitives, MeshTools, Trade + Corrade | MIT | no | **in-core** for v1 (§8); later removable |
+| Filament | Apache-2.0 | no licence problem | **dropped** for technical reasons (§4) |
+| LunaSVG + PlutoVG (lmdraw) | MIT | no | **dropped**; Skia SVG replaces them |
+| FFmpeg / libav* | LGPL-2.1+, or GPL with `--enable-gpl` | **yes**: static LGPL means relink duties; GPL builds are viral | **external**: user-installed `ffmpeg` process, as today. Core replacement for in-process encoding: libvpx (BSD-3) VP8/VP9 in a small own WebM muxer, libaom or SVT-AV1 (BSD-2 + AOM patent licence) for AV1, own GIF/APNG via libpng, libwebp for animated WebP |
+| x264 / x265 | GPL-2.0+ | **yes** | **external** only (through the user's ffmpeg) |
+| H.264 / HEVC / AAC codecs, any implementation | patent pools (MPEG LA / Access Advance / Via) | **yes** (patents, even with BSD code such as a self-built OpenH264) | **external** (user's ffmpeg). Core default video: VP9/AV1 in WebM, plus GIF/APNG/WebP |
+| OpenCASCADE (lmcad) | LGPL-2.1 + OCCT exception | **yes**: static relink duties | **external**: lmcad stays its own binary, exchanging STL/OBJ/glTF meshes. Permissive core replacement if mesh-level CSG is ever wanted: Manifold (Apache-2.0); not B-rep |
+| Blender sources and lmblender's combined binary | GPL-3.0-or-later | **yes** | **external**: lmblender stays its own GPL binary, exchanging glTF + camera JSON. Standalone Cycles + Embree + OIDN are Apache-2.0, so a permissive path-tracer plug-in is possible later, but its size (100+ MB) keeps it out of the core |
+| glibc, linked statically (current Linux hosts) | LGPL-2.1+ | **yes**: relink objects shipped today | **replace**: link musl (MIT) statically, or link glibc dynamically. libstdc++/libgcc (GPL + runtime exception) and libc++ (Apache-2.0 + LLVM exception) have no problem |
+
+The core binary therefore carries only permissive notices. Each external piece keeps its own
+licence files, relink materials or source offer in its own release.
+
 ## 5. Migration in phases, with compatibility aliases
 
 Rule: no gallery composition or README `lmctl autorun` URL breaks at any phase. Old host names stay
@@ -226,7 +253,7 @@ introduces them.
 | CPU 3D too slow for long 1080p videos | Measure in P1 (budget ≤ 0.5 s per 720p frame). Tile and thread the rasterizer (it is embarrassingly parallel). An optional GPU flavour is the escape hatch, not v1. |
 | Schema bloat (201 + ~100 methods) makes the API hard to learn and compile | Namespaced types (`canvas`, `scene`, `timeline`, `layout`); the API design note (ResearchArgon) owns the surface. Old schemas live only in compatibility subcommands. |
 | Floating-point differences across platforms break byte determinism | Unmeasured today. Build without fast-math and with a fixed SSAA and tile order. Gate on SSIM across platforms and on byte identity per platform; promise cross-OS byte identity only if it is measured. |
-| Licence contamination | No OCCT, Cycles or libav in the product binary. FFmpeg stays an external process until the LGPL policy in lmvideo 06 is decided. |
+| Licence contamination | Enforced by §4a: only permissive components in the core; a CI check fails on any non-allowlisted licence in the notices manifest. |
 | One larger product, one release pipeline: a 3D change can block 2D releases | One repository with per-area tests and the existing automatic release per push. Area ownership is in module directories (as lmpdf does), not separate products. |
 | Gallery and URL breakage | P3 alias binaries under old asset names; examples keep their paths; CI keeps running the old repos' examples against the alias until P5. |
 
