@@ -22,7 +22,12 @@ code, repository visibility, repository name, release or licence grant.
 - lmvideo keeps its private-source/public-demo-release peer arrangement. lmcad and
   lmcycles instead end with **one canonical public source repo each, containing
   CI and releases, and no active private source/build twin**. Other products are
-  outside this change.
+  outside this change. lmblender already has this shape: `lmctl-ai/lmblender` is
+  the only repo (`lmctlhq/lmblender` redirects to it), with its own `ci.yml`,
+  `platforms.yml` and releases (v0.3.138), and no RELEASE_TOKEN or private
+  checkout. So the peer-model cutover below applies only to **lmcad**. For
+  lmcycles the work is the rename, removing the DSL and adding the render-job
+  command.
 
 The closed core's licence gate from [08, owner addition 3](08-consolidation-ResearchSol.md#owner-addition-3--licence-gated-core-and-external-components)
 continues to apply: incompatible or unresolved components stay external. ImageMagick
@@ -109,6 +114,11 @@ behind Image. Processing must also work on the fresh Images returned in phase 3.
 | 3.3 | Scene render -> Image and Canvas/Layout viewport composition | The same render can be resized, blurred, measured, drawn in a panel and written without a second image type; alpha edges match composition rules | new lmvideo `molecule-image-pipeline.lms`, based on `ball-stick.lms` |
 | 3.4 | Retained scene mutation over the Timeline frame clock | Repeated/seeked frame evaluation agrees with sequential evaluation; bounded RSS and cancellation; measure representative 720p frame times | magnum `animated-gif.lms`, `saturn-rings.lms`; gallery 38 product slide |
 
+Baseline before setting budgets (released hosts, linux-x64, the same `shadows` scene,
+900×560, whole `lmscript` run): lmmagnum 0.21 s / 80 MB max RSS; lmfilament 4.07 s /
+125 MB. Proposed gate for 3.4/4.3: the unified renderer is no slower than 1.5× the
+lmmagnum figure on that scene. The 720p video budget is set after 3.4 measures it.
+
 Use one own CPU renderer; selectively reuse audited math/geometry and preview work.
 Removing Magnum or Filament helpers is a measured build task, not a zero-dependency
 claim based on source line counts. Keep performance results by scene/triangle count,
@@ -153,6 +163,16 @@ states and an output manifest. Keep Cycles/Embree/OIDN, rendering settings, BSDF
 translation, image/pass output and one session per job. Drop mesh construction,
 diagrams, layout, editing, fitted-camera authoring and independent keyframe/easing
 logic. Existing GPL source/compliance duties remain with the external engine.
+
+### Parallel track — lmcycles can start now
+
+6.1 and 6.2 do not depend on phases 1–5. lmblender already imports glTF 2.0
+(meshes, node transforms, metallic/roughness, external textures) and renders
+Cornell-box fixtures, and its repo is public with working CI. Version 1 of the job
+format can be frozen against hand-written GLB plus `job.json` fixtures, and
+`lmcycles render --job` can ship while lmvideo phases 1–4 proceed. Only 6.3–6.5
+wait for 5.3/5.4. This puts the external engine on its own public release cadence
+without blocking lmvideo.
 
 ## Phase 7 — migrations and release gates
 
@@ -317,10 +337,41 @@ as part of this task.
   update install coordinates only after tested releases exist. Preserve public image
   attribution and source snapshots until deliberately replaced.
 
+## Review amendments (ResearchOpus)
+
+Reviewed against the repos on 2026-10-26. The plan is accepted with these changes,
+already folded in above:
+
+- lmblender is already a single public repo; only lmcad needs the peer-model
+  cutover (Decisions).
+- Measured 3D baseline and a relative performance gate (phase 3).
+- lmcycles 6.1/6.2 run as a parallel early track (before phase 7).
+
+Further points:
+
+- **Image semantics.** Phase 2 keeps lmimg's mutable fluent Image with an explicit
+  `copy()`. This supersedes the "immutable value" wording in 08-ResearchOpus §3.0.
+  Migration fidelity outweighs purity here.
+- **Old lmvideo bytecode.** Item 0.2 recompiles from source (the old hash fails
+  clearly, or the pinned historical binary runs it). This replaces the
+  schema-fingerprint dispatch proposed in 08-ResearchOpus §5 P2 and is consistent
+  with "one schema, no modes". It assumes autorun URLs are source, which they are
+  (`.lms`).
+- **lmcad licence state today.** Public `lmctl-ai/lmcad` holds only README,
+  examples, docs and binaries under "Lattice Systems Binary License 1.0; earlier
+  releases stay MIT". The private `lmctlhq/lmcad` (143 commits) holds the source,
+  with a root MIT LICENSE. Restoring MIT as the public root licence for new
+  releases is the owner's licence decision in O2.
+- **lmcad static glibc.** Relink duties come from both OCCT and static glibc.
+  Consider linking glibc dynamically (≥ 2.35, as lmimg does). The LGPL duties
+  would then shrink to OCCT alone, and the relink test in CI step 3 gets simpler.
+- **Suggested first three merged items:** 0.3 (Image contract), 1.1 (arrow and
+  polyline) and 6.1 (job schema v1). They are independent, small and unblock the
+  most work.
+
 ## Review and evidence
 
-ResearchSol authors this plan; ResearchOpus reviews/amends the committed document.
-This is a handoff for that review, not a claim it has already occurred. Decisions
+ResearchSol authored this plan; ResearchOpus reviewed and amended it (section above). Decisions
 above override earlier brainstorm assumptions about renaming lmvideo, fixed alias
 windows, private twins for the external wrappers, or keeping a second authoring
 surface in lmcycles.

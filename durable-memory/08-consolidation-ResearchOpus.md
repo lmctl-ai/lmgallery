@@ -1,5 +1,14 @@
 # Consolidating the 2D/3D hosts on lmvideo: product and architecture (ResearchOpus)
 
+> **Superseded in part by the owner decisions** recorded in
+> [09-lmvideo-backlog.md](09-lmvideo-backlog.md):
+> - the name stays lmvideo (the `lmframe` proposal is dropped);
+> - lmblender becomes the public open-source `lmcycles` render backend;
+> - lmcad is public open source;
+> - alias timing is deferred, and lmdraw, lmmagnum, lmfilament and lmimg get critical fixes only;
+> - Image keeps lmimg's mutable semantics;
+> - old bytecode is recompiled rather than handled by fingerprint dispatch.
+
 Scope: lmvideo, lmdraw, lmmagnum, lmfilament, lmcad and lmblender. One product should draw 2D and
 3D and produce images and video, with lmvideo as the base. This note covers the target
 architecture, the 3D renderer choice, where CAD fits, a phased migration with compatibility aliases,
