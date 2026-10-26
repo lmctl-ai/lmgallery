@@ -1,14 +1,14 @@
 # Consolidation feasibility inventory — ResearchSol
 
 Snapshot: 2026-10-26. Design only; no renderer, schema, example, release, repository
-visibility or product code is changed by this note. Scope is the six named hosts.
+visibility or product code is changed by this note. Scope now includes the original six hosts plus lmimg (owner addition 2).
 Counts and the complete API appendix come from checked-out **host-only** schemas;
 release sizes come from public GitHub release asset metadata queried for this note.
 These are inventories, not measured performance predictions for a merged build.
 
 ## Recommendation and repository verdicts
 
-Consolidate on **lmvideo**, initially retaining its product name and install coordinate.
+Consolidate on **lmvideo**, as the implementation/distribution base, with one canonical product schema and model.
 Use Skia for 2D, an **own CPU triangle renderer** for the primary 3D path, and the
 existing external FFmpeg encoder pipe. Reuse audited Magnum/Corrade geometry/math
 and the two CPU renderers selectively; Magnum remains an implementation dependency,
@@ -18,14 +18,14 @@ backend. A real GPU implementation is a later, separately measured product decis
 | Repository | Verdict | Concrete boundary |
 |---|---|---|
 | lmvideo | **Merge target / keep** | Owns image/document output, frame clock, plots, diagrams, panels and encoder process. Add scene/viewports behind that output pipeline. |
-| lmdraw | **Merge, then retire independent engine after compatibility gates** | Port 46 declarations, retaining its legacy registry. Do not remove LunaSVG/PlutoVG until SVG attributes, fonts and PNG comparisons pass; Skia is a replacement, not today's lmdraw dependency. |
+| lmdraw | **Merge, then retire independent engine after compatibility gates** | Port 46 declarations, migrating its sources to the canonical schema; frozen old binaries cover old contracts. Do not remove LunaSVG/PlutoVG until SVG attributes, fonts and PNG comparisons pass; Skia is a replacement, not today's lmdraw dependency. |
 | lmmagnum | **Merge selected renderer/geometry, then retire host implementation** | Reuse mesh primitives, transforms, textures, shadows, accumulation and exporters. Keep one canonical scene API; retain old releases and adapters. |
 | lmfilament | **Merge preview features, retire standalone product conditionally** | Reuse CPU preview work. Drop Filament from the ordinary rendering path. Its material compiler/package APIs need a separate compatibility decision; dropping that library cannot preserve all 62 declarations automatically. |
 | lmcad | **Keep separate** | Exact B-Rep/OCCT, booleans, fillets, chamfers, hollowing and volumes remain CAD. Exchange tessellated meshes; do not burden every chart/movie user with OCCT. |
-| lmblender | **Keep separate** | Existing in-process Cycles renderer is a GPL binary, not a subprocess wrapper. Preserve path tracing/EXR/passes/imports in its own process/product. A future external Blender bridge is a different implementation. |
+| lmimg | **Merge image processing, then retire standalone authoring host** | One Image/Frame type owns filters, geometry, compositing and measurements for every producer; no separate img context in the target schema. |
+| lmblender | **Keep external** | Existing in-process Cycles renderer is a GPL binary, not a subprocess wrapper. Preserve path tracing/EXR/passes/imports in its own process/product. A future external Blender bridge is a different implementation. |
 
-Do not merge lmimg or lmplot merely because pictures overlap; they are outside this
-six-host decision. Do not add OCCT, Cycles, a second public scene model or an in-process
+lmimg is explicitly in scope by owner addition 2. lmplot remains outside this decision. Do not add OCCT, Cycles, a second public scene model or an in-process
 FFmpeg distribution to the first consolidation milestone.
 
 ## Corrections that change the estimate
@@ -42,13 +42,105 @@ FFmpeg distribution to the first consolidation milestone.
 4. **lmblender links Cycles/Embree/OIDN and Blender helpers into the executable.**
    `THIRD_PARTY_NOTICES.md` and `docs/LICENSE_AUDIT.md` identify the GPL closure.
    Cycles' own Apache licence does not remove the linked helpers/LUT obligations.
-5. **Compatibility is not renaming a binary.** There are 546 domain declarations
-   across six schemas, different root contexts and only six identical declarations
+5. **Compatibility is not renaming a binary.** The original six schemas contain 546 domain declarations
+   (618 with lmimg added below), different root contexts and only six identical declarations
    between lmvideo and lmdraw. The common diagram vocabulary is useful code reuse,
    not proof that every old script is already API-compatible.
 6. **Release policy changed after the older sibling note.** The newer
    [release-cycle note](06-release-cycle.md) specifies staged Linux x64/arm64 releases
    and promotion; older five-platform/every-main-release prose is historical.
+
+## Owner addition 2 — one product, one schema, one image/frame model
+
+This addition **supersedes the earlier multiple-registry compatibility proposal**.
+The delivered core is one executable and one canonical schema, not `lmvideo draw`,
+`lmvideo magnum`, `lmvideo filament` and `lmvideo img` products hidden in one file.
+Old names can be thin executable aliases, but every new alias must discover the
+**same canonical schema**. Source migration and frozen old releases provide the
+legacy bridge; aliases cannot make differently hashed old bytecode load by magic.
+
+Name candidates: **lmframe** (shared image/frame vocabulary), **lmcanvas** (visual
+composition), or **lmvideo** (least installer churn). No name availability is claimed.
+Recommendation: retain lmvideo's existing distribution coordinate through migration;
+use lmframe as the preferred neutral product name if the owner accepts a later rename.
+A new name does not justify separate authoring schemas or another processing service.
+
+| Core concept | Meaning and ownership | Shared operation path |
+|---|---|---|
+| **Image** | The one pixel object: dimensions, format, alpha/colour convention and owned storage. A video frame is this same Image plus timestamp/index metadata, not another pixel type. | Image decode, Canvas snapshot, Scene render and Layout render all return Image. The same resize/filter/composite/measure/save operations accept every producer. |
+| **Canvas** | Drawing/editor for an Image or a vector command recording, using Skia. | Draw text/paths/shapes or an Image; snapshot to Image. Processing a vector recording first rasterizes explicitly; filtering cannot preserve arbitrary vector structure. |
+| **Scene** | Meshes, transforms, camera, lights and materials, independent of output file type. | `Scene.render(...) -> Image`; a Layout viewport consumes the result directly, including in a Timeline. |
+| **Layout** | Panels/layers that arrange Images, Canvas recordings, plots and Scene views. | Composition produces Image, or a Picture when all required parts retain vector commands. |
+| **Timeline** | Frame clock/tracks and time-indexed evaluation of the same scene/layout/image operations. | Each evaluated frame is an Image; writers consume a stream of these Images. No separate lmimg Animation processing representation. |
+
+**Editing semantics:** preserve lmimg's documented mutable receiver + fluent return,
+with explicit `copy()` when the original must survive; snapshots from drawing or
+3D rendering return fresh Images. The immutable-Image proposal in the companion note
+is an alternative requiring a dataflow migration, because today's scripts often ignore
+a filter's return value. Do not describe immutable edits as mechanically identical.
+A Canvas edit view and its Image share ownership deliberately; unrelated scene/frame
+snapshots must not alias a reused renderer buffer. Timeline writers need bounded
+frame retention/backpressure, not the whole clip resident in memory.
+
+**Pixel semantics:** current lmimg is RGBA8, straight-alpha, gamma-encoded sRGB for
+its editing/statistics contract; it has no colour management. Use that documented
+logical default for migrated operations. Skia's premultiplied buffers and linear-light
+3D shading need explicit conversions at the adapter boundary. Convert once at a
+well-defined boundary, with defined rounding and alpha-zero RGB behaviour; do not
+silently run old levels/mean/SSIM in a new linear/HDR space. Higher precision and ICC
+are separately scoped extensions of the same Image, not existing lmimg capabilities.
+
+### lmimg inventory and mapping
+
+Source HEAD `5364c868768b7aaf95ba3e977b1141062f305a5b`, schema
+`schema/lmimg.dsl.json`, SHA-256
+`e59212275e3cec0df67cd1e4a932c79d52045a113ef6675fc0d2c874c02c0ac9`.
+Context `img: Img`; zero free functions; six types and **72 method declarations**:
+Image 49, Img 14, Curve 1, Layers 3, Montage 2, Animation 3. These are not standard
+catalog methods. Appendix C lists every declaration, taking the seven-host total to 618.
+
+| Existing lmimg capability | Mapping into the canonical product | Behaviour to preserve / new work |
+|---|---|---|
+| `Img.open/canvas/pattern/hald` | Image decode/create/procedural factories | Same Image as drawing, mesh renders and frames; preserve normalized pattern coordinates, seeded hash/noise and Hald dimensions. |
+| `Image.resize/crop/rotate/flip/perspective/lens` | Image geometry operations | Preserve crop/extent, interpolation, transparent borders and ImageMagick's non-right-angle rotation extent before changing engines. |
+| `curves/curves_rgb/levels/threshold/invert/normalize/equalize/colormap/clut/hsl/channelmix` | Image tone/colour/filter operations; Curve/LUT are parameter assets | Preserve RGBA8 rounding, gamma-space arithmetic and trilinear CLUT sampling. They operate equally on a loaded photo or a rendered frame. |
+| `blur/sharpen/edges/unsharp/vignette/tilt_shift/morphology/heal` | Image filters/retouching | Preserve premultiplied-alpha blur, RGB-only sharpening, radius limits and healing-lite semantics. A Skia blur does not implement this entire group. |
+| `mask/selection/blend`, `Layers.add/masked/render` | Image masking/composite plus Layout layers | Retain the ten blend modes, offsets, opacity and mask conventions. Layer rendering returns the canonical Image, not another backend image wrapper. |
+| `Image.rect/circle/line/text`, `Img.text_width` | Canvas drawing/edit view on Image | Share typography with every other output. ASCII stb text versus Skia font metrics requires image/caption review; not guaranteed byte-identical replacement. |
+| `copy/width/height/pixel/set_pixel`, `property/metadata` | Image ownership, pixel access and metadata | Define read/write metadata and mutation lifetime once for all producers; no raw ImageMagick handle escapes. |
+| `mean/stddev/min/max/ssim/psnr/histogram` | Image measurements and histogram export | Equal-dimension checks, normalized RGBA PSNR, identical-image infinity, and global-window luma SSIM remain explicit contracts. |
+| `Img.panel/montage`, `Montage.add/render` | Layout/contact-sheet operations | Reuse panel sizing/spacing; intermediate thumbnails remain Images and can be filtered/drawn without disk round trips. |
+| `Img.animation`, `Animation.add/size/save` | Timeline frames with per-frame durations and output writer | Preserve GIF centisecond delays. Current open reads only an animated input's first frame; full video/animation decode is new work. |
+| `Image.save` and format conversion | One Image writer; conversion is decode -> optional Image ops -> encode | Current formats: PNG/JPEG/TIFF/WebP/GIF/BMP/PNM (PPM/PGM/PBM). Keep a capability list; restricted delegates remain external under addition 3. |
+| `Img.eval/assert_close/assert_true/print` | Shared expression utility/testing/output contracts | Do not carry a parallel img service/root context just for helpers; map assertions/output to the common testing/Output surface. |
+
+ImageMagick is currently a statically linked **permissive ImageMagick License** engine,
+with loadable modules and delegates disabled; the notice explicitly excludes
+GIMP/GEGL/Ghostscript and GPL/LGPL delegates. Its selected codecs include zlib,
+libpng, libjpeg-turbo, libtiff and libwebp, plus stb_truetype/Roboto. It is not excluded
+merely for being ImageMagick: audit exact selected inputs under addition 3. It can
+remain an internal implementation of Image operations while Skia supplies drawing;
+no second product, executable, public image type or file handoff is needed. If that
+closure is rejected, use Skia/stb/libpng for core raster operations, port the original
+MIT editing algorithms, and leave unsupported conversions as explicit external jobs.
+Do not claim Skia already replaces healing, morphology, LUTs or every TIFF feature.
+
+Latest observed public release [lmimg v0.1.3](https://github.com/lmctl-ai/lmimg/releases/tag/v0.1.3):
+`lmimg-linux-x64` **8,937,672 bytes** (asset size, not incremental cost in a shared link).
+This does not justify adding 8.94 MB to lmvideo's size prediction without a prototype.
+The existing 4096 MiB default memory limit and native-allocation accounting are
+requirements to re-evaluate for the shared Image pool, not to discard on migration.
+
+Gallery additions: lmimg is in **two**, not four, of the current 50 showcase records:
+`14-num-sweep-contact-sheet` and `34-image-pipeline-contact-sheet`. Both need a
+source migration and before/after measurements/previews. The affected-host union
+therefore grows from 29 to **31** compositions. Its own public examples include
+lmplot/lmdraw compositions and relative assets; preserve those raw autorun paths.
+
+**Revised verdict:** merge lmimg's capability into the single model, then retire its
+independent authoring schema/engine pipeline after parity gates. Keep `lmimg` as a
+canonical-schema alias for the proposed N=6-release/three-month transition; retain
+old pinned binaries for old source/bytecode. No new distinct img schema is embedded.
 
 ## Host/schema inventory
 
@@ -237,9 +329,10 @@ Four independent contracts must survive:
 2. **Installer:** retain `github:lmctl-ai/<old>@<tag>` and `@latest`; aliases must be
    real correctly named per-platform release assets, with SHA256SUMS and notices.
 3. **Discovery/load:** retain the exact legacy schema bytes, signatures, contexts,
-   CLI/result/error protocol and schema hash. A union schema under an old executable
-   name is insufficient for existing bytecode. Registry adapters must translate types
-   and units; bytecode is not rewritten by text substitution.
+   CLI/result/error protocol and schema hash. The new product and all new aliases expose one canonical schema. Old hashes
+   remain supported by frozen old binaries, not embedded legacy registries. Source
+   migration must translate types/units and recompile; bytecode is not rewritten by
+   text substitution.
 4. **Visual/output:** preserve output filenames, dimensions, input resolution,
    alpha/colour handling, font metrics, frame order and encoding behaviour. A program
    that exits zero but changes the README picture is not an accepted migration.
@@ -255,8 +348,10 @@ Keep original image attribution/source hashes until deliberately re-rendered.
 
 Retain lmvideo's C++ host, schema loader and output protocol. Add a typed mesh scene
 and offscreen 3D viewport producing linear/premultiplied RGBA for Skia composition.
-Keep existing Canvas/Plot/Panel/Document/Picture APIs; do not replace the 218-declaration
-base with a smaller fresh renderer wrapper. Evaluate explicit frame state at frame
+Retain useful Canvas/Plot/Panel/Document/Picture capabilities while normalizing
+old Surface/Image and frame concepts onto the one Image model. Preserve signatures
+where coherent; any changed signature requires an explicit source migration, not
+a second legacy registry inside the core. Evaluate explicit frame state at frame
 index/time before rendering; a still is a one-frame job. General transform/material
 tracks, asset caching and random-access frame evaluation are new engineering tasks.
 
@@ -330,11 +425,11 @@ or force-push is part of this design.
 
 | Phase | Work | Exit evidence |
 |---|---|---|
-| 0. Freeze inventory | Capture schemas and current public example SHA, release tags/hashes, platform support and outputs; maintain explicit material-package exceptions. | All 546 domain declarations classified as kept, adapted, separate or unsupported; no missing declaration hidden in totals. |
+| 0. Freeze inventory | Capture schemas and current public example SHA, release tags/hashes, platform support and outputs; maintain explicit material-package exceptions. | All 618 domain declarations classified as kept, adapted, separate or unsupported; no missing declaration hidden in totals. |
 | 1. Compose a CPU viewport in lmvideo | One scene convention (Y-up, degrees, vertical FOV), primary CPU renderer, asset/material layer and Skia composition; preserve existing APIs. | Existing lmvideo examples unchanged; representative 3D scenes, frame time/RSS and stripped binary measured. Raw RGBA hashes repeat on the same pinned environment. |
-| 2. Add legacy registries and aliases | Basename dispatch and/or subcommands choose **legacy exact schema**, registry and adapter. Thin aliases share the engine; they do not expose a union schema. | Every lmdraw/Magnum/Filament public example runs from an empty directory. Pixel/geometry/alpha tests plus source/old-bytecode/result/error checks. Material-package failures block blanket Filament alias promotion. |
+| 2. Migrate sources and add name aliases | One canonical schema for lmvideo/lmdraw/lmimg/Magnum/Filament aliases; mechanically migrate supported source calls and units, then recompile. Frozen old releases cover unmigrated contracts; no compatibility subcommand selects a second schema. | Every affected public example runs from an empty directory. Pixel/geometry/alpha/measurement/error tests; old pins still install. Unsupported material packages remain external rather than faked. |
 | 3. Stage peer releases | Common core, per-peer assets/checksums/notices, immutable public content snapshots; Linux x64/arm64 minimum, old desktop releases retained. | Fresh-cache `lmscript install` for every old name, pinned tags and latest; version/schema/checksum checks and per-job results. No private-billing dispatch during the hold. |
-| 4. Migrate content mechanically where possible | Rewrite structured source/API call sites with reviewed unit/FOV conversions; update gallery manifests, captions and previews one composition at a time. | All 50 gallery compositions run; the affected 29 produce their declared outputs. All old raw autorun URLs still resolve. New compiler bytecode built from the new schema. |
+| 4. Migrate content mechanically where possible | Rewrite structured source/API call sites with reviewed unit/FOV conversions; update gallery manifests, captions and previews one composition at a time. | All 50 gallery compositions run; the affected 31 produce their declared outputs. All old raw autorun URLs still resolve. New compiler bytecode built from the new schema. |
 | 5. Retire independent engines | Alias support for **N = 6 released compatibility versions and at least 3 months**, whichever is longer, starting only after platform acceptance. | Last compatibility assets, old example URLs and pinned tags retained indefinitely; ownership of security fixes and alias failure rollback recorded. Archive only implementation maintenance, not working download paths. |
 
 Six releases is a proposed policy, not an existing promise. Keep compatibility
@@ -358,7 +453,7 @@ Owner questions (five):
 2. Accept a CPU-primary first release with explicit quality/performance limits, deferring real GPU?
 3. Must all Filament material compiler/package APIs remain supported, or may they stay on the frozen legacy release while scene examples migrate?
 4. Require the proposed six-release/three-month adapter window, and must new Windows/macOS compatibility builds continue alongside the Linux-only release cycle?
-5. Is an independent LunaSVG compatibility path acceptable until SVG/text parity passes, or is an explicitly reviewed visual migration preferable?
+5. Approve mutable Image operations plus explicit copy (closest to current lmimg), or budget immutable-image dataflow rewrites and associated colour/alpha review?
 
 ## Cross-review with the other design notes
 
@@ -1044,3 +1139,82 @@ No consolidation prototype was built or timed for this document. A summed standa
 binary size, a single rendered still, successful schema compilation or a green job
 with skipped/continue-on-error steps cannot establish the merged product's size,
 frame throughput, complete shader support, platform parity or reproducibility.
+
+## Appendix C — lmimg host API declarations (owner addition 2)
+
+Context `img: Img`; legacy inventory only, not an additional target schema.
+
+```text
+Animation.add(Image, int) -> Animation
+Animation.save(string) -> void
+Animation.size() -> int
+Curve.point(float, float) -> Curve
+Image.blend(Image, string, float, int, int) -> Image
+Image.blur(float, float) -> Image
+Image.channelmix(float, float, float, float, float, float, float, float, float) -> Image
+Image.circle(float, float, float, float, float, float, float) -> Image
+Image.clut(Image) -> Image
+Image.colormap(string) -> Image
+Image.copy() -> Image
+Image.crop(int, int, int, int) -> Image
+Image.curves(Curve) -> Image
+Image.curves_rgb(Curve, Curve, Curve) -> Image
+Image.edges(float) -> Image
+Image.equalize() -> Image
+Image.flip(bool) -> Image
+Image.grayscale() -> Image
+Image.heal(int, int, int, int, int) -> Image
+Image.height() -> int
+Image.histogram(string) -> void
+Image.hsl(float, float, float) -> Image
+Image.invert() -> Image
+Image.lens(float) -> Image
+Image.levels(float, float, float) -> Image
+Image.line(float, float, float, float, float, float, float, float, float) -> Image
+Image.mask(Image) -> Image
+Image.max(int) -> float
+Image.mean(int) -> float
+Image.metadata(string, string) -> Image
+Image.min(int) -> float
+Image.morphology(string, int) -> Image
+Image.normalize() -> Image
+Image.perspective(float, float, float, float, float, float, float, float) -> Image
+Image.pixel(int, int, int) -> float
+Image.property(string) -> string
+Image.psnr(Image) -> float
+Image.rect(float, float, float, float, float, float, float, float) -> Image
+Image.resize(int, int) -> Image
+Image.rotate(float, float, float, float, float) -> Image
+Image.save(string) -> void
+Image.selection(int, int, int, int) -> Image
+Image.sepia(float) -> Image
+Image.set_pixel(int, int, float, float, float, float) -> Image
+Image.sharpen(float, float) -> Image
+Image.ssim(Image) -> float
+Image.stddev(int) -> float
+Image.text(float, float, string, float, float, float, float, float) -> Image
+Image.threshold(float) -> Image
+Image.tilt_shift(float, float, float) -> Image
+Image.unsharp(float, float, float, float) -> Image
+Image.vignette(float, float) -> Image
+Image.width() -> int
+Img.animation() -> Animation
+Img.assert_close(float, float, float) -> void
+Img.assert_true(bool) -> void
+Img.canvas(int, int, float, float, float, float) -> Image
+Img.curve() -> Curve
+Img.eval(string) -> float
+Img.hald(int) -> Image
+Img.layers(int, int) -> Layers
+Img.montage() -> Montage
+Img.open(string) -> Image
+Img.panel(Image, Image, int) -> Image
+Img.pattern(int, int, string, string, string, string) -> Image
+Img.print(string) -> void
+Img.text_width(string, float) -> float
+Layers.add(Image, string, float, int, int) -> Layers
+Layers.masked(Image, Image, string, float, int, int) -> Layers
+Layers.render() -> Image
+Montage.add(Image) -> Montage
+Montage.render(int, int, float, float, float, float) -> Image
+```
