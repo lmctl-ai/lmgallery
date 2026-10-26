@@ -3,11 +3,10 @@ Copyright (c) 2026 Lattice Systems LLC ("Lattice").
 
 **Definitions.** "Software" means the Lattice-owned parts of the supplied binary; separately licensed components, examples and documentation are excluded. "You" means the individual or legal entity using it, including staff or contractors acting solely on its behalf.
 "Redistribution" means making Software copies available to third parties; copies solely for Your internal work or backups are not Redistribution.
-"Hosting" means offering the Software or its functionality to third parties as a service, platform or API, including within a hosted product, whether paid or free. Sharing finished outputs alone is permitted; offering automated Software processing to third parties remains Hosting.
 
-**Grant.** Provided You follow this license, You may download, install, copy internally and run the Software free of charge, including for commercial internal use. Private use on Your own or rented VMs, containers or cloud infrastructure for Your own work is permitted and is not Hosting.
+**Grant.** Provided You follow this license, You may download, install, make working and backup copies of, and run the Software free of charge for personal or commercial purposes.
 
-**Restrictions.** Without a separate written commercial license from Lattice, You must not engage in Redistribution, sell, rent or sublicense the Software, or engage in Hosting. Keep required notices intact. Reverse engineering, decompilation and disassembly of Lattice-owned portions are prohibited except where third-party licenses or applicable law permit them.
+**Restrictions.** Without separate written permission from Lattice, You must not engage in Redistribution or sublicense, sell, rent, lease or lend the Software. Keep required notices intact. Reverse engineering, decompilation and disassembly of Lattice-owned portions are prohibited except where third-party licenses or applicable law permit them.
 
 **Ownership.** Lattice retains its rights in the Software and claims no ownership of Your inputs or output files. Rights in third-party material included in outputs remain governed by its own license.
 
