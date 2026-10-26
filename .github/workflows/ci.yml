@@ -26,6 +26,8 @@ jobs:
         run: |
           bash -n test.sh examples/render-all.sh
           git diff --check
+      - name: Test release staging and promotion without network access
+        run: python3 -m unittest discover -s tests/closed-source-release-cycle -v
 
   autorun:
     runs-on: ubuntu-latest

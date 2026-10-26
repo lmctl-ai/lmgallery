@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 GALLERY = Path(__file__).resolve().parents[2]
-TEMPLATE = GALLERY / "scripts/closed-source/templates/private-ci/lmaudio.yml"
+TEMPLATE = GALLERY / "scripts/closed-source/templates/private-release.yml"
 PLACEHOLDERS = ("private implementation detail", "private build metadata", "private source repository",
                 "pinned by `private", "recorded in `private", "TODO(publish)")
 BOUNDARY_PREFIX = "Releases up to and including "
@@ -27,14 +27,14 @@ BOUNDARY_PREFIX = "Releases up to and including "
 
 def latest_tag(product):
     """Return the latest published public tag. The tag decides the MIT boundary, so it is never assumed."""
-    result = subprocess.run(["gh", "release", "list", "-R", f"lmctl-ai/{product}", "-L", "1", "--json", "tagName"],
+    result = subprocess.run(["gh", "api", f"repos/lmctl-ai/{product}/releases/latest", "--jq", ".tag_name"],
                             capture_output=True, text=True, check=False)
     if result.returncode != 0:
         raise SystemExit(f"cannot read latest release of lmctl-ai/{product}: {result.stderr.strip()}")
-    rows = json.loads(result.stdout or "[]")
-    if not rows:
-        raise SystemExit(f"lmctl-ai/{product} has no published release")
-    return rows[0]["tagName"]
+    tag = result.stdout.strip()
+    if result.returncode != 0 or not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
+        raise SystemExit(f"lmctl-ai/{product} has no stable published release: {result.stderr.strip()}")
+    return tag
 
 
 def set_boundary(stage, product, tag):
@@ -82,151 +82,51 @@ def sync_notices(stage, source):
     return [p.name for p in sources]
 
 
-def split_fast_path(body):
-    """Keep one Linux x64 build on routine pushes and reserve the full platform set for releases/manual runs."""
-    jobs = list(re.finditer(r"^  ([A-Za-z0-9_-]+):\n", body, re.M))
-    fast_gate = "github.event_name != 'workflow_dispatch' || inputs.publish_test != true"
-    full_gate = "(github.event_name == 'workflow_dispatch' && inputs.publish_test != true) || startsWith(github.ref, 'refs/tags/v')"
-    primary_name = ""
-
-    def set_condition(block, name, condition):
-        header = f"  {name}:\n"
-        found = re.search(r"^    if: (.*)$", block, re.M)
-        if found:
-            current = found.group(1).strip()
-            block = block[:found.start()] + f"    if: ({current}) && ({condition})" + block[found.end():]
-        else:
-            block = block.replace(header, header + f"    if: {condition}\n", 1)
-        return block
-
-    for i, job in enumerate(jobs):
-        end = jobs[i + 1].start() if i + 1 < len(jobs) else len(body)
-        block = body[job.start():end]
-        inc = re.search(r"^      matrix:\n        include:\n((?:          .*\n)+)", block, re.M)
-        name = job.group(1)
-        if inc:
-            primary_name = name
-            entries = inc.group(1).splitlines(keepends=True)
-            linux = [entry for entry in entries if "linux-x64" in entry]
-            if not linux:
-                raise SystemExit(f"job {name}: no linux-x64 matrix entry for the push-time fast path")
-            full = set_condition(block, name, full_gate)
-            fast = block.replace(f"  {name}:\n", f"  {name}-fast:\n", 1)
-            fast = fast.replace(inc.group(1), "".join(linux), 1)
-            fast = set_condition(fast, f"{name}-fast", fast_gate)
-            body = body[:job.start()] + fast + full + body[end:]
-            break
-    else:
-        linux_job = next((job for job in jobs if "linux-x64" in job.group(1).lower()), None)
-        if linux_job is None:
-            raise SystemExit("no linux-x64 matrix entry or named job was found for the push-time fast path")
-        start = linux_job.start()
-        primary_name = linux_job.group(1)
-        end = next((job.start() for job in jobs if job.start() > start), len(body))
-        block = body[start:end]
-        body = body[:start] + set_condition(block, linux_job.group(1), fast_gate) + body[end:]
-
-    # Gate every remaining runnable platform/build job. Cheap version/audit jobs
-    # may still run during publish_test; publish jobs use their own conditions.
-    jobs = list(re.finditer(r"^  ([A-Za-z0-9_-]+):\n", body, re.M))
-    changed = []
-    for i, job in enumerate(jobs):
-        name = job.group(1)
-        if name in {"version", "audit", "publish", "publish-test", primary_name} or name.endswith("-fast"):
-            continue
-        end = jobs[i + 1].start() if i + 1 < len(jobs) else len(body)
-        block = body[job.start():end]
-        if not re.search(r"^    runs-on:", block, re.M):
-            continue
-        # The primary Linux job is left available for push/PR checks.
-        if "linux-x64" in name.lower() or (name.endswith("-fast")):
-            continue
-        conditioned = set_condition(block, name, full_gate)
-        changed.append((job.start(), end, conditioned))
-    for start, end, replacement in reversed(changed):
-        body = body[:start] + replacement + body[end:]
-    return body
-
-
 def generate_private_ci(source, product, out):
-    """Transform the product's current ci.yml into a private workflow; fail closed on what is not transformed."""
-    text = (Path(source) / ".github/workflows/ci.yml").read_text(encoding="utf-8")
-    already_private = "  publish-test:" in text and "RELEASE_TOKEN" in text and "release-to-public.sh" in text
-    if already_private:
-        Path(out).write_text(text, encoding="utf-8", newline="\n")
-        return []
-    lines = text.split("\n")
-    # 1. Replace the top-level trigger block.
-    start = lines.index("on:") if "on:" in lines else next(i for i, l in enumerate(lines) if l.startswith("on:"))
-    end = next(i for i in range(start + 1, len(lines)) if lines[i] and not lines[i].startswith((" ", "#")))
-    triggers = [
-        "on:",
-        "  push:",
-        "    branches: [main]",
-        "    tags: [\"v*\"]",
-        "  workflow_dispatch:",
-        "    inputs:",
-        "      release_tag:",
-        "        description: First/new public tag, for example v0.2.0",
-        "        required: false",
-        "        type: string",
-        "      publish_test:",
-        "        description: Verify the publishing token with a temporary draft release, without building",
-        "        required: false",
-        "        default: false",
-        "        type: boolean",
-        "",
-    ]
-    lines = lines[:start] + [f"# Generated for lmctlhq/{product} from the current ci.yml by publish_tree.py."] + triggers + lines[end:]
-    body = "\n".join(lines)
-    # 2. Remove the public release job (it publishes with GITHUB_TOKEN on every push to main).
-    job = re.search(r"^  release:\n(?:    .*\n|\n)*?(?=^  \S|\Z)", body, re.M)
-    if not job:
-        raise SystemExit(f"{product}: no release job found in ci.yml; add a transform before generating")
-    needs_match = re.search(r"^    needs:\s*(?:\[(.*)\]|([A-Za-z0-9_-]+))\s*$", job.group(0), re.M)
-    if not needs_match:
-        raise SystemExit(f"{product}: the release job has no supported needs list/scalar to carry over")
-    # The publish job waits for the same matrix jobs the public release waited for (never version or audit).
-    needs_value = needs_match.group(1) if needs_match.group(1) is not None else needs_match.group(2)
-    publish_needs = [n.strip() for n in needs_value.split(",") if n.strip() not in ("version", "audit")]
-    if not publish_needs:
-        raise SystemExit(f"{product}: no build job remains in the release job's needs list")
-    body = body[:job.start()] + body[job.end():]
-    # The source workflow's `only` selector is removed; every real release
-    # dispatch builds the complete matrix. publish_test remains build-free.
-    body = re.sub(r"^(\s+)ONLY_OK:\s*\$\{\{[^\n]*inputs\.only[^\n]*\}\}\s*$", r'\1ONLY_OK: "true"', body, flags=re.M)
-    body = re.sub(r"^(\s+)if: [^\n]*inputs\.only[^\n]*$", r"\1if: true", body, flags=re.M)
-    # 3. Append the publish jobs from the reviewed template (RELEASE_TOKEN only).
-    template = TEMPLATE.read_text(encoding="utf-8")
-    publish = template[template.index("  publish-test:"):]
-    publish = publish.replace("lmctl-ai/lmaudio", f"lmctl-ai/{product}")
-    publish = publish.replace("needs: [full-matrix]", "needs: [" + ", ".join(publish_needs) + "]")
-    publish = publish.replace("pattern: binary-*", f"pattern: {product}-*")
-    body = body.rstrip("\n") + "\n\n" + publish
-    # 4. Version from the tag: the public tag decides the binary's version, never the run number.
-    version_expr = r"\$\(scripts/stamp-version\.sh --base\)\.\$\{?GITHUB_RUN_NUMBER\}?"
-    body, count = re.subn(version_expr, "${PRIVATE_VERSION#v}", body)
-    if count:
-        version_env = ("  PRIVATE_VERSION: ${{ inputs.release_tag || (startsWith(github.ref, 'refs/tags/v') && github.ref_name) "
-                       "|| 'v0.0.0-private-ci' }}")
-        if re.search(r"^env:\n", body, re.M):
-            body = re.sub(r"^env:\n", "env:\n" + version_env + "\n", body, count=1, flags=re.M)
-        else:
-            body = re.sub(r"^permissions:", "env:\n" + version_env + "\npermissions:", body, count=1, flags=re.M)
-    # 5. Push to main runs one Linux job; the full matrix runs only on dispatch or a version tag.
-    body = split_fast_path(body)
-    # 6. Fail closed on constructs that still need a human decision.
-    remaining = []
-    if "GITHUB_RUN_NUMBER" in body:
-        remaining.append("version derived from GITHUB_RUN_NUMBER: derive it from the tag instead")
-    if re.search(r"gh release (create|upload|edit)", body) and "RELEASE_TOKEN" not in body:
-        remaining.append("a release write uses a token other than RELEASE_TOKEN")
-    if "release-to-public.sh" not in body:
-        remaining.append("publish does not call release-to-public.sh")
-    if remaining:
-        raise SystemExit(f"{product}: manual edits required before the private CI can be generated: " + "; ".join(remaining))
-    Path(out).write_text(body, encoding="utf-8", newline="\n")
-    return remaining
+    """Generate the dispatch-only Linux staging workflow from the product CI contract."""
+    return generate_private_release(source, product, out)
+
+
+def generate_private_release(source, product, out):
+    """Render a two-architecture prerelease workflow; public CI remains untouched."""
+    source = Path(source)
+    version_text = (source / "VERSION").read_text().splitlines()[0] if (source / "VERSION").is_file() else ""
+    if not version_text:
+        cmake = (source / "CMakeLists.txt").read_text()
+        match = re.search(rf"project\({re.escape(product)}\s+VERSION\s+(\d+)\.(\d+)", cmake)
+        if not match:
+            raise SystemExit(f"{product}: cannot derive MAJOR.MINOR from VERSION or CMakeLists.txt")
+        major, minor = match.groups()
+    else:
+        parts = version_text.split(".")
+        if len(parts) < 2:
+            raise SystemExit(f"{product}: invalid VERSION {version_text!r}")
+        major, minor = parts[:2]
+    commands = {
+        "lmaudio": ("scripts/sync-deps.sh && scripts/sync-sdk.sh --verify && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmaudio dist/lmaudio-linux-x64", "./test.sh", "scripts/sync-deps.sh && scripts/sync-sdk.sh --verify && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmaudio dist/lmaudio-linux-arm64", "./test.sh"),
+        "lmimg": ("scripts/sync-deps.sh && scripts/sync-sdk.sh --verify && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmimg dist/lmimg-linux-x64", "./test.sh", "scripts/sync-deps.sh && scripts/sync-sdk.sh --verify && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmimg dist/lmimg-linux-arm64", "./test.sh"),
+        "lmdraw": ("scripts/sync-sdk.sh --verify && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmdraw dist/lmdraw-linux-x64 && scripts/stage-release-notices.sh dist && rm -f dist/*.sha256 && tar -czf dist/lmdraw-linux-x64-notices.tar.gz -C dist licenses && rm -rf dist/licenses", "./test.sh", "scripts/sync-sdk.sh --verify && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmdraw dist/lmdraw-linux-arm64 && scripts/stage-release-notices.sh dist && rm -f dist/*.sha256 && tar -czf dist/lmdraw-linux-arm64-notices.tar.gz -C dist licenses && rm -rf dist/licenses", "./test.sh"),
+        "lmoffice": ("scripts/sync-sdk.sh && RID=linux-x64 scripts/build.sh && mkdir -p dist && cp build/publish/lmoffice dist/lmoffice-linux-x64", "LMOFFICE_BIN=build/publish/lmoffice ./test.sh", "scripts/sync-sdk.sh && RID=linux-arm64 scripts/build.sh && mkdir -p dist && cp build/publish/lmoffice dist/lmoffice-linux-arm64", "LMOFFICE_BIN=build/publish/lmoffice ./test.sh"),
+        "lmcad": ("scripts/sync-sdk.sh --verify && scripts/build-occt.sh && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLMCAD_OCCT_PREFIX=build/occt-prefix -DLMCAD_FULL_STATIC=ON && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmcad dist/lmcad-linux-x64 && scripts/stage-release-notices.sh dist build/occt-prefix linux && tar -czf dist/lmcad-linux-x64-occt-relink-recipe.tar.gz .github/occt-cmake-flags.txt scripts/build-occt.sh durable-memory/13-licensing.md", "./test.sh", "scripts/sync-sdk.sh --verify && scripts/build-occt.sh && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLMCAD_OCCT_PREFIX=build/occt-prefix -DLMCAD_FULL_STATIC=ON && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmcad dist/lmcad-linux-arm64 && scripts/stage-release-notices.sh dist build/occt-prefix linux && tar -czf dist/lmcad-linux-arm64-occt-relink-recipe.tar.gz .github/occt-cmake-flags.txt scripts/build-occt.sh durable-memory/13-licensing.md", "./test.sh"),
+        "lmfilament": ("scripts/sync-sdk.sh --verify && scripts/sync-filament.sh && scripts/build-filament.sh && scripts/build.sh && mkdir -p dist && cp build/host/lmfilament dist/lmfilament-linux-x64 && tar -C build/host -czf dist/lmfilament-linux-x64-relink-objects.tar.gz CMakeFiles/lmfilament.dir build.ninja && cp third_party/filament/LICENSE dist/FILAMENT-LICENSE", "./test.sh", "scripts/sync-sdk.sh --verify && scripts/sync-filament.sh && scripts/build-filament.sh && scripts/build.sh && mkdir -p dist && cp build/host/lmfilament dist/lmfilament-linux-arm64 && tar -C build/host -czf dist/lmfilament-linux-arm64-relink-objects.tar.gz CMakeFiles/lmfilament.dir build.ninja && cp third_party/filament/LICENSE dist/FILAMENT-LICENSE", "./test.sh"),
+        "lmvideo": ("scripts/fetch-skia.sh --quiet && make STATIC=1 -j2 && mkdir -p dist && cp build/lmvideo dist/lmvideo-linux-x64 && scripts/stage-release-notices.sh dist && tar -czf dist/lmvideo-linux-x64-licenses.tar.gz -C dist licenses && rm -rf dist/licenses", "./test.sh", "LMVIDEO_PLATFORM=linux-arm64 scripts/fetch-skia.sh --quiet && LMVIDEO_PLATFORM=linux-arm64 make STATIC=1 -j2 && mkdir -p dist && cp build/lmvideo dist/lmvideo-linux-arm64 && scripts/stage-release-notices.sh dist && tar -czf dist/lmvideo-linux-arm64-licenses.tar.gz -C dist licenses && rm -rf dist/licenses", "./test.sh"),
+        "lmmagnum": ("scripts/sync-deps.sh && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLMMAGNUM_FULL_STATIC=ON && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmmagnum dist/lmmagnum-linux-x64 && scripts/stage-release-notices.sh dist", "./test.sh", "scripts/sync-deps.sh && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DLMMAGNUM_FULL_STATIC=ON && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmmagnum dist/lmmagnum-linux-arm64 && scripts/stage-release-notices.sh dist", "./test.sh"),
+        "lmpdf": ("rustup toolchain install 1.92.0 --profile minimal && rustup target add x86_64-unknown-linux-musl && scripts/compile-release.sh x86_64-unknown-linux-musl linux-x64", "python3 scripts/check-linkage.py --platform linux-x64 --binary dist/lmpdf-linux-x64 --output dist/linkage-linux-x64.json --static-crt && cargo test --release --locked --target x86_64-unknown-linux-musl", "rustup toolchain install 1.92.0 --profile minimal && rustup target add aarch64-unknown-linux-musl && scripts/compile-release.sh aarch64-unknown-linux-musl linux-arm64", "python3 scripts/check-linkage.py --platform linux-arm64 --binary dist/lmpdf-linux-arm64 --output dist/linkage-linux-arm64.json --static-crt && cargo test --release --locked --target aarch64-unknown-linux-musl"),
+    }
+    if product not in commands:
+        raise SystemExit(f"{product}: no reviewed Linux staging adapter; add its real CI commands before generating")
+    x64, tx, arm, ta = commands[product]
+    try:
+        ci_commit = subprocess.check_output(["git", "-C", str(source), "log", "-1", "--format=%H", "--", ".github/workflows/ci.yml"], text=True).strip()
+    except subprocess.CalledProcessError:
+        ci_commit = "unavailable"
+    text = TEMPLATE.read_text(encoding="utf-8")
+    replacements = {"{{PRODUCT}}": product, "{{MAJOR}}": major, "{{MINOR}}": minor, "{{SOURCE_CI_COMMIT}}": ci_commit,
+                    "{{BUILD_X64}}": x64, "{{TEST_X64}}": tx, "{{BUILD_ARM64}}": arm, "{{TEST_ARM64}}": ta}
+    for key, value in replacements.items():
+        text = text.replace(key, value)
+    Path(out).write_text(text, encoding="utf-8", newline="\n")
+    return []
 
 
 def main():

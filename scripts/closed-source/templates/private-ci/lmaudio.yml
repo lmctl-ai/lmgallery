@@ -1,199 +1,157 @@
-name: lmaudio private CI
+name: private Linux release staging
+
+# Build/test/package commands are derived from the private source CI at
+# fc3a7b38c2e18cd0c0fb2082423c90657bc9c79b; public-content CI remains in the public peer.
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
-  pull_request:
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: First/new public tag, for example v0.3.0
-        required: false
-        type: string
-      publish_test:
-        description: Create and delete a draft public release to verify the publishing token, without building
-        required: false
-        default: false
-        type: boolean
 
 permissions:
   contents: read
 
-concurrency:
-  group: lmaudio-${{ github.ref }}
-  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+env:
+  PRODUCT: "lmaudio"
 
 jobs:
-  linux-fast:
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+  version:
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - id: version
+        run: |
+          set -euo pipefail
+          if [ -x scripts/stamp-version.sh ]; then base=$(scripts/stamp-version.sh --base); else base=$(sed -n 's/.*project([^)]*VERSION \([0-9]*\.[0-9]*\).*/\1/p' CMakeLists.txt | head -1); fi
+          test -n "$base"
+          echo "tag=v${base}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+  linux-x64:
+    needs: version
+    env:
+      RELEASE_TAG: ${{ needs.version.outputs.tag }}
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Check out public examples anonymously
-        run: git clone --depth 1 https://github.com/lmctl-ai/lmaudio.git public
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 24
-      - name: Install lmscript and Linux tools
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: 8.0.132}
+      - name: Install Linux build tools and compiler
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ninja-build
+          if ! command -v clang-18 >/dev/null 2>&1; then sudo apt-get install -y -qq wget ca-certificates && wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 18; fi
+          sudo apt-get install -y -qq ninja-build clang-18 lld-18 libc++-18-dev libc++abi-18-dev libunwind-18-dev libclang-rt-18-dev zlib1g-dev libssl-dev musl-tools pkg-config ffmpeg python3-venv
+          python3 -m pip install --user cmake==3.31.6
+      - name: Build and test current Linux x64 release
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
           npm install --global @lmctl-ai/lmctl@0.2.420
-      - name: Build and test private source
-        env:
-          LMAUDIO_TEST_NETWORK: "1"
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          scripts/sync-deps.sh
-          scripts/sync-sdk.sh --verify
-          ./test.sh
-          echo "$GITHUB_WORKSPACE/build" >> "$GITHUB_PATH"
-      - name: Check and run public examples against the fresh Linux host
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          if [ -d public/examples ]; then
-            find public/examples -type f -name '*.lms' -print0 |
-              while IFS= read -r -d '' example; do
-                relative="${example#public/}"
-                (cd public && lmscript --check "$relative" && lmscript "$relative")
-              done
+          if [ "$PRODUCT" = lmoffice ]; then python3 -m venv .test-venv && .test-venv/bin/pip install python-docx==1.2.0 openpyxl==3.1.5 python-pptx==1.0.2 && export PYTHON="$PWD/.test-venv/bin/python"; fi
+          export CC=clang-18 CXX=clang++-18
+          if [ -x scripts/stamp-version.sh ]; then scripts/stamp-version.sh "${RELEASE_TAG#v}"; elif [ -f CMakeLists.txt ]; then OLD_VERSION=$(sed -n 's/.*project([^)]*VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt | head -1); python3 - "$OLD_VERSION" "${RELEASE_TAG#v}" "$PRODUCT" <<'PY'
+          from pathlib import Path
+          import sys
+          old, new, product = sys.argv[1:]
+          p = Path('CMakeLists.txt'); p.write_text(p.read_text().replace(f'VERSION {old}', f'VERSION {new}', 1))
+          t = Path('test.sh')
+          if t.exists(): t.write_text(t.read_text().replace(f'{product} {old}', f'{product} {new}'))
+          PY
           fi
-
-  full-matrix:
-    if: (github.event_name == 'workflow_dispatch' && inputs.publish_test != true) || startsWith(github.ref, 'refs/tags/v')
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { os: ubuntu-22.04, name: linux-x64 }
-          - { os: ubuntu-22.04-arm, name: linux-arm64 }
-          - { os: macos-15, name: macos-arm64 }
-          - { os: macos-15-intel, name: macos-x64 }
-          - { os: windows-2022, name: windows-x64 }
-    runs-on: ${{ matrix.os }}
-    name: full ${{ matrix.name }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Check out public examples anonymously
-        run: git clone --depth 1 https://github.com/lmctl-ai/lmaudio.git public
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 24
-      - name: Install lmscript
-        run: npm install --global @lmctl-ai/lmctl@0.2.420
-      - name: Install Linux tools
-        if: runner.os == 'Linux'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ninja-build
-      - name: Install macOS tools
-        if: runner.os == 'macOS'
-        run: brew install ninja coreutils
-      - name: Install Windows tools
-        if: runner.os == 'Windows'
-        run: |
-          if ! command -v g++ >/dev/null 2>&1 || ! command -v ninja >/dev/null 2>&1; then choco install -y mingw ninja; fi
-          mkdir -p .ci-bin
-          printf '#!/usr/bin/env bash\nexec python "$@"\n' > .ci-bin/python3
-          chmod +x .ci-bin/python3
-          echo "$PWD/.ci-bin" >> "$GITHUB_PATH"
-      - name: Build and test private source
-        env:
-          LMAUDIO_TEST_NETWORK: "1"
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          scripts/sync-deps.sh
-          scripts/sync-sdk.sh --verify
+          scripts/sync-deps.sh && scripts/sync-sdk.sh --verify && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmaudio dist/lmaudio-linux-x64
           ./test.sh
-          echo "$GITHUB_WORKSPACE/build" >> "$GITHUB_PATH"
-      - name: Check and run public examples against the fresh host
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          if [ -d public/examples ]; then
-            find public/examples -type f -name '*.lms' -print0 |
-              while IFS= read -r -d '' example; do
-                relative="${example#public/}"
-                (cd public && lmscript --check "$relative" && lmscript "$relative")
-              done
-          fi
-      - name: Package the platform binary
-        env:
-          MATRIX_NAME: ${{ matrix.name }}
-        run: |
-          set -euo pipefail
-          mkdir -p dist
-          ext=""; [ "$RUNNER_OS" = "Windows" ] && ext=".exe"
-          cp "build/lmaudio$ext" "dist/lmaudio-$MATRIX_NAME$ext"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          test -f "dist/$PRODUCT-linux-x64"
+          printf '%s\n' "$RELEASE_TAG" > dist/RELEASE_TAG-x64
+          cp LICENSE dist/LICENSE
+          for n in THIRD_PARTY_NOTICES THIRD_PARTY_NOTICES.md; do [ ! -f "$n" ] || cp "$n" dist/; done
+      - uses: actions/upload-artifact@v4
         with:
-          name: binary-${{ matrix.name }}
+          name: lmaudio-linux-x64
           path: dist/
           if-no-files-found: error
-          retention-days: 7
 
-  publish-test:
-    if: github.event_name == 'workflow_dispatch' && inputs.publish_test == true
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
+  linux-arm64:
+    needs: version
+    env:
+      RELEASE_TAG: ${{ needs.version.outputs.tag }}
+    runs-on: ubuntu-22.04-arm
     steps:
-      - name: Verify public release write permission without a build
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: 8.0.132}
+      - name: Install Linux build tools and compiler
+        run: |
+          sudo apt-get update -qq
+          if ! command -v clang-18 >/dev/null 2>&1; then sudo apt-get install -y -qq wget ca-certificates && wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 18; fi
+          sudo apt-get install -y -qq ninja-build clang-18 lld-18 libc++-18-dev libc++abi-18-dev libunwind-18-dev libclang-rt-18-dev zlib1g-dev libssl-dev musl-tools pkg-config ffmpeg python3-venv
+          python3 -m pip install --user cmake==3.31.6
+      - name: Build and test current Linux arm64 release
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          npm install --global @lmctl-ai/lmctl@0.2.420
+          if [ "$PRODUCT" = lmoffice ]; then python3 -m venv .test-venv && .test-venv/bin/pip install python-docx==1.2.0 openpyxl==3.1.5 python-pptx==1.0.2 && export PYTHON="$PWD/.test-venv/bin/python"; fi
+          export CC=clang-18 CXX=clang++-18
+          if [ -x scripts/stamp-version.sh ]; then scripts/stamp-version.sh "${RELEASE_TAG#v}"; elif [ -f CMakeLists.txt ]; then OLD_VERSION=$(sed -n 's/.*project([^)]*VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt | head -1); python3 - "$OLD_VERSION" "${RELEASE_TAG#v}" "$PRODUCT" <<'PY'
+          from pathlib import Path
+          import sys
+          old, new, product = sys.argv[1:]
+          p = Path('CMakeLists.txt'); p.write_text(p.read_text().replace(f'VERSION {old}', f'VERSION {new}', 1))
+          t = Path('test.sh')
+          if t.exists(): t.write_text(t.read_text().replace(f'{product} {old}', f'{product} {new}'))
+          PY
+          fi
+          scripts/sync-deps.sh && scripts/sync-sdk.sh --verify && cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel 3 && mkdir -p dist && cp build/lmaudio dist/lmaudio-linux-arm64
+          ./test.sh
+          test -f "dist/$PRODUCT-linux-arm64"
+          printf '%s\n' "$RELEASE_TAG" > dist/RELEASE_TAG-arm64
+          cp LICENSE dist/LICENSE
+          for n in THIRD_PARTY_NOTICES THIRD_PARTY_NOTICES.md; do [ ! -f "$n" ] || cp "$n" dist/; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lmaudio-linux-arm64
+          path: dist/
+          if-no-files-found: error
+
+  stage:
+    needs: [version, linux-x64, linux-arm64]
+    env:
+      RELEASE_TAG: ${{ needs.version.outputs.tag }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {path: release-artifacts, merge-multiple: true}
+      - uses: actions/checkout@v4
+        with: {repository: lmctl-ai/lmaudio, path: public, persist-credentials: false}
+      - name: Assemble and publish Linux prerelease
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
           set -euo pipefail
           test -n "$GH_TOKEN"
-          tag="lmctl-publish-test-${GITHUB_RUN_ID}"
-          cleanup() { gh release delete "$tag" -R lmctl-ai/lmaudio --yes >/dev/null 2>&1 || true; }
-          trap cleanup EXIT
-          gh release create "$tag" -R lmctl-ai/lmaudio --draft --target main --title "$tag" --notes "Temporary release-token permission check."
-          test "$(gh release view "$tag" -R lmctl-ai/lmaudio --json isDraft --jq .isDraft)" = true
-          gh release delete "$tag" -R lmctl-ai/lmaudio --yes
-          trap - EXIT
-          if gh release view "$tag" -R lmctl-ai/lmaudio >/dev/null 2>&1; then
-            echo "publish-test draft release still exists" >&2
-            exit 1
-          fi
-
-  publish:
-    if: (github.event_name == 'workflow_dispatch' && inputs.publish_test != true) || startsWith(github.ref, 'refs/tags/v')
-    needs: [full-matrix]
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
-        with:
-          pattern: binary-*
-          path: release-artifacts
-          merge-multiple: true
-      - name: Select the first/new release tag
-        id: release
-        env:
-          MANUAL_TAG: ${{ inputs.release_tag }}
-        run: |
-          set -euo pipefail
-          tag="$MANUAL_TAG"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then tag="$GITHUB_REF_NAME"; fi
-          test -n "$tag" || { echo "Set release_tag for workflow_dispatch" >&2; exit 1; }
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-      - name: Publish the first/new release to the public peer
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-          RELEASE_TAG: ${{ steps.release.outputs.tag }}
-        run: ./scripts/release-to-public.sh "$RELEASE_TAG" "$GITHUB_WORKSPACE/release-artifacts"
+          cp public/LICENSE release-artifacts/LICENSE
+          expected="lmaudio-linux-x64 lmaudio-linux-arm64"
+          for name in $expected; do test -f "release-artifacts/$name"; done
+          test "$(cat release-artifacts/RELEASE_TAG-x64)" = "$RELEASE_TAG"
+          test "$(cat release-artifacts/RELEASE_TAG-arm64)" = "$RELEASE_TAG"
+          rm -f release-artifacts/RELEASE_TAG-x64 release-artifacts/RELEASE_TAG-arm64
+          while IFS= read -r path; do
+            name=${path#release-artifacts/}
+            case "$name" in *macos*|*windows*|*darwin*|*osx*) echo "non-Linux asset: $name" >&2; exit 1;; esac
+            [ "$(basename "$path")" = "$name" ] || { echo "nested asset: $path" >&2; exit 1; }
+            case "$name" in
+              "lmaudio-linux-x64"|"lmaudio-linux-arm64"|LICENSE|THIRD_PARTY_NOTICES|THIRD_PARTY_NOTICES.md|FILAMENT-LICENSE|OCCT-*|Apache-2.0.txt|build123d-NOTICE.txt|PyVista-MIT.txt|LGPL-2.1.txt|GPL-3.txt|GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt|GCC-TOOLCHAIN-COPYRIGHT|GLIBC-COPYRIGHT|Magnum-COPYING|Corrade-COPYING|"lmaudio"-linux-*-relink-objects.tar.gz|"lmaudio"-linux-*-notices.tar.gz|"lmaudio"-linux-*-licenses.tar.gz|"lmaudio"-linux-*-occt-relink-recipe.tar.gz|linkage-linux-*.json|build-metrics-linux-*.json|SHA256SUMS) ;;
+              *) echo "asset is outside the product allowlist: $name" >&2; exit 1;;
+            esac
+          done < <(find release-artifacts -type f)
+          test -f release-artifacts/LICENSE
+          compgen -G 'release-artifacts/THIRD_PARTY_NOTICES*' >/dev/null
+          boundary=$(awk 'BEGIN{p=1} p && NF{print} !NF{p=0}' public/LICENSE)
+          printf 'private-run-id: %s\n\n%s\n\nLinux x86_64 and arm64 staging release. Promote only after local verification.\n' "$GITHUB_RUN_ID" "$boundary" > release-notes.md
+          (cd release-artifacts && find . -type f ! -name SHA256SUMS -printf '%f\0' | sort -z | xargs -0 sha256sum > SHA256SUMS)
+          gh release create "$RELEASE_TAG" -R "lmctl-ai/lmaudio" --target main --title "$RELEASE_TAG" --prerelease --latest=false --notes-file release-notes.md release-artifacts/*

@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Offline gh fixture used by release-cycle contract tests."""
+import base64, hashlib, json, os, pathlib, shutil, sys
+
+args = sys.argv[1:]
+log = pathlib.Path(os.environ["STUB_LOG"])
+with log.open("a") as f:
+    f.write("gh " + " ".join(args) + "\n")
+
+def emit(value):
+    print(json.dumps(value) if not isinstance(value, str) else value)
+
+if args[:2] == ["repo", "clone"]:
+    target = pathlib.Path(args[3] if len(args) > 3 and args[2].startswith("lmctl-") else args[-1]); (target / "examples").mkdir(parents=True); (target / "scripts").mkdir()
+    (target / "LICENSE").write_text("baseline license\n")
+    (target / "THIRD_PARTY_NOTICES").write_text("MIT\n")
+    (target / "examples/two.lms").write_text('p = _lmcode_ cli="lmaudio" install="github:lmctl-ai/lmaudio@v0.2.1"; end _lmcode_\n')
+    installer = target / "scripts/install-hosts.sh"; installer.write_text("#!/bin/sh\nexit 0\n"); installer.chmod(0o755)
+    raise SystemExit(0)
+
+if args[:2] == ["api", "repos/lmctlhq/lmaudio/actions/permissions"]:
+    emit({"enabled": os.getenv("STUB_ACTIONS", "false") == "true"}); raise SystemExit(0)
+if args[:2] == ["api", "repos/lmctlhq/lmaudio/actions/runs?per_page=5"]:
+    if os.getenv("STUB_BUDGET") == "true": emit({"workflow_runs": [{"id": 7, "conclusion": "failure", "check_suite_id": 9}]})
+    else: emit({"workflow_runs": []})
+    raise SystemExit(0)
+if args[:2] == ["api", "repos/lmctlhq/lmaudio/contents/.github/workflows/ci.yml?ref=main"]:
+    workflow = "on:\n  workflow_dispatch:\n    inputs: {}\njobs:\n  linux-x64:\n    runs-on: ubuntu-22.04\n  linux-arm64:\n    runs-on: ubuntu-22.04-arm\n  stage:\n    env: secrets.RELEASE_TOKEN\n    run: gh release create --prerelease --latest=false private-run-id: 42\n"
+    if os.getenv("STUB_OLD_WORKFLOW") == "true": workflow = "on:\n  push:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n"
+    emit({"content": base64.b64encode(workflow.encode()).decode(), "encoding": "base64"}); raise SystemExit(0)
+if args[:2] == ["api", "repos/lmctlhq/lmaudio/check-suites/9/check-runs"]:
+    emit({"check_runs": [{"output": {"summary": "Actions budget exhausted"}}]}); raise SystemExit(0)
+if args[:2] == ["api", "repos/lmctlhq/lmaudio/actions/workflows/ci.yml"]:
+    emit({"state": "active"}); raise SystemExit(0)
+if args[:2] == ["api", "repos/lmctl-ai/lmaudio/releases/latest"]:
+    emit({"tag_name": os.getenv("STUB_TAG", "v0.2.1"), "prerelease": False}); raise SystemExit(0)
+if args[:2] == ["workflow", "run"]: emit("dispatched"); raise SystemExit(0)
+if args[:2] == ["api", "repos/lmctlhq/lmaudio/actions/workflows/ci.yml/runs?event=workflow_dispatch&branch=main&per_page=20"]:
+    emit({"workflow_runs": [{"id": 42, "status": "completed", "conclusion": "success"}]}); raise SystemExit(0)
+if args[:2] == ["api", "repos/lmctl-ai/lmaudio/releases?per_page=100"]:
+    emit([{"tag_name": "v0.2.1", "prerelease": True, "body": "private-run-id: 42"}]); raise SystemExit(0)
+if args[:2] == ["run", "list"]: emit("[]"); raise SystemExit(0)
+if args[:2] == ["release", "list"]: emit("v0.2.1"); raise SystemExit(0)
+if args[:2] == ["release", "view"]:
+    if "--json" in args: emit({"tagName": os.getenv("STUB_TAG", "v0.2.1"), "isPrerelease": True, "isDraft": False}); raise SystemExit(0)
+    raise SystemExit(0)
+if args[:2] == ["release", "download"]:
+    dest = pathlib.Path(args[args.index("--dir") + 1]); dest.mkdir(parents=True, exist_ok=True)
+    x64 = dest / "lmaudio-linux-x64"
+    x64.write_text('#!/bin/sh\nif [ "$1" = --version ]; then echo "lmaudio 0.2.1"; exit 0; fi\nif [ "$1" = --dsl-schema ]; then echo "{}"; exit 0; fi\nexit 0\n')
+    x64.chmod(0o755); (dest / "lmaudio-linux-arm64").write_bytes(b"arm64-placeholder")
+    (dest / "LICENSE").write_text("baseline license\n")
+    # The baseline notice remains MIT when the runner asks for only the
+    # previous release's notice; the staged release can carry the copyleft
+    # mutation for the dedicated rejection test.
+    baseline = "--pattern" in args and any("THIRD_PARTY_NOTICES" in x for x in args)
+    (dest / "THIRD_PARTY_NOTICES").write_text("MIT\n" if baseline else ("GPL-3.0-only\n" if os.getenv("STUB_COPYLEFT") == "true" else "MIT\n"))
+    names = sorted(p.name for p in dest.iterdir())
+    sums = "".join(f"{hashlib.sha256((dest / n).read_bytes()).hexdigest()}  {n}\n" for n in names)
+    (dest / "SHA256SUMS").write_text("0" * 64 + "  lmaudio-linux-x64\n" if os.getenv("STUB_CORRUPT") == "true" else sums)
+    raise SystemExit(0)
+if args[:2] == ["release", "edit"]: emit("promoted"); raise SystemExit(0)
+if args[:2] == ["release", "create"]: emit("created"); raise SystemExit(0)
+raise SystemExit(0)

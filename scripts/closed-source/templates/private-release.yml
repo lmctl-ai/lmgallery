@@ -1,0 +1,157 @@
+name: private Linux release staging
+
+# Build/test/package commands are derived from the private source CI at
+# {{SOURCE_CI_COMMIT}}; public-content CI remains in the public peer.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PRODUCT: "{{PRODUCT}}"
+
+jobs:
+  version:
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - id: version
+        run: |
+          set -euo pipefail
+          if [ -x scripts/stamp-version.sh ]; then base=$(scripts/stamp-version.sh --base); else base=$(sed -n 's/.*project([^)]*VERSION \([0-9]*\.[0-9]*\).*/\1/p' CMakeLists.txt | head -1); fi
+          test -n "$base"
+          echo "tag=v${base}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+  linux-x64:
+    needs: version
+    env:
+      RELEASE_TAG: ${{ needs.version.outputs.tag }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: 8.0.132}
+      - name: Install Linux build tools and compiler
+        run: |
+          sudo apt-get update -qq
+          if ! command -v clang-18 >/dev/null 2>&1; then sudo apt-get install -y -qq wget ca-certificates && wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 18; fi
+          sudo apt-get install -y -qq ninja-build clang-18 lld-18 libc++-18-dev libc++abi-18-dev libunwind-18-dev libclang-rt-18-dev zlib1g-dev libssl-dev musl-tools pkg-config ffmpeg python3-venv
+          python3 -m pip install --user cmake==3.31.6
+      - name: Build and test current Linux x64 release
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          npm install --global @lmctl-ai/lmctl@0.2.420
+          if [ "$PRODUCT" = lmoffice ]; then python3 -m venv .test-venv && .test-venv/bin/pip install python-docx==1.2.0 openpyxl==3.1.5 python-pptx==1.0.2 && export PYTHON="$PWD/.test-venv/bin/python"; fi
+          export CC=clang-18 CXX=clang++-18
+          if [ -x scripts/stamp-version.sh ]; then scripts/stamp-version.sh "${RELEASE_TAG#v}"; elif [ -f CMakeLists.txt ]; then OLD_VERSION=$(sed -n 's/.*project([^)]*VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt | head -1); python3 - "$OLD_VERSION" "${RELEASE_TAG#v}" "$PRODUCT" <<'PY'
+          from pathlib import Path
+          import sys
+          old, new, product = sys.argv[1:]
+          p = Path('CMakeLists.txt'); p.write_text(p.read_text().replace(f'VERSION {old}', f'VERSION {new}', 1))
+          t = Path('test.sh')
+          if t.exists(): t.write_text(t.read_text().replace(f'{product} {old}', f'{product} {new}'))
+          PY
+          fi
+          {{BUILD_X64}}
+          {{TEST_X64}}
+          test -f "dist/$PRODUCT-linux-x64"
+          printf '%s\n' "$RELEASE_TAG" > dist/RELEASE_TAG-x64
+          cp LICENSE dist/LICENSE
+          for n in THIRD_PARTY_NOTICES THIRD_PARTY_NOTICES.md; do [ ! -f "$n" ] || cp "$n" dist/; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: {{PRODUCT}}-linux-x64
+          path: dist/
+          if-no-files-found: error
+
+  linux-arm64:
+    needs: version
+    env:
+      RELEASE_TAG: ${{ needs.version.outputs.tag }}
+    runs-on: ubuntu-22.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - uses: actions/setup-node@v4
+        with: {node-version: 24}
+      - uses: actions/setup-dotnet@v4
+        with: {dotnet-version: 8.0.132}
+      - name: Install Linux build tools and compiler
+        run: |
+          sudo apt-get update -qq
+          if ! command -v clang-18 >/dev/null 2>&1; then sudo apt-get install -y -qq wget ca-certificates && wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 18; fi
+          sudo apt-get install -y -qq ninja-build clang-18 lld-18 libc++-18-dev libc++abi-18-dev libunwind-18-dev libclang-rt-18-dev zlib1g-dev libssl-dev musl-tools pkg-config ffmpeg python3-venv
+          python3 -m pip install --user cmake==3.31.6
+      - name: Build and test current Linux arm64 release
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          npm install --global @lmctl-ai/lmctl@0.2.420
+          if [ "$PRODUCT" = lmoffice ]; then python3 -m venv .test-venv && .test-venv/bin/pip install python-docx==1.2.0 openpyxl==3.1.5 python-pptx==1.0.2 && export PYTHON="$PWD/.test-venv/bin/python"; fi
+          export CC=clang-18 CXX=clang++-18
+          if [ -x scripts/stamp-version.sh ]; then scripts/stamp-version.sh "${RELEASE_TAG#v}"; elif [ -f CMakeLists.txt ]; then OLD_VERSION=$(sed -n 's/.*project([^)]*VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt | head -1); python3 - "$OLD_VERSION" "${RELEASE_TAG#v}" "$PRODUCT" <<'PY'
+          from pathlib import Path
+          import sys
+          old, new, product = sys.argv[1:]
+          p = Path('CMakeLists.txt'); p.write_text(p.read_text().replace(f'VERSION {old}', f'VERSION {new}', 1))
+          t = Path('test.sh')
+          if t.exists(): t.write_text(t.read_text().replace(f'{product} {old}', f'{product} {new}'))
+          PY
+          fi
+          {{BUILD_ARM64}}
+          {{TEST_ARM64}}
+          test -f "dist/$PRODUCT-linux-arm64"
+          printf '%s\n' "$RELEASE_TAG" > dist/RELEASE_TAG-arm64
+          cp LICENSE dist/LICENSE
+          for n in THIRD_PARTY_NOTICES THIRD_PARTY_NOTICES.md; do [ ! -f "$n" ] || cp "$n" dist/; done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: {{PRODUCT}}-linux-arm64
+          path: dist/
+          if-no-files-found: error
+
+  stage:
+    needs: [version, linux-x64, linux-arm64]
+    env:
+      RELEASE_TAG: ${{ needs.version.outputs.tag }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with: {path: release-artifacts, merge-multiple: true}
+      - uses: actions/checkout@v4
+        with: {repository: lmctl-ai/{{PRODUCT}}, path: public, persist-credentials: false}
+      - name: Assemble and publish Linux prerelease
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN"
+          cp public/LICENSE release-artifacts/LICENSE
+          expected="{{PRODUCT}}-linux-x64 {{PRODUCT}}-linux-arm64"
+          for name in $expected; do test -f "release-artifacts/$name"; done
+          test "$(cat release-artifacts/RELEASE_TAG-x64)" = "$RELEASE_TAG"
+          test "$(cat release-artifacts/RELEASE_TAG-arm64)" = "$RELEASE_TAG"
+          rm -f release-artifacts/RELEASE_TAG-x64 release-artifacts/RELEASE_TAG-arm64
+          while IFS= read -r path; do
+            name=${path#release-artifacts/}
+            case "$name" in *macos*|*windows*|*darwin*|*osx*) echo "non-Linux asset: $name" >&2; exit 1;; esac
+            [ "$(basename "$path")" = "$name" ] || { echo "nested asset: $path" >&2; exit 1; }
+            case "$name" in
+              "{{PRODUCT}}-linux-x64"|"{{PRODUCT}}-linux-arm64"|LICENSE|THIRD_PARTY_NOTICES|THIRD_PARTY_NOTICES.md|FILAMENT-LICENSE|OCCT-*|Apache-2.0.txt|build123d-NOTICE.txt|PyVista-MIT.txt|LGPL-2.1.txt|GPL-3.txt|GCC-RUNTIME-LIBRARY-EXCEPTION-3.1.txt|GCC-TOOLCHAIN-COPYRIGHT|GLIBC-COPYRIGHT|Magnum-COPYING|Corrade-COPYING|"{{PRODUCT}}"-linux-*-relink-objects.tar.gz|"{{PRODUCT}}"-linux-*-notices.tar.gz|"{{PRODUCT}}"-linux-*-licenses.tar.gz|"{{PRODUCT}}"-linux-*-occt-relink-recipe.tar.gz|linkage-linux-*.json|build-metrics-linux-*.json|SHA256SUMS) ;;
+              *) echo "asset is outside the product allowlist: $name" >&2; exit 1;;
+            esac
+          done < <(find release-artifacts -type f)
+          test -f release-artifacts/LICENSE
+          compgen -G 'release-artifacts/THIRD_PARTY_NOTICES*' >/dev/null
+          boundary=$(awk 'BEGIN{p=1} p && NF{print} !NF{p=0}' public/LICENSE)
+          printf 'private-run-id: %s\n\n%s\n\nLinux x86_64 and arm64 staging release. Promote only after local verification.\n' "$GITHUB_RUN_ID" "$boundary" > release-notes.md
+          (cd release-artifacts && find . -type f ! -name SHA256SUMS -printf '%f\0' | sort -z | xargs -0 sha256sum > SHA256SUMS)
+          gh release create "$RELEASE_TAG" -R "lmctl-ai/{{PRODUCT}}" --target main --title "$RELEASE_TAG" --prerelease --latest=false --notes-file release-notes.md release-artifacts/*

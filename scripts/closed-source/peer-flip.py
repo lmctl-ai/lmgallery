@@ -1021,6 +1021,11 @@ def _wait_for_private_workflow(product: str, attempts: int = 30) -> None:
 
 
 def _run_publish_test(product: str, private_sha: str) -> dict:
+    raise FlipError(
+        "private Actions dispatch is disabled by owner decision; use release-cycle.sh --dry-run "
+        "or re-enable manually with: gh api repos/lmctlhq/%s/actions/permissions -X PUT -F enabled=true"
+        % product
+    )
     _wait_for_private_workflow(product)
     before = command(["gh", "run", "list", "-R", private_repo(product), "-L", "5", "--json", "databaseId,event,headSha"], timeout=120)
     previous_ids = {str(row.get("databaseId")) for row in json.loads(before.stdout)}
@@ -1415,6 +1420,12 @@ def _assert_private_mirror_refs(product: str, expected_refs: dict[str, str]) -> 
 
 
 def _set_repo_actions_enabled(product: str, enabled: bool) -> None:
+    if enabled:
+        raise FlipError(
+            "refusing to enable private Actions automatically; owner decision keeps Actions disabled. "
+            "Re-enable manually only with: gh api repos/lmctlhq/%s/actions/permissions -X PUT -F enabled=true"
+            % product
+        )
     value = "true" if enabled else "false"
     state = json.loads(command(["gh", "api", f"repos/{private_repo(product)}/actions/permissions"]).stdout)
     if state.get("enabled") is enabled:
@@ -2045,7 +2056,7 @@ def apply_general_product(product: str, first_tag: str) -> int:
         ci = _reuse_lmfilament_publish_test(snapshot["ref"], snapshot["root"])
     current_private_workflow = root / ".github/workflows/ci.yml"
     current_private_text = current_private_workflow.read_text(encoding="utf-8") if current_private_workflow.is_file() else ""
-    private_ci_ready = "  publish-test:" in current_private_text and "RELEASE_TOKEN" in current_private_text and (root / "scripts/release-to-public.sh").is_file()
+    private_ci_ready = "  stage:" in current_private_text and "RELEASE_TOKEN" in current_private_text and "workflow_dispatch:" in current_private_text
     if not ci.get("ok") and not (source_is_private and not private_ci_ready):
         raise FlipError(f"{product} main CI is not green: {ci.get('url','')} {ci.get('error','')}")
     if source_is_private and not private_ci_ready:
@@ -2147,7 +2158,7 @@ def apply_general_product(product: str, first_tag: str) -> int:
         actions = json.loads(command(["gh", "api", f"repos/{private_repo(product)}/actions/permissions"]).stdout)
         workflow_path = root / ".github/workflows/ci.yml"
         workflow_text = workflow_path.read_text(encoding="utf-8") if workflow_path.is_file() else ""
-        private_ci_ready = "  publish-test:" in workflow_text and "RELEASE_TOKEN" in workflow_text and (root / "scripts/release-to-public.sh").is_file()
+        private_ci_ready = "  stage:" in workflow_text and "RELEASE_TOKEN" in workflow_text and "workflow_dispatch:" in workflow_text
         has_secret = any(item.get("name") == "RELEASE_TOKEN" for item in secrets)
         if private_ci_ready:
             if not has_secret:
