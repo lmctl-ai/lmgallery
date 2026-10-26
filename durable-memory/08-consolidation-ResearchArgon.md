@@ -15,7 +15,7 @@
 | **`lmmagnum`** | 3D procedural primitives, hierarchical nodes, PBR-lite + shadow-map software rasterizer, STL/OBJ/PLY export (4.0 MB) | 7 / 58 | **MERGE API & RETIRE** | Despite the name, `lmmagnum` does **not** use Magnum's OpenGL/Vulkan renderer — `cpp/render.cpp` (200 LOC) is a pure C++17 CPU Z-buffer rasterizer (`#include "stb_image_write.h"`), using Magnum only for `MeshTools` primitive generators and `Matrix4`. |
 | **`lmfilament`** | 3D procedural primitives (`box`, `sphere`, `icosphere`, `cylinder`, `cone`, `capsule`, `plane`, `triangle`, `tube_between`, `ring`, `text`), PBR materials, procedural textures, CPU preview rasterizer (16.4 MB) | 7 / 62 | **MERGE API & RETIRE** | Runs Google Filament 1.78.1 on `Backend::NOOP` (which renders **zero pixels**) and renders every PNG through `cpp/preview.cpp` (255 LOC pure C++17 CPU rasterizer). `cpp/mesh.cpp` (375 LOC) already generates all 11 procedural primitives in C++17 (only calling Filament's `SurfaceOrientation` for unused tangent quaternions). |
 | **`lmcad`** | Parametric B-Rep solid modeling (`Sketch`, `Part`, `Assembly`), exact STEP/IGES/BREP/STL/DXF/SVG export on OpenCascade 7.8 (30.5 MB) | 9 / 62 | **KEEP SEPARATE** | Exact NURBS/B-Rep booleans, fillets, chamfers, shells, lofts, and HLR technical projections require 75 OCCT libraries and trigger **LGPL-2.1 §6a relink-archive obligations** (`lmcad-relink.tar.gz`). Merging OCCT into `lmvideo` would infect the core binary with LGPL relink duties. Interop is clean via STL/OBJ/glTF file handoff. |
-| **`lmblender`** | In-process static Blender Cycles CPU path tracer, modifiers, metaballs, curves, `.blend`/`.glb` export (124 MB) | 3 / 96 | **KEEP SEPARATE** | Links Blender/Cycles (**GPL-3.0-or-later**, 124 MB). Cannot be linked into a closed-source binary, and its path-tracing latency is incompatible with high-FPS programmatic video loops. |
+| **`lmblender`** | In-process static Blender Cycles CPU path tracer, modifiers, metaballs, curves, `.blend`/`.glb` export (124 MB) | 3 / 96 | **SHRINK TO RENDER BACKEND** | Drops all 3D modeling/drawing/animation DSL methods (~2,600 LOC); shrinks to a headless Cycles + Embree + OIDN path-tracing backend (`lmblender --render-scene`) invoked transparently by `lmvideo` when `s3d.set_backend("cycles")` is selected, keeping the 124 MB **GPL-3.0-or-later** binary strictly across an out-of-process pipe boundary. |
 
 ### Critical Architecture Refinement (Why to Drop *Both* Filament and Magnum/Corrade)
 
@@ -110,14 +110,18 @@ All 3D types use **one canonical convention** across the unified schema (while l
 
 ```
 Type: Scene3D
-  # Environment & Background
+  # Render Backend & Environment
+  set_backend(mode: string) -> Scene3D                    # "cpu" (default in-core C++17 rasterizer) | "cycles" (external lmblender path tracer)
+  set_samples(samples: int) -> Scene3D                    # Ray-tracing samples per pixel when backend == "cycles" (default 64)
+  set_bounces(max_bounces: int) -> Scene3D                # Max light path bounces when backend == "cycles" (default 8)
+  set_denoise(enabled: bool) -> Scene3D                   # OpenImageDenoise (OIDN) toggle when backend == "cycles" (default true)
   set_background(color: string) -> Scene3D                # Solid background ("transparent" / "#00000000" composites cleanly over 2D Canvas!)
   set_sky_gradient(zenith_hex: string, horizon_hex: string, ground_hex: string) -> Scene3D
   set_ambient(color_hex: string, intensity: float) -> Scene3D
-  set_shadows(enabled: bool) -> Scene3D                   # 1024x1024 directional shadow map with 3x3 PCF
+  set_shadows(enabled: bool) -> Scene3D                   # 1024x1024 directional shadow map with 3x3 PCF ("cpu") or ray-traced shadows ("cycles")
   set_ssaa(samples: int) -> Scene3D                       # 1 (fast), 2 (2x2 default), 4 (4x4 supersampling)
   set_exposure(aperture: float, shutter: float, iso: float) -> Scene3D
-  set_tone_mapping(mode: string) -> Scene3D               # "aces" | "filmic" | "reinhard" | "linear"
+  set_tone_mapping(mode: string) -> Scene3D               # "aces" | "filmic" | "agx" | "reinhard" | "linear"
   set_grid_floor(size: float, step: float, color_hex: string) -> Scene3D
 
   # Camera
@@ -232,6 +236,23 @@ Every one of `lmimg`'s 6 types and 55 methods maps cleanly into the unified sche
 | **`Montage` & `Img.panel`** (3) | `img.montage()`, `Montage.add(img)`, `Montage.render(...)`, `img.panel(a,b,gap)` | **`Panel.grid(cols, rows, gx, gy)`** + **`Panel.add_image(img)`** | `lmvideo`'s `Panel` layout manager already supports grid, border, flow, and pack layouts with titles and padding, plus a 1-liner `image_montage(cols, gap, bg)` helper. |
 | **`Animation`** (3) | `img.animation()`, `Animation.add(img, delay_cs)`, `Animation.save(path)`, `Animation.size()` | **`Video`** (`video.add_frame(img, delay_ms)`, `video.save(path)`) | Unifies frame-by-frame `Animation` with `Video` so scripts can output GIF, APNG, WebP, WebM, or MP4 from the same timeline. |
 | **`Image` Inspection, QA & I/O** (11) | `pixel`, `set_pixel`, `mean`, `stddev`, `min`, `max`, `ssim(other)`, `psnr(other)`, `histogram(path)`, `metadata`, `property`, `save(path)` | **`Image`** methods | Gives every 2D drawing, 3D render, and video frame built-in `ssim()` / `psnr()` regression metrics and multi-format export (`PNG`, `JPEG`, `WebP`, `GIF`, `BMP`, `TIFF`, `PNM`). |
+
+### 2.6 Shrinking `lmblender` to a Pure Path-Traced Render Backend (`s3d.set_backend("cycles")`)
+
+Instead of maintaining a second 3D modeling/drawing/animation DSL in `lmblender`, **all 3D scene authoring happens in the unified `lmvideo` product (`Scene3D` + `Mesh3D` + `Material3D`)**, and `lmblender` shrinks to a headless Cycles path-tracing engine invoked as a selectable render backend:
+
+1. **Where the Backend Interface Sits**:
+   - **Script level**: `s3d.set_backend("cpu" | "cycles")` (plus `s3d.set_samples(64)`, `s3d.set_bounces(8)`, `s3d.set_denoise(true)`). Switching a script from fast preview/video rasterization (`"cpu"`) to path-traced global illumination, glass refraction (`Material3D.set_transmission(t, ior)`), and OIDN denoising (`"cycles"`) is a **one-line change** on `Scene3D`; downstream 2D Skia callouts (`s3d.project_x/y(...)`), `Panel` layouts, `lmimg` grading filters, and `video.next_frame()` loops remain 100% unchanged.
+   - **Host C++ level (`lmvideo/src/scene3d.hpp`)**: `Scene3D::render_image(int w, int h) -> Image` dispatches through `RenderBackend3D`:
+     - `CpuRasterBackend` (in-core `MIT`): runs in-process in milliseconds.
+     - `CyclesPipeBackend` (out-of-process `GPL-3.0` isolation): serializes `Scene3D` into an in-memory binary `.glb` buffer, spawns `lmblender --render-glb - --width W --height H` over a stdin/stdout pipe, and reads back raw RGBA8 (or Float32 EXR) pixels directly into `lmvideo`'s `Image` buffer.
+2. **Scene Export Format from `lmvideo` to Cycles (`.glb` + `extras.lm_cycles`)**:
+   - `lmblender/cpp/gltf_import.hpp` (484 LOC) **already parses binary glTF 2.0 (`.glb`)** into Cycles (`ccl::Scene`, `ccl::Mesh`, `ccl::Shader`, `ccl::Object`).
+   - Standard glTF 2.0 + KHR extensions carry all meshes (`POSITION`, `NORMAL`, `TEXCOORD_0`, `COLOR_0`), hierarchical node transforms, cameras (`yfov` / `xmag`, `znear`, `zfar`), punctual lights (`KHR_lights_punctual`: directional, point, spot), textures (embedded PNG `bufferViews`), and PBR materials (`pbrMetallicRoughness`, `emissiveFactor`, `KHR_materials_transmission`, `KHR_materials_ior`, `KHR_materials_clearcoat`, `KHR_materials_volume`).
+   - A small root `extras.lm_cycles` JSON object (~25 LOC in `gltf_import.hpp`) carries the remaining Cycles render parameters: `samples`, `max_bounces`, `seed`, `denoise`, `exposure`, `tone_mapping` (`agx` / `filmic` / `aces`), sky/ground gradient or HDRI environment, shadow-catcher node flags, and volumetric fog parameters.
+3. **What `lmblender` Keeps vs Drops**:
+   - **Drops (~2,600 LOC in `lmblender/cpp/main.cpp` and `schema/lmblender.dsl.json`)**: drops all 18 procedural mesh generators (`box`, `sphere`, `torus`, `extrude`, `lathe`, `heightfield`, `metaballs`, `text_mesh`, `curve_tube`), all 12 mesh modifiers (`subdivide`, `bevel_edges`, `solidify`, `array_*`, `deform_*`, `smooth`, `decimate`, `mirror`), and its standalone camera/animation DSL after the compatibility alias window. *(Useful procedural generators and mesh modifiers like `extrude`, `lathe`, `heightfield`, `subdivide`, and `deform_*` move into `lmvideo`'s in-core `Mesh3D` API so both `"cpu"` and `"cycles"` backends can use them!)*
+   - **Keeps (~750 LOC)**: keeps the static Cycles (`ccl::Session`/`ccl::Scene`) + Intel Embree BVH + OpenImageDenoise (OIDN) + AgX/Filmic `view_luts.h` pipeline and `cpp/gltf_import.hpp` behind `lmblender --render-glb`.
 
 ---
 
