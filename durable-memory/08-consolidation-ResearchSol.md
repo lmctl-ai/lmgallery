@@ -265,6 +265,7 @@ build selection; the historical size inventory above is not an approved link clo
 | Component | Licence / selected-build condition | Problem? | In-core / external / replacement |
 |---|---|---|---|
 | Skia 2D raster/SVG/PDF | BSD-3-Clause plus audited component notices | No inherent closed-source conflict; unverified pack contents are not approved automatically | **In-core**, after rebuilding/auditing the exact dependency/runtime closure. Replacement for LunaSVG is Skia's SVG DOM; retain legacy SVG behaviour only through accepted adapters or an optional external legacy host. |
+| lmimg ImageMagick processing engine | Permissive ImageMagick License plus separately pinned codec/font notices | No inherent closed-source conflict in the current delegate-disabled closure; re-audit selected code | **In-core implementation of the same Image**, not a second host/schema. If that closure fails the licence gate, port original MIT processing algorithms onto Skia/stb/libpng and leave unsupported conversion delegates external. |
 | Magnum / Corrade | MIT | No licence problem | **In-core** where required; optional replacement is extracted/reimplemented MIT-authored mesh primitives plus Skia math. Removing a dependency remains a build-tested optimization, not an assumed zero-cost edit. |
 | Filament / material compiler | Apache-2.0 plus dependency notices | No inherent licence conflict; noop rendering/size is an architectural issue | Ordinary core uses own MIT CPU renderer. **External optional** legacy `lmfilament --dsl FILE` for real `.filamat` compilation/package operations if preserving that API; exchange material packages/OBJ/PNG, do not fake them. |
 | OCCT B-Rep kernel | LGPL-2.1 + Open CASCADE exception | **Yes** under the owner's no-static-relink-duty rule | **External** `lmcad --dsl FILE`, exchanging OBJ/STL plus explicit units/appearance metadata. **Core replacement:** own MIT triangle scene and **Manifold (Apache-2.0)** for optional mesh booleans. Neither replaces exact OCCT B-Rep, fillets or topology; those remain external. |
@@ -375,8 +376,8 @@ shared scene fidelity and camera/material interchange still require a schema.
 **Hard compatibility limits:** lmdraw's arbitrary SVG-style attributes, gradients,
 embedded fonts and imported SVG need adapters and image tests, not a CLI rename.
 Filament's material source compilation, `material_file`, `Material.save`, package
-size and material-package ABI either retain the real toolchain in a compatibility
-flavour/old executable or are explicitly excluded from migrated examples. Do not
+size and material-package ABI either retain the real toolchain in an external
+tool/old executable or are explicitly excluded from migrated examples. Do not
 fake compiled packages or silently treat uploaded PBR maps as shaded maps. The old
 public Filament release remains available if its exact contract cannot be reproduced.
 
@@ -406,14 +407,14 @@ or lmmagnum. Keep their last Windows binaries usable until the unified Windows
 Skia/3D/encoder path passes or the owner explicitly changes support policy. A Linux-only
 new release cadence does not erase the installed historic macOS/Windows contract.
 
-Build the core once per supported platform; test canonical and legacy registries
-against immutable **public peer commit SHAs**. Publish each alias to its own public
+Build the core once per supported platform; test the one canonical registry, name
+aliases and migrated examples against immutable **public peer commit SHAs**. Publish each alias to its own public
 repo using properly scoped publisher credentials; the existing single-peer token
 cannot be assumed to write all peers. Reuse signed/checksummed artifacts where bytes
 are identical, but name them `<legacy>-<os>-<arch>[.exe]` and preserve each repo's
 version banner/tag checks. Cross-peer latest promotion is not atomic: stage all aliases,
 verify each fresh-cache installer/hash, then promote with rollback to previous releases.
-Record one core source SHA plus schema/adapter versions in every release manifest.
+Record one core source SHA plus canonical-schema/migration-tool versions in every release manifest.
 
 Remove independent build/release entries for retired engines only after the common
 pipeline publishes their tested compatibility assets. Keep CAD and Blender separate.
@@ -496,11 +497,11 @@ The feasibility inventory requires these amendments to that draft's assumptions:
   `video.next_frame`, and `Document.save_png` are not existing API guarantees.
   The six task examples are design sketches until expressed in the supported
   block/range syntax and a concrete additive schema; they are not runnable demos.
-- Legacy contexts must be **scene:Scene** for lmdraw/Magnum and **fil:Filament**
-  for Filament, not the proposed replacement contexts. Additions to the default
-  lmvideo schema also require known-schema-fingerprint dispatch for old compiled
-  lmvideo bytecode, or an explicit recompile policy; appending methods changes
-  raw schema hashes even when old method names remain.
+- The legacy inventory contexts were **scene:Scene** for lmdraw/Magnum and
+  **fil:Filament** for Filament. Addition 2 now chooses source migration and one
+  canonical registry, rather than retaining those contexts as extra core schemas.
+  Appending/changing declarations changes raw schema hashes: old bytecode uses
+  pinned historical binaries; migrated source must be recompiled for the new core.
 - Gallery exposure is 22 lmvideo, four lmdraw and one Magnum composition;
   Magnum/Filament are published products, not unreferenced/unpublished plans.
   A two-release shell-wrapper window does not cover their existing installer and
