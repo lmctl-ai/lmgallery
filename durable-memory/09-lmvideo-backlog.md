@@ -38,6 +38,21 @@ is not inherently excluded: the currently pinned delegate-disabled permissive
 build must pass the same exact-dependency audit as Skia and its codecs. No FFmpeg,
 OCCT or GPL Blender helper is silently linked into lmvideo.
 
+**Owner decision: CPU only.** Skia uses its raster backend, the 3D rasterizer runs on the CPU,
+and Cycles runs on the CPU. GPU is a possible later upgrade if a real need appears; it is not built
+or scheduled.
+
+*Interface note.* Every pixel producer sits behind two internal interfaces that the DSL and schema
+never name:
+- `Surface`: the 2D target (Skia raster today);
+- `Renderer`: the 3D or path-traced engine (`raster` or `cycles` today, selected by
+  `renderer=` / quality settings).
+
+A future GPU backend is another implementation of the same interfaces, chosen by a build or runtime
+option. It adds no new DSL calls. The CPU output stays the deterministic reference that golden
+tests compare against (a GPU path would be gated by SSIM against it). The GPU notes in phase 6 are
+background only.
+
 ## Model and acceptance rules
 
 Image is the shared pixel object, whether decoded, drawn, processed, rendered in
