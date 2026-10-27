@@ -599,6 +599,42 @@ backported. Implement first-class portable material/texture compilation via P.M1
 Unsupported legacy Filament binary/shader semantics remain explicitly external
 until converted; never fabricate a successful portable material from opaque bytes.
 
+## Showcase benchmark gap queue (from document 10)
+
+The [32-target showcase plan](10-showcase-benchmark.md) is a capability roadmap,
+not proof that current renderers pass it. The following queues extend/refine the
+existing phases. Split each family into independent changes; no GPU work is created.
+Each target remains PLANNED until the actual lmvideo script, feature witnesses,
+per-file asset rights, output and measured CPU budget pass together. Public/private
+content ownership remains as described above; full expensive scenes are explicitly
+triggered verification, not an implicit PR/Actions schedule.
+
+| ID | Phase / independently scoped work | Acceptance test | Showcase targets |
+|---|---|---|---|
+| G.1 | Phase 3: shared mesh instances first, then seeded surface scatter | 1024 transforms share geometry; deterministic ordering/seed, bounded memory and explicit instance/node limits; export does not accidentally duplicate every vertex | B11, B28, B29, B32 |
+| G.2 | Phase 3 geometry queue: lathe; polygon extrusion/holes; spline tubes; heightfield; then optional CSG/isosurface meshing as separate changes | Per-builder bounds/normals/winding, degenerate inputs and mesh/resource budgets. Use concrete typed samples/Image inputs, not an unsupported first-class DSL callback | B08, B09, B17, B26, B29 |
+| G.3 | Phase 4: tangent-space normal-map sampling, including tangent handedness and mip semantics | Analytic relief and mirrored UV fixtures show correct light response; CPU actually samples the normal channel; equivalent exported material resources verified | B04–B06 |
+| G.4 | Phase 4: CPU environment lighting with explicit dynamic-range/colour storage, irradiance and roughness filtering | Defined HDR/LDR decode path and Image colour/precision conversion; roughness sphere/rotation/diffuse tests. A sky gradient or raw unfiltered cubemap is not full IBL | B01, B06 |
+| G.5 | Phase 4: depth-tested CPU point sprites, then a separate wireframe/thick-line pass | Bounded particle/line buffers, correct alpha/depth, stable particle IDs/seeds and non-consuming Timeline state; no WebGPU compute requirement | B10, B12, B32 |
+| G.6 | Phase 4: vertex-colour/scalar LUT attributes across CPU rendering and export | COLOR_0 interpolation, range/clamping and material multiplication are correct; data-to-colour values independently checked | B09, B10 |
+| G.7 | Phase 3: per-viewport cameras and uncapped plane clipping | Same scene renders with independent projections; near/section clipping tested. Any coloured cap needs real intersection/tessellation or a pre-cut CAD mesh; fragment discard alone does not create it | B14, B27 |
+| G.8 | Phase 3/2: depth and normal Image passes, then depth-aware post-processing | Camera/depth conventions and normals measured on analytic geometry; edge/DoF filters consume the same Image model; no false physical-camera equivalence | B13, B32 |
+| G.9 | Phase 6 material queue: transmission/IOR/absorption; SSS; clearcoat; anisotropy separately | Named Cycles capability/profile per property, refraction/attenuation/energy witnesses and correct texture metadata. Use actual standard glTF extensions where defined; SSS or other unsupported fields require an explicit sidecar/profile, not invented standard glTF support | B17–B20, B25–B27 |
+| G.10 | Phase 6: area emitters and physical camera focus/aperture controls | Known illumination/focus/blade fixtures, explicit units and export/bridge round trip; emissive-mesh caustic fixture or properly tested analytic-light visibility/MIS bindings | B16, B18, B20, B23, B25, B26 |
+| G.11 | Phase 6 extension queue: homogeneous medium; native curves/hair; heterogeneous density as three tasks | Volume attenuation/phase-function checks; actual curve-geometry/BSDF proof rather than swept-mesh hair; bounded grid/noise density with required decoder/build capability and convergence tests | B21, B24, B31 |
+| G.12 | Phase P: original/proven-permitted scene asset pack and licence manifest | Exact source/version/hash/author/licence evidence for every model/texture/font/HDRI; block unknown/NC files. Do not vendor three.js DamagedHelmet merely by relabelling its CC-BY-NC notice; default to an original helmet analogue | B06, B19, B25, B27 |
+| G.13 | Phase 5: explicit GLB embedded-image/material/instancing profile | Embedded PNG/JPEG and required-extension checks; well-formed unsupported features rejected. Declare compressed, skin and morph support separately, not silently static. Track import limits versus logical instances | B06, B19, B25, B28 |
+| G.14 | Phase 3/6: bounded deforming/topology-changing mesh frame states | Updated normals/bounds/geometry IDs, sequential/seeked frame equivalence and scene-memory limits. Prescribed/baked states do not claim a Blender rigid/soft-body or Geometry Nodes solver | B30; future rigged-model cases |
+| G.15 | Phase 0: reproducible showcase manifest/harness and score accounting | Record CPU model/thread/ISA/build/seed/sample/denoise/colour settings, asset rights/hashes, cold bake/import/render/encode times, RSS and feature witnesses. Cache hits are separate; published legacy-wrapper output does not earn a built-in lmvideo pass | All B01–B32 |
+
+No reference renders are copied into the repo. The comparison column is a written
+visual specification and external reference link beside our own committed image.
+Provisional budgets in document 10 are targets for a named CPU profile, not measured
+cross-machine guarantees; baseline and revise with evidence before making them
+release gates. Float/ISA/denoiser differences require declared comparisons rather
+than one universal SSIM/hash threshold. Existing wrapper guards (for example 4096
+imported meshes/materials) are not silently raised to accommodate a large benchmark.
+
 ## Earlier two-product open-source plan (historical scope)
 
 > **Scope superseded by the six-repo section below.** Its licence analysis remains useful, but the old two-product publication/rename/O1–O9 instructions are not the active cutover plan. Use the six-repo owner-only sequence instead.
