@@ -6,6 +6,15 @@ product's demo page. Public documentation and example paths are stable so the
 
 ![<Alt text>](docs/images/<hero-image>.png)
 
+## Install lmctl
+
+Everything here runs through [lmctl](https://lmctl.com), the core tool of the lmctl family:
+
+```bash
+npm install -g @lmctl-ai/lmctl
+lmctl autorun path/to/example.lms
+```
+
 ## Install
 
 Use the public release for your platform. Verify the downloaded asset with
