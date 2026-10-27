@@ -1031,3 +1031,21 @@ and [lmblender's public link audit](https://github.com/lmctl-ai/lmblender/blob/m
 The upstream Cycles/OCCT links above were checked for this plan. Original example
 names were checked in the source/public content trees; all new APIs, example names,
 workflow changes and identity operations remain proposed work until implemented.
+
+### Initial Phase-6 parallel-track evidence (2026-10-27)
+
+Private implementation candidate `8d11272` builds standalone Cycles 5.3.0 at
+`3eb35f8` with CPU-only Embree/OIIO/OIDN source overrides, pinned dependency
+metadata and actual compiled-header licence audits. GPL atomic headers are
+replaced by an independently authored MIT adapter; rejected GPU/embedded-HEIF/
+ambiguous prebuilt-OIDN inputs are not selected. Private notes 35–37 record
+exact pins, source/weights hashes and remaining release-packaging checks.
+`cycles-product-still.lms` exports/imports GLB, renders 640×480/32 spp using
+in-process CPU Cycles and source-built OIDN, and returns the canonical Image
+for ordinary postprocessing. Two clean runs produce identical PNG/pixel hashes;
+media stays in the local render store. The default internal module loads lazily
+(no renderer subprocess); paired discovery costs remain within 1.1× baseline.
+This is the requested initial track only: native Linux x64 development, not a
+portable release, arm64 gate, final licence certification or full 6.1/6.2 parity.
+Textures, environments, area/orthographic lights/cameras and the other explicit
+prototype refusals remain in the existing Phase-6 work, not silently rasterized.
