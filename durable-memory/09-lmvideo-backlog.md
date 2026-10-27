@@ -282,7 +282,7 @@ Equivalent fixtures count: the suggested filenames above are seeds, not extra AP
 
 | Existing item | Remaining acceptance work / backlog |
 |---|---|
-| P.2 / P.F4 | Explicit Arabic/Hebrew shaping/bidi contract and witness. SVG currently selects a primitive shaper; 3D rejects RTL. Do not infer shaping from linked libraries |
+| P.2 / P.F4 | Explicit Arabic/Hebrew shaping/bidi, style/weight/axis selection and loaded-font PDF/SVG embedding/subset witnesses. SVG currently selects a primitive shaper; 3D rejects RTL. Do not infer shaping from linked libraries |
 | P.3 | Public two-face output/notice witness and explicit fallback-event reporting contract; native exact-two-face provenance already passes |
 | P.4 / P.F3 | Website-owner catalog/licence ledger, immutable asset publishing and live URL/MIME/retention verification; no deployment authorized by this audit |
 | P.5 | Welded-edge watertightness oracle for countered/beveled glyph solids and CJK |
