@@ -1056,3 +1056,24 @@ Cycles output. Independent projected bounds, depth/distance invariance and the
 full local 71-check suite pass; Luna reviewed and ran the native regression.
 The existing denoised room still retains identical hashes. This is camera-only
 progress within Phase 6; no Actions, portable release or full-parity claim.
+
+### Phase 6 local x64 gate
+
+The default built-in CPU renderer, versioned job/capabilities/result contract,
+explicit authored sample/bounce/seed/denoise settings, bounded frame batches,
+geometry reuse, cancellation and partial-result integrity are now locally tested.
+Fourteen original Tier-1 triangle companions (B01–B11, B13–B15) execute with CPU
+Cycles/OIDN and paired raster plus independent camera/geometry checks. B12's
+screen-space Gaussian sprites remain explicitly raster-only. The common diffuse
+Cornell GLB matches the verified lmblender 0.3.138 reference at SSIM 0.999818,
+after matching camera/light defaults and excluding its legacy display LUT.
+
+`examples/phase6/cad-final-render.lms` is the real lmcad→STL→preview/final story:
+metres/mm scale, projected labels, an uncapped section, eight denoised frames,
+H264 movie and Timeline. Its local-output/source locks are in the adjacent
+manifest. It is kept outside the released fifty-example registry because its
+host API is unreleased; this is Phase 6 evidence, not a Phase 7 migration.
+Private lmvideo notes 36/40/41/42 record source/dependency licences, the genuine
+clean-source build, precision, all gates and arm64 prerequisites/untested scope.
+No Actions, production ARM build, binary release or media upload is included.
+Phase 7 remains unstarted.
