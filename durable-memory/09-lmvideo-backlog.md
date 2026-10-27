@@ -78,7 +78,8 @@ Resolve premultiplied Skia buffers and linear-light 3D buffers at explicit bound
 Changing to immutable edits, HDR or colour-managed processing is additional scoped
 work, not a claimed transparent migration. ImageMagick handles remain internal.
 
-Every item below is intended as a small independently reviewable change. The table
+Every item below is intended as a small independently reviewable change. The "Gallery example" column means the
+example's web page on lmctl.com, not a picture committed to the repo. The table
 names a concrete regression/example seed, **not an assertion that the new API exists**.
 Prefixes `draw:`, `img:`, `magnum:`, `filament:`, `cad:` and `blender:` refer to the
 existing public example files in those repos; new examples live in lmvideo. Keep
@@ -87,7 +88,7 @@ migration is accepted. Unit tests do not substitute for running the actual scrip
 
 For each implementation item: schema/compiler/registry parity; warnings-as-errors
 build; source-located failure tests where relevant; same-pinned-environment repeat
-hashes; a committed picture/caption and empty-directory `lmctl autorun` run. Cross-OS
+hashes; an `examples/*.lms` + manifest entry (expected-output hashes) in public `lmctl-ai/lmvideo`, its web page at `lmctl.com/tools/lmvideo/examples/<slug>.html` (renders and video in the website media store, not in Git; see `10-showcase-benchmark.md` §3.3 and the website's `tools-from-examples.md`), and an empty-directory `lmctl autorun` run. Cross-OS
 images use documented tolerances/semantic checks; MP4 hashes require a pinned codec
 and metadata policy. Baseline all current lmvideo examples before changing them.
 
@@ -778,7 +779,9 @@ as part of this task.
 
 - **lmvideo:** the sole authoring entry point and active feature backlog; show a
   processed Image, 2D/3D panel, CPU preview, CAD-imported turntable and optional
-  Cycles final render, each with a committed picture and working autorun command.
+  Cycles final render, each as an lmctl.com/tools/lmvideo/ page (still, side-by-side or video)
+  with a working autorun command. The public repo README stays short: a few small pictures and
+  links to those pages.
 - **lmcad:** public-source build instructions, exact B-Rep scope versus tessellation,
   MIT/OCCT/runtime licence table, tested relink/source materials, stable OBJ/STL
   handoff example and existing engineering galleries. Do not advertise absent STEP/
