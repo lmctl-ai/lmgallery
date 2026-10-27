@@ -272,6 +272,29 @@ and temporary-file lifecycle once across image processing, textures, exports and
 external render jobs. No website asset, material-pack implementation or new dependency
 has been published by this plan amendment.
 
+### Bounded Phase P audit before G.* (2026-10-27)
+
+The implementation audit is recorded in private lmvideo
+`durable-memory/46-phase-p-audit.md` (source baseline `377cc75`). Resolver/cache,
+loaded-face metrics/fallback runs, two-face provenance, portable material packs
+and resolved frame caching have real tests; Phase P as a whole is not complete.
+Equivalent fixtures count: the suggested filenames above are seeds, not extra APIs.
+
+| Existing item | Remaining acceptance work / backlog |
+|---|---|
+| P.2 / P.F4 | Explicit Arabic/Hebrew shaping/bidi contract and witness. SVG currently selects a primitive shaper; 3D rejects RTL. Do not infer shaping from linked libraries |
+| P.3 | Public two-face output/notice witness and explicit fallback-event reporting contract; native exact-two-face provenance already passes |
+| P.4 / P.F3 | Website-owner catalog/licence ledger, immutable asset publishing and live URL/MIME/retention verification; no deployment authorized by this audit |
+| P.5 | Welded-edge watertightness oracle for countered/beveled glyph solids and CJK |
+| P.6 / P.A1 | Common catalog/checksum/offline/provenance witness for HDR/LUT/material-pack resources, reusing existing APIs rather than adding aliases for planned names |
+| P.A2 | Complete transitive source/licence dependency-lock and clean offline rerender witness |
+| P.A3 | Shared decoded-resource pool plus bounded async prefetch/cancellation acceptance |
+| P.M4 / G.13 | Strengthen embedded JPEG/data-URI and resource-hash/colour handoff proof; existing B04 already exercises radial/height/ORM pack compilation and warm reload |
+
+P.7's 40–60-only invalidation and B15's 120 cold/warm frames cover its core
+acceptance; a differently named orbit fixture is not a missing cache feature.
+Website publication and migrations remain owner-controlled, outside this G.* run.
+
 ## Phase 1 — highest-value lmdraw parity helpers
 
 | ID | Small item | Acceptance test | Gallery example / fixture |
