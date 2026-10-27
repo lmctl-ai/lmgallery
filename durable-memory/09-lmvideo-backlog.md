@@ -1047,5 +1047,12 @@ media stays in the local render store. The default internal module loads lazily
 (no renderer subprocess); paired discovery costs remain within 1.1× baseline.
 This is the requested initial track only: native Linux x64 development, not a
 portable release, arm64 gate, final licence certification or full 6.1/6.2 parity.
-Textures, environments, area/orthographic lights/cameras and the other explicit
+Textures, environments, area lights and the other explicit
 prototype refusals remain in the existing Phase-6 work, not silently rasterized.
+
+Camera parity continuation: private `8d33ca3` and public witness `08a67b7`
+preserve orthographic GLB cameras and vertical framing for portrait/landscape
+Cycles output. Independent projected bounds, depth/distance invariance and the
+full local 71-check suite pass; Luna reviewed and ran the native regression.
+The existing denoised room still retains identical hashes. This is camera-only
+progress within Phase 6; no Actions, portable release or full-parity claim.
