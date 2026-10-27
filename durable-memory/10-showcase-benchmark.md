@@ -77,15 +77,35 @@ Per the owner's licence gate ([09-lmvideo-backlog.md](09-lmvideo-backlog.md) §P
 ### 3.2 Benchmark Acceptance Contract (No Copyrighted Renders in Repo)
 
 For each benchmark scene `B01`–`B32`, completion requires:
-1. **Self-contained `.lms` script** under `lmvideo/examples/benchmark/bench-NN-<slug>.lms` (using only procedural generation or pinned `CC0` / `CC-BY-4.0` assets resolved through `P.1`/`P.6` with SHA-256 verification and `--offline` support).
-2. **Committed rendered output** (`images/benchmark/bench-NN-<slug>.png` or `.mp4`) produced by `lmvideo` in CI from an empty working directory (`lmctl autorun`).
-3. **Side-by-side README Benchmark Table entry** containing:
-   - Our committed rendered image (`<img src="images/benchmark/bench-NN-<slug>.png" width="420">`),
+1. **Self-contained `.lms` script** in the **public peer** (`lmctl-ai/lmvideo`) under `examples/showcase/bench-NN-<slug>.lms` (using only procedural generation or pinned `CC0` / `CC-BY-4.0` assets resolved through `P.1`/`P.6` with SHA-256 verification and `--offline` support).
+2. **Committed rendered output** in the **public peer** (`docs/images/showcase/bench-NN-<slug>.png` or `.gif`/`.mp4`) produced by `lmvideo` from an empty working directory (`lmctl autorun https://raw.githubusercontent.com/lmctl-ai/lmvideo/main/examples/showcase/bench-NN-<slug>.lms`).
+3. **Side-by-side Public README / Scoreboard Table entry** (`lmctl-ai/lmvideo/README.md` and `docs/showcase-benchmark.md`) containing:
+   - Our committed rendered image (`<img src="docs/images/showcase/bench-NN-<slug>.png" width="420">`),
    - A structured technical description of the reference scene, its clickable upstream URL (`blender.org` or `threejs.org`), the visual phenomenon being verified (e.g., *"Dielectric refraction + volume absorption + internal reflections on lathe geometry"*), measured CPU render time / peak RSS, and the exact `lmctl autorun` one-liner.
    - **Zero copied third-party reference JPEGs/PNGs** in the Git tree.
 4. **Quantitative Regression Gate**:
    - Same-environment reruns match pinned SHA-256 (for `raster`) or `SSIM >= 0.99` (for `cycles` with fixed seed and OIDN);
    - `raster` vs `cycles` material handoff scenes (`B06`, `B27`) verify base-color and silhouette parity (`SSIM >= 0.85` on diffuse/matte regions, with documented GI/specular differences).
+
+### 3.3 Public vs Private Peer Layout (`lmctl-ai/lmvideo` vs `lmctlhq/lmvideo`) & `publish_tree.py` Mechanics
+
+Per the owner's peer-repository rule ([05-closed-source-peer-model.md](05-closed-source-peer-model.md)), code and demos are strictly separated between the two `lmvideo` peers:
+
+| Peer Repository | Role | Exact Tracked Layout for the Showcase Benchmark |
+| :--- | :--- | :--- |
+| **Public Peer (`lmctl-ai/lmvideo`)**<br>*(local `~/repos/dsl/lmvideo-public`)* | **EXAMPLES, DEMOS & RELEASES** (MIT-licensed examples/docs under `LICENSE-examples`; binary releases under `LICENSE`) | - `README.md` — Primary visual gallery and tiered `B01`–`B32` showcase scoreboard with `<img src="docs/images/showcase/...">` and `lmctl autorun` captions<br>- `docs/showcase-benchmark.md` — Detailed per-scene visual spec, reference URLs, timings, and asset attribution<br>- `examples/showcase/bench-01-pbr-spheres.lms` .. `bench-32-flagship-story.lms` — The 32 runnable benchmark scripts (authoritative copy)<br>- `docs/images/showcase/bench-01-pbr-spheres.png` (and `.gif`/`.mp4` clips) — Committed benchmark renders<br>- `LICENSE`, `LICENSE-examples`, `THIRD_PARTY_NOTICES.md`, `docs/third-party-licenses/`<br>- `.github/workflows/ci.yml` — Read-only public CI verifying README/doc links, image paths, `lmctl autorun` raw URLs, and `lmscript --check examples/**/*.lms` against the latest published release |
+| **Private Peer (`lmctlhq/lmvideo`)**<br>*(local `/home/mma/repos/lmctlhq/lmvideo`)* | **CODE, BUILD & ENGINE TESTS** (Proprietary implementation source & release publisher) | - `cpp/`, `Makefile`, `schema/lmvideo.dsl.json` — All C++17 engine source (Skia 2D, `Image` processing, CPU 3D rasterizer, built-in Cycles bridge) and canonical schema<br>- `scripts/` (`fetch-skia.sh`, `sync-sdk.sh`, `stage-release-notices.sh`, `release-to-public.sh`) & `third_party/` pins<br>- `tests/` — Fast unit tests, source-coupled failure/diagnostic tests, and minimal synthetic regression fixtures (`tests/baselines/`) that require source/internal headers<br>- `durable-memory/` — Internal engineering design notes (`01`–`21`)<br>- `.github/workflows/` — Private build/test workflow that checks out `lmctl-ai/lmvideo` `main` beside source, places the freshly built `build/lmvideo` on `PATH`, runs `tests/` **plus** `examples/showcase/*.lms` from the public checkout, and publishes release binaries to `lmctl-ai/lmvideo` via `scripts/release-to-public.sh` |
+
+**How Scripts, Notices, and Releases Flow Between Peers (`publish_tree.py` & Two-Checkout Discipline)**:
+1. **Initial Staging & Flip (`peer-flip.py` + `publish_tree.py`)**:
+   - [`scripts/closed-source/peer-flip.py`](../scripts/closed-source/peer-flip.py) stages the public content tree into `/home/mma/staging/closed-source/lmvideo/public-tree/` according to [`closed-source-plans/lmvideo.md`](closed-source-plans/lmvideo.md) (moving `README.md`, `docs/`, `examples/`, and `docs/third-party-licenses/` into the public tree while excluding `cpp/`, `Makefile`, `schema/`, `scripts/`, `tests/`, and `durable-memory/`).
+   - [`scripts/closed-source/publish_tree.py`](../scripts/closed-source/publish_tree.py) (`publish_tree.py STAGE /home/mma/repos/lmctlhq/lmvideo lmvideo --boundary --notices --private-ci`) post-processes the staged public tree:
+     - `--boundary` queries `gh api repos/lmctl-ai/lmvideo/releases/latest` and stamps the exact MIT-to-Personal-Use-License boundary sentence into `STAGE/LICENSE` and `STAGE/README.md`, swapping the license badge to `[![Examples: MIT](...)](LICENSE-examples)`;
+     - `--notices` copies `THIRD_PARTY_NOTICES*` byte-for-byte from `lmctlhq/lmvideo` into `STAGE/`, failing closed if any private placeholder string (`private implementation detail`, `TODO(publish)`, etc.) is present;
+     - `--private-ci` generates the private workflow that builds `lmvideo-linux-{x64,arm64}`, packages `licenses.tar.gz` via `scripts/stage-release-notices.sh`, and validates the build before `scripts/release-to-public.sh` uploads the 5 platform binaries + `SHA256SUMS` to `lmctl-ai/lmvideo`.
+2. **Ongoing Benchmark Authoring After Split**:
+   - New showcase scripts (`examples/showcase/bench-NN-<slug>.lms`), rendered images (`docs/images/showcase/bench-NN-<slug>.png`), and scoreboard updates are **authored and committed directly in the public peer (`lmctl-ai/lmvideo`)**, never duplicated in `lmctlhq/lmvideo`.
+   - When an engine phase (`Phase 2–6` or `G.1`–`G.12`) lands in private `lmctlhq/lmvideo` and a new binary release is published to `lmctl-ai/lmvideo` via `scripts/release-to-public.sh` (with `publish_tree.py --notices` syncing any new font/Cycles third-party notices), the corresponding `bench-NN-*.lms` scripts and renders are committed to `lmctl-ai/lmvideo`, where public CI immediately verifies `lmscript --check` and raw `lmctl autorun` URLs against the released binary.
 
 ---
 
