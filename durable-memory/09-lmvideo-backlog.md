@@ -285,7 +285,7 @@ Equivalent fixtures count: the suggested filenames above are seeds, not extra AP
 | P.2 / P.F4 | Explicit Arabic/Hebrew shaping/bidi, style/weight/axis selection and loaded-font PDF/SVG embedding/subset witnesses. SVG currently selects a primitive shaper; 3D rejects RTL. Do not infer shaping from linked libraries |
 | P.3 | Public two-face output/notice witness and explicit fallback-event reporting contract; native exact-two-face provenance already passes |
 | P.4 / P.F3 | Website-owner catalog/licence ledger, immutable asset publishing and live URL/MIME/retention verification; no deployment authorized by this audit |
-| P.5 | Welded-edge watertightness oracle for countered/beveled glyph solids and CJK |
+| P.5 | ASCII countered/beveled solids now have positional-weld edge/volume oracles and repaired cap/bevel joins (private lmvideo49); other-font/CJK solid coverage remains to be demonstrated |
 | P.6 / P.A1 | Common catalog/checksum/offline/provenance witness for HDR/LUT/material-pack resources, reusing existing APIs rather than adding aliases for planned names |
 | P.A2 | Complete transitive source/licence dependency-lock and clean offline rerender witness |
 | P.A3 | Shared decoded-resource pool plus bounded async prefetch/cancellation acceptance |
