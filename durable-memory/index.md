@@ -18,6 +18,7 @@ Technical documentation, design notes, and operational procedures for `lmgallery
 | [08-consolidation-ResearchSol.md](08-consolidation-ResearchSol.md) | Exhaustive 546-declaration feasibility inventory, dependency/licence/size matrix, gallery/URL impact, and CI/release contracts |
 | [08-consolidation-ResearchArgon.md](08-consolidation-ResearchArgon.md) | Unified all-in-one model (`Image`/`Scene`/`Timeline`), `lmimg` + 2D + 3D + video schema, component licence matrix, 6 examples, and migration shims |
 | [09-lmvideo-backlog.md](09-lmvideo-backlog.md) | Owner-decided lmvideo backlog, acceptance/gallery items, and public lmcad/lmcycles transition plan |
+| [10-showcase-benchmark.md](10-showcase-benchmark.md) | 32-scene visual benchmark from Blender Demo Files & three.js Examples (Tiers 1–3, asset licence rules, CPU budgets, and 12 gap items feeding 09) |
 | [closed-source-pin-inventory.md](closed-source-pin-inventory.md) | Local versioned install/release-tag consumers for the nine in-scope products |
 | [closed-source-staging-inventory.md](closed-source-staging-inventory.md) | Staged public-tree SHAs, validation, active-team gates, and source sync status |
 
