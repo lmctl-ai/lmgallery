@@ -111,25 +111,93 @@ For each benchmark scene `B01`–`B32`, completion requires:
    - Same pinned environment: record repeat hashes for both CPU paths; use explicitly justified numerical/image tolerances where the implementation is nondeterministic. Across ISA/denoiser builds use documented tolerances, not a universal byte claim; no SSIM comparison to an unlicensed copied render.
    - `raster` vs `cycles` handoff scenes (`B06`, `B27`) compare camera/projection, silhouette/depth and decoded material/channel values independently. A predeclared matte ROI may use SSIM ≥0.85 only with matched illumination/exposure and documented GI/specular differences; low whole-image similarity alone cannot diagnose a broken importer.
 
-### 3.3 Public vs Private Peer Layout (`lmctl-ai/lmvideo` vs `lmctlhq/lmvideo`) & `publish_tree.py` Mechanics
+### 3.3 Public examples/demos and private code: authoritative layout
 
-Per the owner's peer-repository rule ([05-closed-source-peer-model.md](05-closed-source-peer-model.md)), code and demos are strictly separated between the two `lmvideo` peers:
+The public peer **owns the benchmark**, not a generated copy of a private examples
+folder. The private peer owns implementation and source-coupled tests. This design
+note is in lmgallery; the runnable product showcase and its earned results live in
+`lmctl-ai/lmvideo`, alongside that product's public README gallery.
 
-| Peer Repository | Role | Exact Tracked Layout for the Showcase Benchmark |
-| :--- | :--- | :--- |
-| **Public Peer (`lmctl-ai/lmvideo`)**<br>*(local `~/repos/dsl/lmvideo-public`)* | **EXAMPLES, DEMOS & RELEASES** (MIT-licensed examples/docs under `LICENSE-examples`; binary releases under `LICENSE`) | - `README.md` — Primary visual gallery and tiered `B01`–`B32` showcase scoreboard with `<img src="docs/images/showcase/...">` and `lmctl autorun` captions<br>- `docs/showcase-benchmark.md` — Detailed per-scene visual spec, reference URLs, timings, and asset attribution<br>- `examples/showcase/bench-01-pbr-spheres.lms` .. `bench-32-flagship-story.lms` — The 32 runnable benchmark scripts (authoritative copy)<br>- `docs/images/showcase/bench-01-pbr-spheres.png` (and `.gif`/`.mp4` clips) — Committed benchmark renders<br>- `LICENSE`, `LICENSE-examples`, `THIRD_PARTY_NOTICES.md`, `docs/third-party-licenses/`<br>- `.github/workflows/ci.yml` — Read-only public CI verifying README/doc links, image paths, `lmctl autorun` raw URLs, and `lmscript --check examples/**/*.lms` against a matching pinned published release |
-| **Private Peer (`lmctlhq/lmvideo`)**<br>*(local `/home/mma/repos/lmctlhq/lmvideo`)* | **CODE, BUILD & ENGINE TESTS** (Proprietary implementation source & release publisher) | - `cpp/`, `Makefile`, `schema/lmvideo.dsl.json` — All C++17 engine source (Skia 2D, `Image` processing, CPU 3D rasterizer, built-in Cycles bridge) and canonical schema<br>- `scripts/` (`fetch-skia.sh`, `sync-sdk.sh`, `stage-release-notices.sh`, `release-to-public.sh`) & `third_party/` pins<br>- `tests/` — Fast unit tests, source-coupled failure/diagnostic tests, and minimal synthetic regression fixtures (`tests/baselines/`) that require source/internal headers<br>- `durable-memory/` — Internal engineering design notes (`01`–`21`)<br>- `.github/workflows/` — Private build/test workflow that checks out `lmctl-ai/lmvideo` `main` beside source, places the freshly built `build/lmvideo` on `PATH`, runs `tests/` **plus** `examples/showcase/*.lms` from the public checkout, and publishes release binaries to `lmctl-ai/lmvideo` via `scripts/release-to-public.sh` |
+| Peer | Authoritative tracked content | Not its responsibility |
+|---|---|---|
+| **Public `lmctl-ai/lmvideo`**, local `~/repos/dsl/lmvideo-public` | `README.md` image/description gallery and tier scoreboard; `examples/showcase/bench-NN-<slug>.lms`; required relative inputs and per-file asset/licence manifest; `docs/images/showcase/` our PNG/GIF/MP4 outputs; `docs/showcase-benchmark.md` visual specifications; `docs/showcase/scoreboard.json` measured results/provenance; binary releases, notices and full licence texts; public content-check scripts/workflow | No proprietary renderer implementation, build-only private fixtures or copied reference renders. `LICENSE-examples` covers authored demos/docs, not a relicensing of third-party assets. |
+| **Private `lmctlhq/lmvideo`**, local `~/repos/lmctlhq/lmvideo` | `cpp/`, `schema/`, Makefile/build tooling, dependency pins, renderer/asset code, CI and release publisher; `tests/` source-coupled unit/failure/diagnostic tests and small synthetic fixtures/goldens requiring internal APIs; internal engineering notes | No second authoritative showcase script/render/scoreboard tree. It reads a pinned public checkout to test the real demonstrations with its freshly built candidate. |
 
-**How Scripts, Notices, and Releases Flow Between Peers (`publish_tree.py` & Two-Checkout Discipline)**:
-1. **Initial Staging & Flip (`peer-flip.py` + `publish_tree.py`)**:
-   - [`scripts/closed-source/peer-flip.py`](../scripts/closed-source/peer-flip.py) stages the public content tree into `/home/mma/staging/closed-source/lmvideo/public-tree/` according to [`closed-source-plans/lmvideo.md`](closed-source-plans/lmvideo.md) (moving `README.md`, `docs/`, `examples/`, and `docs/third-party-licenses/` into the public tree while excluding `cpp/`, `Makefile`, `schema/`, `scripts/`, `tests/`, and `durable-memory/`).
-   - [`scripts/closed-source/publish_tree.py`](../scripts/closed-source/publish_tree.py) (`publish_tree.py STAGE /home/mma/repos/lmctlhq/lmvideo lmvideo --boundary --notices --private-ci`) post-processes the staged public tree:
-     - `--boundary` queries `gh api repos/lmctl-ai/lmvideo/releases/latest` and stamps the exact MIT-to-Personal-Use-License boundary sentence into `STAGE/LICENSE` and `STAGE/README.md`, swapping the license badge to `[![Examples: MIT](...)](LICENSE-examples)`;
-     - `--notices` copies `THIRD_PARTY_NOTICES*` byte-for-byte from `lmctlhq/lmvideo` into `STAGE/`, failing closed if any private placeholder string (`private implementation detail`, `TODO(publish)`, etc.) is present;
-     - `--private-ci` generates the private workflow that builds `lmvideo-linux-{x64,arm64}`, packages `licenses.tar.gz` via `scripts/stage-release-notices.sh`, and validates the build before `scripts/release-to-public.sh` uploads the 5 platform binaries + `SHA256SUMS` to `lmctl-ai/lmvideo`.
-2. **Ongoing Benchmark Authoring After Split**:
-   - New showcase scripts (`examples/showcase/bench-NN-<slug>.lms`), rendered images (`docs/images/showcase/bench-NN-<slug>.png`), and scoreboard updates are **authored and committed directly in the public peer (`lmctl-ai/lmvideo`)**, never duplicated in `lmctlhq/lmvideo`.
-   - When an engine phase (`Phase 2–6` or `G.1`–`G.15`) lands in private `lmctlhq/lmvideo` and a new binary release is published to `lmctl-ai/lmvideo` via `scripts/release-to-public.sh` (with `publish_tree.py --notices` syncing any new font/Cycles third-party notices), the corresponding `bench-NN-*.lms` scripts and renders are committed to `lmctl-ai/lmvideo`, where explicitly triggered public checks verify `lmscript --check` and raw `lmctl autorun` URLs against the released binary. No automatic workflow schedule or GPU job is introduced by this plan.
+Public scoreboard records include scene/status, required feature witnesses, allowed
+asset hashes/licences, rendered-file hashes, CPU/build/ISA/thread/sample/denoise
+profile, phase timings/RSS, binary tag/hash/schema and the tested public content SHA.
+Private CI can generate logs/artifacts, but those are not the canonical earned-score
+record. Only reviewed results tied to the actual binary enter the public scoreboard.
+
+#### What publish_tree.py actually does
+
+Source selection and staging are separate from publication:
+
+1. The historical split/staging path in
+   [`peer-flip.py`](../scripts/closed-source/peer-flip.py) selects the reviewed tracked
+   README/docs/examples and necessary inputs into a public tree, excludes private
+   source/build/tests/engineering notes, and maps licence directories to public
+   `docs/third-party-licenses/`. Its product staging plan is
+   [closed-source-plans/lmvideo.md](closed-source-plans/lmvideo.md). This is initial
+   boundary/bootstrap tooling, **not** an instruction to repeat a flip or rewrite
+   public history for each new demo.
+2. [`publish_tree.py`](../scripts/closed-source/publish_tree.py) **post-processes an
+   existing staged tree**. It does not author showcase scripts, copy an arbitrary
+   private examples tree by itself, render images, commit, push, deploy the website
+   or upload releases. Its actual arguments are `STAGE SOURCE_REPO PRODUCT` plus
+   optional `--notices`, `--boundary [--latest-tag ...]`, and `--private-ci OUT`.
+3. `--notices` copies root `THIRD_PARTY_NOTICES*` byte-for-byte from source and
+   rejects listed placeholder strings. Full licence directories/source/relink
+   bundles, when applicable, are staged by the explicit product/release recipes;
+   copying that root notice alone is not a complete compliance package.
+4. `--private-ci OUT` writes a workflow file; it does not run CI or publish. The
+   current generator renders a dispatch-only **Linux x64/arm64** prerelease workflow,
+   not five automatic platform builds. Build recipes and notice staging are distinct
+   from `scripts/release-to-public.sh` uploading the approved binary artifacts.
+5. `--boundary` is historical licence-boundary tooling: it queries public latest
+   unless given an explicit tag and its current implementation still writes the old
+   Personal Use wording. **Do not run it to refresh demos or advance a historical
+   cutoff.** Use the existing reviewed binary licence and preserved release-era
+   statement; changing the helper/terms is a separate task. No boundary/flip/publish
+   command is executed by this benchmark plan.
+
+Illustrative staged-notice refresh only (not a command executed here):
+
+```sh
+python3 scripts/closed-source/publish_tree.py   /path/to/reviewed-public-stage /home/mma/repos/lmctlhq/lmvideo lmvideo --notices
+```
+
+A reviewed staged content change reaches the public peer through a normal public
+branch/commit. For an already split product, new demos are instead authored
+**directly in the public checkout**; do not regenerate or overwrite its README,
+examples or images from a stale private copy.
+
+#### Ongoing script/render/scoreboard flow
+
+1. Author the `.lms`, visual specification, allowed-asset manifest and proposed
+   scoreboard entry on a public branch. The benchmark is PLANNED until executed;
+   no reference image is copied into the repo. Keep future-API examples off public
+   main until a matching installable release exists.
+2. Private source verification checks out that **exact public branch commit SHA**
+   beside the source commit, builds the candidate and puts that executable first
+   on PATH. Run the public scripts from an empty directory and collect output,
+   feature witnesses, licence validation, timings/RSS and CPU repeat checks. Never
+   substitute a different private showcase script for the actual public one.
+3. Review and commit our produced images/clips and verified scoreboard data to the
+   public branch, with reproducible source/public/binary provenance. Source-coupled
+   synthetic engine fixtures stay in private tests; public demo results stay public.
+4. Stage/publish a matching versioned binary and complete notices through the product
+   release path. Test fresh-cache install and pin the candidate tag in new demos
+   before merging/promoting, avoiding a window where public main requires an API
+   absent from latest. Keep old versioned examples/releases usable.
+5. Explicitly triggered public checks validate links, image paths, licence manifests,
+   real raw URLs, source checking and selected executions against the pinned released
+   binary. Merge the public gallery/scoreboard after evidence passes. This plan adds
+   no automatic Actions schedule, private-budget dispatch, website upload or GPU job.
+
+The result is two complementary repos: **private code/tests/build/CI; public
+examples/scripts/renders/docs/scoreboard/releases**. Neither the public authoring
+workflow nor a build-time read-only checkout makes demos private implementation.
 
 ---
 
