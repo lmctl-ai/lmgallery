@@ -94,14 +94,46 @@ A GPL Blender file also cannot be relabelled Apache because Cycles has that lice
 
 | Tier | Scope & Target Count | Target IDs | Engine Path | Deliverable Gate & Wall-Time Envelope |
 | :--- | :--- | :--- | :--- | :--- |
-| **Tier 1 — CPU Rasterizer Core** | **15 targets** (Primitives, PBR, PCF shadows, `.lmmat` procedural textures, normal maps, glTF + HDRI IBL, 3D text extrusion, spline/lathe/heightfield, vertex colormaps, 1k instancing, particles, 3D LUT/DoF/outline post-processing, 4-view CAD clipping, animated 2D+3D video) | `B01`–`B15` | `renderer="raster"` (+ Phase 2 `Image` filters & `lmcad` STL/OBJ handoff) | Planned only after completing **Phases 2–5** + Gaps `G.1`–`G.8` and `G.13` as applicable. Timing is unmeasured: provisional 5–30 s still/bake ceilings and up to 240 s for the 120-frame clips; all listed G.* gaps must pass before claiming completion.  **Verified locally: 15/15 (B01–B15); Tier 2 is locally 12/12; Tier 3 is locally2/5.** |
+| **Tier 1 — CPU Rasterizer Core** | **15 targets** (Primitives, PBR, PCF shadows, `.lmmat` procedural textures, normal maps, glTF + HDRI IBL, 3D text extrusion, spline/lathe/heightfield, vertex colormaps, 1k instancing, particles, 3D LUT/DoF/outline post-processing, 4-view CAD clipping, animated 2D+3D video) | `B01`–`B15` | `renderer="raster"` (+ Phase 2 `Image` filters & `lmcad` STL/OBJ handoff) | Planned only after completing **Phases 2–5** + Gaps `G.1`–`G.8` and `G.13` as applicable. Per-target local timings and profiles are locked in the manifest; declared 5–30 s still/bake ceilings and up to 240 s for the 120-frame clips; all listed G.* gaps must pass before claiming completion.  **Verified locally: 15/15 (B01–B15); Tier 2 is locally 12/12; Tier 3 is locally5/5.** |
 | **Tier 2 — Built-in CPU Cycles** | **12 targets** (Cornell GI, glass refraction/dispersion, caustics, random-walk SSS, clearcoat/anisotropy car paint, volumetric god-rays, physical sky, thin-lens bokeh DoF, hair/fur strands, archviz interior GI, tabletop splash still-life, CAD preview-vs-Cycles twin) | `B16`–`B27` | `renderer="cycles"` (in-process permissive Cycles + Embree + OIDN, `Phase 6`) | Achievable upon completing **Phase 6 (`6.0`–`6.5`)** + Gaps `G.9`–`G.11`. Provisional 90–600 s still ceilings; samples, bounces, denoise and convergence recorded per target. Spectral dispersion is not implied by ordinary RGB glass.  **Verified locally: 12/12 (B16–B27).** |
-| **Tier 3 — Stretch & Complex Systems** | **5 targets** (10k+ surface-scattered botanical meadow, CSG/fractal sculpture, fracture/soft-body physics clip, heterogeneous cloud/smoke volume, flagship multi-domain 3D+2D+post video) | `B28`–`B32` | `raster` + `cycles` + procedural scatter / volume / multi-pass | Stretch targets validating high-instance scaling (`G.1`), CSG/isosurface generation (`G.2`), 3D volume density (`G.11`), and full-pipeline video caching (`P.7`).  **Verified locally:2/5 (B28/B29); B30–B32 remain PLANNED.** |
+| **Tier 3 — Stretch & Complex Systems** | **5 targets** (10k+ surface-scattered botanical meadow, CSG/fractal sculpture, fracture/soft-body physics clip, heterogeneous cloud/smoke volume, flagship multi-domain 3D+2D+post video) | `B28`–`B32` | `raster` + `cycles` + procedural scatter / volume / multi-pass | Stretch targets validating high-instance scaling (`G.1`), CSG/isosurface generation (`G.2`), 3D volume density (`G.11`), and full-pipeline video caching (`P.7`).  **Verified locally:5/5 (B28–B32).** |
 
 Local milestone snapshot: private lmvideo `2157b36` and the future-API public candidate `ca0de6e` record Tier 1 **15/15**, Tier 2 **12/12 (B16–B27)**, Tier 3 **0/5**. The SDK suite passes72 checks; frozen C++ runtime `b7304a5` has scalar physical-sky, HG volume, finite-source lens/bokeh, native strand/pigment/angular/shadow and exact-job controls. Final public-source pairs retain the max-one-code CPU Cycles rule; no tolerance was relaxed for postprocessing. The CAD twin records actual CLI preview/final wall intervals and independently checked geometry/camera/masks. `lmvideo/durable-memory/67-tier2-physical-gates.md` records timings and limits. B28–B32 remain PLANNED. No Actions, release, public-main merge, media upload or Phase7 work was performed.
 
 Stretch progress: private `d79e359`, public demo-only candidate `2460a9d`: B28/B29 now VERIFIED locally, Tier3 **2/5**. B28 has10200 original shared42-triangle clumps with independently decoded surface attachment, normals and .04m cross-batch spacing;18.83s entire generation+raster+Cycles is a conservative raster≤30s bound. B29 has8000 independently enumerated Menger voxels,6.75m bounds/125m³ occupied volume;18.47s entire run. Both900×560 finals and previews repeat exactly. Static baked bends do not claim wind simulation; recursive instancing does not claim a CSG union. B30–B32 remain PLANNED; density transport implementation is not plume acceptance.
 
+
+### Current local gate (2026-10-28)
+
+Private `lmvideo` **5009d65** and public demo candidate **62ee47a** record
+**32/32 VERIFIED locally: Tier1 15/15, Tier2 12/12, Tier3 5/5**. The final
+CYCLES-enabled SDK suite passes72/72; source, rights, runtime/module, media,
+measured CPU/RSS and repeat locks are checked. Full media stays in the documented
+local content-addressed render store; the public candidate contains examples and
+metadata only. Public main remains on the installable release.
+
+| Stretch target | Measured cold wall, including WebM when applicable | Key independent witness |
+|---|---:|---|
+| B28 |18.83s|10200 shared clumps, actual attachment/normals and cross-batch .04m spacing; whole run also bounds raster below30s|
+| B29 |18.47s|8000 recursive Menger voxels,6.75m bounds and125m³ occupied volume|
+| B30 |75.20s|90 complete720p30 prescribed-deformation frames, exact paired images/codecs|
+| B31 |44.36s|32768 actual Worley density samples, exact material/job and96spp/OIDN still|
+| B32 |251.40s|150 complete720p30 frames, real bloom/Hald LUT/HUD/Plot/VectorField in one Layout|
+
+The separate B32 Cycles hero is exact; its native render upper bound is7.62s,
+and a conservative bound including all setup/prepare/writes and outer overhead
+is14.54s, below180s. B28–B32 primary image/frame repeats are exact.
+The reopened B26 was preserved rather than ignored: coincident glass/wood faces
+were separated by0.5mm and the metal prop now has real bevel geometry. Six fresh
+current-build images globally stay within the unchanged one-code rule (35 final
+channels vary), with the renderer, samples and grading unchanged. Its selected
+cold run is62.51s below600s. Prior failed/undenoised controls remain retained.
+
+Limits are explicit: static baked meadow bends, recursive instancing rather than
+CSG union, prescribed deformation rather than a physics solver, authored spatial
+density rather than fluid simulation/VDB import. Technical proof is in lmvideo
+`72-stretch-local-gate.md` and `73-b26-contact-requalification.md`. Phase7, release,
+website/media upload and Actions dispatch remain outside this task.
 
 ### 3.2 Benchmark Acceptance Contract (Web-First Showcase & No Copyrighted Renders in Repo)
 

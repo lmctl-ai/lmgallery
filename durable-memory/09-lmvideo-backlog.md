@@ -1121,3 +1121,22 @@ checks its entire recursive occupancy and bounds. Tier3 is2/5.
 Density-grid persistence/normalized local bounds are implemented at `2fc5546`,
 but B31 stays PLANNED until a legible heterogeneous plume and paired witnesses pass.
 B30/B32 full clip gates remain pending. No Phase7 or publication work is authorized.
+
+### Complete showcase gate (local,2026-10-28)
+
+Private5009d65 / public demo candidate62ee47a now lock all32targets: Tier1 15/15,
+Tier2 12/12, Tier3 5/5, with full CYCLES-enabled tests72/72. B28 verifies global
+10k-scale scatter; B29 verifies recursive occupancy; B30 verifies all90 authored
+mesh-state frames; B31 verifies a bounded true32³ Worley field and exact native
+volume handoff; B32 verifies all150multi-domain frames and its separate paired
+Cycles hero. G.11's density path has analyticXYZ/scale/translation and memory
+controls; G.14 demonstrates prescribed geometry, with no solver claim.
+
+Independent review reopened B26 on rebuilt current source. The historical
+capture remains retained; a distinct0.5mm glass/wood air interface and actual
+metal bevel geometry now pass the global six-image max-one-code check. No
+renderer/sampling/grading/tolerance relaxation was used. All final sources,
+rights, media hashes, CPU/RSS and runtime pins are in the mirrored scoreboard.
+The detailed timing/limits are in10's current-gate section and the private
+72/73technical notes. No Actions, release, upload or production build was
+dispatched. Phase7 remains unstarted and waits for the owner's instruction.
