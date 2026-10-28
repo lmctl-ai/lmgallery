@@ -1100,3 +1100,14 @@ Private lmvideo notes 36/40/41/42 record source/dependency licences, the genuine
 clean-source build, precision, all gates and arm64 prerequisites/untested scope.
 No Actions, production ARM build, binary release or media upload is included.
 Phase 7 remains unstarted.
+
+
+### Local showcase checkpoint — Tier2 complete
+
+The private acceptance ledger at `lmvideo`2157b36 records B01–B27 locally
+VERIFIED (15/15 Tier1,12/12 Tier2). Frozen runtime b7304a5 passes SDK72;
+G.10 physical focus and G.11 homogeneous HG medium/native curves have exact
+job, resource and quantitative native controls. B28–B32 remain PLANNED: large
+surface scatter, recursive geometry, bounded frame states, heterogeneous density
+and the full video story are the next acceptance work. This checkpoint does
+not start Phase7 or authorize publication/release/Actions changes.
