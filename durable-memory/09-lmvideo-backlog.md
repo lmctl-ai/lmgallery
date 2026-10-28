@@ -1111,3 +1111,13 @@ job, resource and quantitative native controls. B28–B32 remain PLANNED: large
 surface scatter, recursive geometry, bounded frame states, heterogeneous density
 and the full video story are the next acceptance work. This checkpoint does
 not start Phase7 or authorize publication/release/Actions changes.
+
+### Stretch geometry gate (local,2026-10-28)
+
+B28/B29 are locally VERIFIED at private `d79e359` / public content `2460a9d`,
+with exact paired images, original rights, measured CPU/RSS and decoded geometry.
+The meadow checks global cross-batch spacing and all surface normals; the Menger
+checks its entire recursive occupancy and bounds. Tier3 is2/5.
+Density-grid persistence/normalized local bounds are implemented at `2fc5546`,
+but B31 stays PLANNED until a legible heterogeneous plume and paired witnesses pass.
+B30/B32 full clip gates remain pending. No Phase7 or publication work is authorized.
