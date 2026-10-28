@@ -40,3 +40,13 @@ Its throwaway release/tag were deleted and latest restored to v0.2.1.
 Evidence: `~/.local/state/lmctl/closed-source-releases/manual-lmaudio-20261026T011149/rehearsal.json`.
 The superseded lmgallery runner and its CLI-specific tests have been removed;
 workflow-generation checks remain public and offline.
+
+Owner update (2026-10-28): lmvideo v0.1.36 is explicitly authorized for native
+local Linux release-build/testing and manual on-demand staging; this supersedes
+the historical no-local-build statement above for lmvideo. Its registry entry
+is manual-only, uses the versioned private runtime/101-example gate, and includes
+the complete license archive. Meta-Lead runs `release-cycle.sh lmvideo` to stage
+and test, then `release-cycle.sh lmvideo --promote` after staged review. The two
+native Ubuntu22.04 jobs build Linux x64/arm64 with Cycles; no production-server
+build or implicit daily publication of lmvideo is permitted. Technical evidence
+is in lmvideo durable-memory/78-release-0136-local-gate.md.
