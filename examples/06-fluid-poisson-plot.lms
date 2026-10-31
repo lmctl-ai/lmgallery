@@ -10,7 +10,7 @@ fluid.assert_close(field.l2_error("x*x + y*y"), 0.0, 0.005);
 field.sample(41, 41).save_csv("build/examples/fluid-field.csv");
 end _lmcode_
 savedsl(sim, "build/fluid.dslb");
-r = system ${dsl_cli(sim)} --dsl build/fluid.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/fluid.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 plot = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
 plot.png("images/showcase-06-fluid-poisson-plot.png", 900, 560);
@@ -23,6 +23,6 @@ plot.cmd("set palette defined (0 '#17324d', 0.5 '#159895', 1 '#fff2b2')");
 plot.cmd("unset key"); plot.cmd("plot 'build/examples/fluid-field.csv' using 1:2:4 with image"); plot.close();
 end _lmcode_
 savedsl(plot, "build/plot.dslb");
-r = system ${dsl_cli(plot)} --dsl build/plot.dslb;
+r = system ${dsl_cli(plot)} --lmcode build/plot.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-06-fluid-poisson-plot.png");

@@ -27,7 +27,7 @@ num.assert_close(beta.get(1, 0), 3.0, 0.5);
 num.assert_close(sd, 4.0, 1.0);
 end _lmcode_
 savedsl(fit_program, "build/forecast-fit.dslb");
-r = system(concat(dsl_cli(fit_program), ["--dsl", "build/forecast-fit.dslb"]), 300000);
+r = system(concat(dsl_cli(fit_program), ["--lmcode", "build/forecast-fit.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Read the three fitted values back from the lmnum output lines.
@@ -67,7 +67,7 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(chart_program, "build/forecast-chart.dslb");
-r = system(concat(dsl_cli(chart_program), ["--dsl", "build/forecast-chart.dslb"]), 300000);
+r = system(concat(dsl_cli(chart_program), ["--lmcode", "build/forecast-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Workbook (lmoffice): forecast table, formulas, and a native bar chart beside it.
@@ -95,6 +95,6 @@ sheet.bar_chart(1, 8, 22, 19, "Forecast against target ($k)", "A2:A13", "B2:B13"
 book.save();
 end _lmcode_
 savedsl(book_program, "build/forecast-book.dslb");
-r = system(concat(dsl_cli(book_program), ["--dsl", "build/forecast-book.dslb"]), 300000);
+r = system(concat(dsl_cli(book_program), ["--lmcode", "build/forecast-book.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/sales-forecast.xlsx and images/showcase-28-forecast-workbook.png");

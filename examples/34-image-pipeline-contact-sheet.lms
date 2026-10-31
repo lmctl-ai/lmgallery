@@ -28,7 +28,7 @@ out.print("psnr=" + str(after_psnr));
 out.print("levels_ssim=" + str(levels_ssim));
 end _lmcode_
 savedsl(pipeline, "build/pipeline.dslb");
-r = system(concat(dsl_cli(pipeline), ["--dsl", "build/pipeline.dslb"]), 300000);
+r = system(concat(dsl_cli(pipeline), ["--lmcode", "build/pipeline.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Read the measured values back from the lmvideo output lines.
@@ -58,6 +58,6 @@ s1.notes("Steps: levels 0.05-0.95, unsharp configuration (radius 0.6, sigma 0.2,
 slides.save();
 end _lmcode_
 savedsl(deck, "build/image-pipeline.dslb");
-r = system(concat(dsl_cli(deck), ["--dsl", "build/image-pipeline.dslb"]), 300000);
+r = system(concat(dsl_cli(deck), ["--lmcode", "build/image-pipeline.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/image-pipeline.pptx and images/showcase-34-image-pipeline.png");

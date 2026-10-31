@@ -41,7 +41,7 @@ counts.save_csv("build/signups.csv");
 num.print("weekday mean " + str(weekday_sum / weekday_n) + ", weekend mean " + str(weekend_sum / weekend_n));
 end _lmcode_
 savedsl(sim, "build/signups-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl build/signups-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/signups-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -58,6 +58,6 @@ plot.cmd("plot 'build/signups.csv' using (t0 + $1*86400):2 with boxes fc rgb '#9
 plot.close();
 end _lmcode_
 savedsl(draw, "build/signups-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl build/signups-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode build/signups-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-24-signups-date-axis.png");

@@ -19,7 +19,7 @@ let out = space.system().add(earth).add(sat).propagate(${2.0 * period}, 801, 5.0
 out.save_csv("build/orbit.csv");
 end _lmcode_
 savedsl(sim, "build/orbit-sim.dslb");
-r = system(concat(dsl_cli(sim), ["--dsl", "build/orbit-sim.dslb"]), 300000);
+r = system(concat(dsl_cli(sim), ["--lmcode", "build/orbit-sim.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # The CSV has no header. Columns (1-based): 1 t [s]; 8-10 satellite x y z [km]. Row k is t = k T / 400.
@@ -64,7 +64,7 @@ let doc = docx.create("build/observing-plan.docx");
 doc.markdown(${body}).save();
 end _lmcode_
 savedsl(word, "build/plan-word.dslb");
-r = system(concat(dsl_cli(word), ["--dsl", "build/plan-word.dslb"]), 300000);
+r = system(concat(dsl_cli(word), ["--lmcode", "build/plan-word.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
@@ -73,7 +73,7 @@ let doc = docx.create("build/observing-plan.pdf");
 doc.markdown(${body}).save();
 end _lmcode_
 savedsl(word_pdf, "build/plan-word-pdf.dslb");
-r = system(concat(dsl_cli(word_pdf), ["--dsl", "build/plan-word-pdf.dslb"]), 300000);
+r = system(concat(dsl_cli(word_pdf), ["--lmcode", "build/plan-word-pdf.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Slide deck: the same numbers as slides; each slide has one heading.
@@ -102,7 +102,7 @@ let slides = pptx.create("build/observing-plan.pptx");
 slides.markdown(${deck_md}).save();
 end _lmcode_
 savedsl(deck, "build/plan-deck.dslb");
-r = system(concat(dsl_cli(deck), ["--dsl", "build/plan-deck.dslb"]), 300000);
+r = system(concat(dsl_cli(deck), ["--lmcode", "build/plan-deck.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart (lmvideo): distance from the centre at the five epochs (the gallery output).
@@ -118,6 +118,6 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(chart, "build/plan-chart.dslb");
-r = system(concat(dsl_cli(chart), ["--dsl", "build/plan-chart.dslb"]), 300000);
+r = system(concat(dsl_cli(chart), ["--lmcode", "build/plan-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/observing-plan.docx, build/observing-plan.pptx and images/showcase-44-observing-plan.png");

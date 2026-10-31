@@ -28,7 +28,7 @@ skill_bar(6, "Rust", 42.0);
 video.end();
 end _lmcode_
 savedsl(skills, "build/skills.dslb");
-r = system(concat(dsl_cli(skills), ["--dsl", "build/skills.dslb"]), 300000);
+r = system(concat(dsl_cli(skills), ["--lmcode", "build/skills.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Resume (lmoffice). The levels are the bar lengths printed on the chart.
@@ -52,6 +52,6 @@ doc.paragraph("MSc Statistics, University of Leeds (2016)");
 doc.save();
 end _lmcode_
 savedsl(resume_program, "build/resume.dslb");
-r = system(concat(dsl_cli(resume_program), ["--dsl", "build/resume.dslb"]), 300000);
+r = system(concat(dsl_cli(resume_program), ["--lmcode", "build/resume.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/resume-jordan-lee.docx and images/showcase-30-resume-skills.png");

@@ -21,7 +21,7 @@ bio.print("final_i=" + str(r.final("I")));
 bio.print("final_r=" + str(r.final("R")));
 end _lmcode_
 savedsl(sim, "build/sir-sim.dslb");
-r = system(concat(dsl_cli(sim), ["--dsl", "build/sir-sim.dslb"]), 300000);
+r = system(concat(dsl_cli(sim), ["--lmcode", "build/sir-sim.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 let peak_i = 0.0; let peak_t = 0.0; let final_s = 0.0; let final_i = 0.0; let final_r = 0.0;
@@ -49,7 +49,7 @@ book.sheet_from_csv("Summary", ${summary});
 book.save();
 end _lmcode_
 savedsl(workbook, "build/sir-book.dslb");
-r = system(concat(dsl_cli(workbook), ["--dsl", "build/sir-book.dslb"]), 300000);
+r = system(concat(dsl_cli(workbook), ["--lmcode", "build/sir-book.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Report (lmoffice): the Markdown is formatted here from the same numbers.
@@ -80,7 +80,7 @@ let doc = docx.create("build/sir-report.docx");
 doc.markdown(${report_md} + "\n" + limits).save();
 end _lmcode_
 savedsl(report, "build/sir-report.dslb");
-r = system(concat(dsl_cli(report), ["--dsl", "build/sir-report.dslb"]), 300000);
+r = system(concat(dsl_cli(report), ["--lmcode", "build/sir-report.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Samples for the chart in percent of the population: day 0, 20, ..., 120 (row k is line k + 2, after the header).
@@ -113,6 +113,6 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(chart, "build/sir-chart.dslb");
-r = system(concat(dsl_cli(chart), ["--dsl", "build/sir-chart.dslb"]), 300000);
+r = system(concat(dsl_cli(chart), ["--lmcode", "build/sir-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/sir-workbook.xlsx, build/sir-report.docx and images/showcase-48-sir-epidemic.png");

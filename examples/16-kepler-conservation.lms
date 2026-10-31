@@ -20,7 +20,7 @@ let out = space.system().add(earth).add(sat).propagate(${2.0 * tper}, 801, 5.0, 
 out.save_csv("build/kepler.csv");
 end _lmcode_
 savedsl(sim, "build/kepler-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl build/kepler-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/kepler-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -62,6 +62,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "build/kepler-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl build/kepler-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode build/kepler-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-16-kepler-conservation.png");

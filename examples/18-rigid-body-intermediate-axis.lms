@@ -25,7 +25,7 @@ phys.assert_close(sqrt(b.lx() * b.lx() + b.ly() * b.ly() + b.lz() * b.lz()) / l0
 s.save_csv("build/plate.csv");
 end _lmcode_
 savedsl(sim, "build/rigid-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl build/rigid-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/rigid-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Growth of the instability: the largest |omega_x| or |omega_z| over the run, from the samples.
@@ -75,6 +75,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "build/rigid-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl build/rigid-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode build/rigid-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-18-rigid-body-intermediate-axis.png");

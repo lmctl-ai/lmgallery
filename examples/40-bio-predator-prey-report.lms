@@ -47,7 +47,7 @@ bio.print("q11=" + str(r.value("pred", 396)));
 r.save_csv("build/predator-prey.csv");
 end _lmcode_
 savedsl(sim, "build/predator-prey-sim.dslb");
-r = system(concat(dsl_cli(sim), ["--dsl", "build/predator-prey-sim.dslb"]), 300000);
+r = system(concat(dsl_cli(sim), ["--lmcode", "build/predator-prey-sim.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Read the results back.
@@ -126,7 +126,7 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(figure, "build/predator-prey-figure.dslb");
-r = system(concat(dsl_cli(figure), ["--dsl", "build/predator-prey-figure.dslb"]), 300000);
+r = system(concat(dsl_cli(figure), ["--lmcode", "build/predator-prey-figure.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Lab report (lmoffice).
@@ -147,6 +147,6 @@ doc.paragraph("Predators peak after prey, as the coupled model predicts. The pop
 doc.save();
 end _lmcode_
 savedsl(report, "build/predator-prey-report.dslb");
-r = system(concat(dsl_cli(report), ["--dsl", "build/predator-prey-report.dslb"]), 300000);
+r = system(concat(dsl_cli(report), ["--lmcode", "build/predator-prey-report.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/predator-prey-lab-report.docx and images/showcase-40-predator-prey.png");

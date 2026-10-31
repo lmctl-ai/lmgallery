@@ -25,7 +25,7 @@ fig1.draw();
 video.end();
 end _lmcode_
 savedsl(charts_1, "build/sales-chart1.dslb");
-r = system(concat(dsl_cli(charts_1), ["--dsl", "build/sales-chart1.dslb"]), 300000);
+r = system(concat(dsl_cli(charts_1), ["--lmcode", "build/sales-chart1.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart 2: revenue by product line, Q3 2026 ($M).
@@ -44,7 +44,7 @@ fig2.draw();
 video.end();
 end _lmcode_
 savedsl(charts_2, "build/sales-chart2.dslb");
-r = system(concat(dsl_cli(charts_2), ["--dsl", "build/sales-chart2.dslb"]), 300000);
+r = system(concat(dsl_cli(charts_2), ["--lmcode", "build/sales-chart2.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart 3: monthly revenue trend, July to June ($M).
@@ -73,7 +73,7 @@ fig3.draw();
 video.end();
 end _lmcode_
 savedsl(charts_3, "build/sales-chart3.dslb");
-r = system(concat(dsl_cli(charts_3), ["--dsl", "build/sales-chart3.dslb"]), 300000);
+r = system(concat(dsl_cli(charts_3), ["--lmcode", "build/sales-chart3.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # The figures behind the charts and their totals.
@@ -116,6 +116,6 @@ doc.paragraph("Total revenue for the twelve months is $281.9M.").italic(true);
 doc.save();
 end _lmcode_
 savedsl(report_program, "build/sales-report.dslb");
-r = system(concat(dsl_cli(report_program), ["--dsl", "build/sales-report.dslb"]), 300000);
+r = system(concat(dsl_cli(report_program), ["--lmcode", "build/sales-report.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/sales-report.docx");

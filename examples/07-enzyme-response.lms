@@ -27,7 +27,7 @@ for (i in range(0, 10)) {
 bio.print("constants," + str(km) + "," + str(vmax));
 end _lmcode_
 savedsl(compute, "build/enzyme/compute.dslb");
-r = system ${dsl_cli(compute)} --dsl build/enzyme/compute.dslb;
+r = system ${dsl_cli(compute)} --lmcode build/enzyme/compute.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 let csv = "s_mean,rate,michaelis_menten\n";
 let km = 0.0; let vmax = 0.0;
@@ -61,6 +61,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(plot, "build/enzyme/draw.dslb");
-r = system ${dsl_cli(plot)} --dsl build/enzyme/draw.dslb;
+r = system ${dsl_cli(plot)} --lmcode build/enzyme/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-07-enzyme-response.png");

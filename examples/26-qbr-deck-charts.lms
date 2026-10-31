@@ -24,7 +24,7 @@ fig1.draw();
 video.end();
 end _lmcode_
 savedsl(charts_1, "build/qbr-chart1.dslb");
-r = system(concat(dsl_cli(charts_1), ["--dsl", "build/qbr-chart1.dslb"]), 300000);
+r = system(concat(dsl_cli(charts_1), ["--lmcode", "build/qbr-chart1.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart 2: net margin trend (line).
@@ -45,7 +45,7 @@ fig2.draw();
 video.end();
 end _lmcode_
 savedsl(charts_2, "build/qbr-chart2.dslb");
-r = system(concat(dsl_cli(charts_2), ["--dsl", "build/qbr-chart2.dslb"]), 300000);
+r = system(concat(dsl_cli(charts_2), ["--lmcode", "build/qbr-chart2.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart 3: revenue by region (bars) for the latest quarter.
@@ -65,7 +65,7 @@ fig3.draw();
 video.end();
 end _lmcode_
 savedsl(charts_3, "build/qbr-chart3.dslb");
-r = system(concat(dsl_cli(charts_3), ["--dsl", "build/qbr-chart3.dslb"]), 300000);
+r = system(concat(dsl_cli(charts_3), ["--lmcode", "build/qbr-chart3.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Deck: title, highlights, and one slide per chart with bullets and speaker notes.
@@ -106,6 +106,6 @@ d6.bullet(100.0, 220.0, 1100.0, 48.0, "Hold operating margin at or above 24%.");
 deck.save();
 end _lmcode_
 savedsl(deck_program, "build/qbr-deck.dslb");
-r = system(concat(dsl_cli(deck_program), ["--dsl", "build/qbr-deck.dslb"]), 300000);
+r = system(concat(dsl_cli(deck_program), ["--lmcode", "build/qbr-deck.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/qbr-deck.pptx");

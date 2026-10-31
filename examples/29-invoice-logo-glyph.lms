@@ -24,7 +24,7 @@ canvas.text("LS", 96.0, 258.0, font(150.0).bold(true), paint().color("#ffffff"))
 video.end();
 end _lmcode_
 savedsl(art, "build/logo-art.dslb");
-r = system(concat(dsl_cli(art), ["--dsl", "build/logo-art.dslb"]), 300000);
+r = system(concat(dsl_cli(art), ["--lmcode", "build/logo-art.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 glyph = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
@@ -53,7 +53,7 @@ for (row in range(0, 21)) {
 video.end();
 end _lmcode_
 savedsl(glyph, "build/glyph-art.dslb");
-r = system(concat(dsl_cli(glyph), ["--dsl", "build/glyph-art.dslb"]), 300000);
+r = system(concat(dsl_cli(glyph), ["--lmcode", "build/glyph-art.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Gallery output: the brand sheet, 900 px wide, with the logo and glyph.
@@ -71,7 +71,7 @@ canvas.image_rect(glyph_art, 430.0, 240.0, 220.0, 220.0);
 video.end();
 end _lmcode_
 savedsl(sheet, "build/brand-art.dslb");
-r = system(concat(dsl_cli(sheet), ["--dsl", "build/brand-art.dslb"]), 300000);
+r = system(concat(dsl_cli(sheet), ["--lmcode", "build/brand-art.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Invoice (lmoffice).
@@ -96,6 +96,6 @@ doc.paragraph("Thank you for your business.").italic(true).align("right");
 doc.save();
 end _lmcode_
 savedsl(book, "build/invoice.dslb");
-r = system(concat(dsl_cli(book), ["--dsl", "build/invoice.dslb"]), 300000);
+r = system(concat(dsl_cli(book), ["--lmcode", "build/invoice.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/invoice-INV-1042.docx and images/showcase-29-invoice-logo.png");

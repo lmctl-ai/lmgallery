@@ -29,7 +29,7 @@ for (k in range(2401, 3201)) {
 num.assert_close(late, amp, 0.01 * amp);
 end _lmcode_
 savedsl(sim, "build/driven-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl build/driven-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/driven-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -55,6 +55,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "build/driven-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl build/driven-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode build/driven-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-17-oscillator-driven.png");

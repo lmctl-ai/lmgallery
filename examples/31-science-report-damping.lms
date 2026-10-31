@@ -42,7 +42,7 @@ for (k in range(0, 3)) {
 }
 end _lmcode_
 savedsl(sim, "build/damping-sim.dslb");
-r = system(concat(dsl_cli(sim), ["--dsl", "build/damping-sim.dslb"]), 600000);
+r = system(concat(dsl_cli(sim), ["--lmcode", "build/damping-sim.dslb"]), 600000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Read the simulated and measured ratios back from the lmnum output lines.
@@ -77,7 +77,7 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(figure, "build/damping-figure.dslb");
-r = system(concat(dsl_cli(figure), ["--dsl", "build/damping-figure.dslb"]), 300000);
+r = system(concat(dsl_cli(figure), ["--lmcode", "build/damping-figure.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Report (lmoffice).
@@ -99,6 +99,6 @@ doc.paragraph("The logarithmic decrement recovers each set damping ratio to bett
 doc.save();
 end _lmcode_
 savedsl(report, "build/damping-report.dslb");
-r = system(concat(dsl_cli(report), ["--dsl", "build/damping-report.dslb"]), 300000);
+r = system(concat(dsl_cli(report), ["--lmcode", "build/damping-report.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/damping-report.docx and images/showcase-31-science-report.png");

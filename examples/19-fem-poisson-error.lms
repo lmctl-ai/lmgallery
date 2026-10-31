@@ -20,7 +20,7 @@ fluid.assert_true(e1 > e2);
 fluid.print("P1 L2 error = " + str(e1) + ", P2 L2 error = " + str(e2));
 end _lmcode_
 savedsl(sim, "build/fem-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl build/fem-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/fem-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -45,6 +45,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "build/fem-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl build/fem-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode build/fem-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-19-fem-poisson-error.png");

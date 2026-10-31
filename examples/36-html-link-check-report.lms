@@ -28,7 +28,7 @@ for (i in range(0, pages.len())) {
 report.write_text("build/links.txt");
 end _lmcode_
 savedsl(check, "build/links.dslb");
-r = system(concat(dsl_cli(check), ["--dsl", "build/links.dslb"]), 300000);
+r = system(concat(dsl_cli(check), ["--lmcode", "build/links.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Read the report back: each broken link is one line.
@@ -63,7 +63,7 @@ canvas.text("exit 1", 24.0, 268.0, font(18.0), paint().color("#fca5a5"));
 video.end();
 end _lmcode_
 savedsl(term, "build/link-term.dslb");
-r = system(concat(dsl_cli(term), ["--dsl", "build/link-term.dslb"]), 300000);
+r = system(concat(dsl_cli(term), ["--lmcode", "build/link-term.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Word report (lmoffice).
@@ -84,6 +84,6 @@ doc.paragraph("Fix the two links, then rerun the check; the pages are in the sit
 doc.save();
 end _lmcode_
 savedsl(report_doc, "build/link-check.dslb");
-r = system(concat(dsl_cli(report_doc), ["--dsl", "build/link-check.dslb"]), 300000);
+r = system(concat(dsl_cli(report_doc), ["--lmcode", "build/link-check.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/link-check-report.docx and images/showcase-36-link-check.png");

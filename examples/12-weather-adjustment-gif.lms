@@ -27,7 +27,7 @@ wx.assert_true(h1 > 0.05 * h0 && h1 < 0.8 * h0);
 wx.print("Rossby radius " + str(m.rossby_radius() / 1000.0) + " km; central height anomaly after 14 h: " + str(h1) + " m of " + str(h0));
 end _lmcode_
 savedsl(sim, "build/adjust/sim.dslb");
-r = system(concat(dsl_cli(sim), ["--dsl", "build/adjust/sim.dslb"]), 300000);
+r = system(concat(dsl_cli(sim), ["--lmcode", "build/adjust/sim.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println(split(r.stdout, "{\"ok\"")[0]);
 
@@ -54,7 +54,7 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "build/adjust/draw.dslb");
-r = system(concat(dsl_cli(draw), ["--dsl", "build/adjust/draw.dslb"]), 300000);
+r = system(concat(dsl_cli(draw), ["--lmcode", "build/adjust/draw.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 r = system ffmpeg -y -loglevel error -framerate 8 -i build/adjust/f%d.png -vf "split[a][b];[a]palettegen=max_colors=64[p];[b][p]paletteuse=dither=none" images/showcase-12-weather-adjustment.gif;
 assert(r.code == 0, "ffmpeg is required for the animation: " + r.stderr);

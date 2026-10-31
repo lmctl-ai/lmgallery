@@ -25,7 +25,7 @@ product outside this migration, so 29 is the operative number.
 `scripts/run-examples.py --only NN` for NN = 01–50 on unmodified main:
 **50/50 execute** and produce their declared outputs. Four compositions
 (07, 13, 40, 48; all lmbio) fail *only* under this machine's ambient PATH, where
-a stale `~/.local/bin/lmbio` 0.1.0 without `--dsl-schema --json` shadows the
+a stale `~/.local/bin/lmbio` 0.1.0 without `--lmcode-schema --json` shadows the
 released host (pre-existing, see index.md open items). With a clean PATH the
 released lmbio v0.1.3 installs and all four pass. All verification here used
 `PATH=$HOME/work/KimiK3b/bin:/usr/bin:/bin` (shim dir with only lmctl/lmscript

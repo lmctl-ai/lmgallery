@@ -26,7 +26,7 @@ for (i in range(0, 6)) {
 }
 end _lmcode_
 savedsl(compute, "build/particle/compute.dslb");
-r = system ${dsl_cli(compute)} --dsl build/particle/compute.dslb;
+r = system ${dsl_cli(compute)} --lmcode build/particle/compute.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 let csv = "thickness,uncollided,exponential,standard_error,all_forward,all_forward_error\n";
 let mu = 0.0; let hvl = 0.0;
@@ -50,6 +50,6 @@ plot.cmd("plot exp(-mu*x) with lines lw 2 lc rgb '#d7191d' title 'exp(-mu x)', '
 plot.close();
 end _lmcode_
 savedsl(plot, "build/particle/draw.dslb");
-r = system ${dsl_cli(plot)} --dsl build/particle/draw.dslb;
+r = system ${dsl_cli(plot)} --lmcode build/particle/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-09-photon-transport.png");

@@ -41,7 +41,7 @@ num.print("w11=" + str(sqrt(lam11)));
 num.print("w21=" + str(sqrt(lam21)));
 end _lmcode_
 savedsl(modes, "build/wave-modes.dslb");
-r = system(concat(dsl_cli(modes), ["--dsl", "build/wave-modes.dslb"]), 300000);
+r = system(concat(dsl_cli(modes), ["--lmcode", "build/wave-modes.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 let w11 = 0.0;
@@ -79,6 +79,6 @@ for (frame in range(0, video.count())) {
 video.end();
 end _lmcode_
 savedsl(film, "build/wave-2d-film.dslb");
-r = system(concat(dsl_cli(film), ["--dsl", "build/wave-2d-film.dslb"]), 900000);
+r = system(concat(dsl_cli(film), ["--lmcode", "build/wave-2d-film.dslb"]), 900000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/wave-2d.mp4 and images/showcase-33-wave-2d.png");

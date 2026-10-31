@@ -28,7 +28,7 @@ lmf.save_text("data/cashflows.csv", rows);
 lmf.print("NPV at 8% = " + str(npv) + " k$");
 end _lmcode_
 savedsl(calc, "data/cashflows-calc.dslb");
-r = system ${dsl_cli(calc)} --dsl data/cashflows-calc.dslb;
+r = system ${dsl_cli(calc)} --lmcode data/cashflows-calc.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Read the generated CSV with lmnum, then generate the lmvideo source from its
@@ -57,12 +57,12 @@ for (t in range(0, 7)) {
   source = source + "canvas.text(" + str(x) + ".0, 410.0, 10.5, \"PV " + str(pv_short) + "k\", \"#475569\").set_attr(\"text-anchor\", \"middle\");\n";
 }
 source = source + "canvas.rect(610.0, 420.0, 245.0, 92.0, \"#e0f2fe\").set_attr(\"rx\", \"8\"); canvas.text(632.0, 450.0, 12.0, \"Decision metric\", \"#075985\").set_attr(\"font-weight\", \"700\"); canvas.text(632.0, 480.0, 21.0, \"NPV ";
-source = source + str(floor(npv_read * 10.0 + 0.5) / 10.0) + "k\", \"#047857\").set_attr(\"font-weight\", \"700\"); canvas.text(40.0, 445.0, 15.0, \"How to read the diagram\", \"#0f172a\").set_attr(\"font-weight\", \"700\"); canvas.text(40.0, 470.0, 13.0, \"Red is the initial investment; green arrows are future receipts.\", \"#334155\"); canvas.text(40.0, 495.0, 13.0, \"The PV labels are read directly from lmfinance's generated CSV.\", \"#334155\"); canvas.text(40.0, 520.0, 13.0, \"Positive NPV means the receipts beat the 8% cost of capital.\", \"#334155\"); canvas.redraw(); canvas.png(\"build/rendered/showcase-02-finance-cashflows.png\", 900, 540, 1);\nend _dsl_\nsavedsl(p, \"data/cashflows-draw.dslb\");\nargv = dsl_cli(p); push(argv, \"--dsl\"); push(argv, \"data/cashflows-draw.dslb\"); r = system(argv);\nassert(r.code == 0, r.stdout + r.stderr);\n";
+source = source + str(floor(npv_read * 10.0 + 0.5) / 10.0) + "k\", \"#047857\").set_attr(\"font-weight\", \"700\"); canvas.text(40.0, 445.0, 15.0, \"How to read the diagram\", \"#0f172a\").set_attr(\"font-weight\", \"700\"); canvas.text(40.0, 470.0, 13.0, \"Red is the initial investment; green arrows are future receipts.\", \"#334155\"); canvas.text(40.0, 495.0, 13.0, \"The PV labels are read directly from lmfinance's generated CSV.\", \"#334155\"); canvas.text(40.0, 520.0, 13.0, \"Positive NPV means the receipts beat the 8% cost of capital.\", \"#334155\"); canvas.redraw(); canvas.png(\"build/rendered/showcase-02-finance-cashflows.png\", 900, 540, 1);\nend _dsl_\nsavedsl(p, \"data/cashflows-draw.dslb\");\nargv = dsl_cli(p); push(argv, \"--lmcode\"); push(argv, \"data/cashflows-draw.dslb\"); r = system(argv);\nassert(r.code == 0, r.stdout + r.stderr);\n";
 num.assert_close(npv_read, 18.6244988084, 0.0000001);
 num.print(source);
 end _lmcode_
 savedsl(read, "data/cashflows-read.dslb");
-r = system ${dsl_cli(read)} --dsl data/cashflows-read.dslb;
+r = system ${dsl_cli(read)} --lmcode data/cashflows-read.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 write_file("data/cashflows-draw.lms", split(r.stdout, "{\"ok\"")[0]);
 r = system lmscript data/cashflows-draw.lms;

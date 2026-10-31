@@ -50,7 +50,7 @@ page or slide (`scripts/source-page-preview.py`, LibreOffice through `scripts/re
 ## Local environment
 
 `~/.local/bin/lmbio` (0.1.0) is on PATH and shadows the released lmbio; lmscript then rejects it because it has no
-`--dsl-schema --json`. Run the compositions with the released hosts from the lmscript cache by keeping that
+`--lmcode-schema --json`. Run the compositions with the released hosts from the lmscript cache by keeping that
 directory off PATH (`PATH=/usr/local/bin:/usr/bin:/bin lmctl autorun ...`). CI installs the released hosts and is
 not affected.
 

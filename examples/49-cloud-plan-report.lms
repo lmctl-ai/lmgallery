@@ -21,7 +21,7 @@ let plan1 = tofu.plan("build/infra");
 let ok_apply1 = tofu.apply("build/infra");
 end _lmcode_
 savedsl(first, "build/infra-first.dslb");
-r = system(concat(dsl_cli(first), ["--dsl", "build/infra-first.dslb"]), 600000);
+r = system(concat(dsl_cli(first), ["--lmcode", "build/infra-first.dslb"]), 600000);
 assert(r.code == 0, r.stdout + r.stderr);
 let state1 = json_parse(read_file("build/infra/terraform.tfstate"));
 
@@ -33,7 +33,7 @@ let plan2 = tofu.plan("build/infra");
 let ok_apply2 = tofu.apply("build/infra");
 end _lmcode_
 savedsl(second, "build/infra-second.dslb");
-r = system(concat(dsl_cli(second), ["--dsl", "build/infra-second.dslb"]), 600000);
+r = system(concat(dsl_cli(second), ["--lmcode", "build/infra-second.dslb"]), 600000);
 assert(r.code == 0, r.stdout + r.stderr);
 let state2 = json_parse(read_file("build/infra/terraform.tfstate"));
 
@@ -89,7 +89,7 @@ let doc = docx.create("build/infra-change-report.docx");
 doc.markdown(${body}).save();
 end _lmcode_
 savedsl(report, "build/infra-report.dslb");
-r = system(concat(dsl_cli(report), ["--dsl", "build/infra-report.dslb"]), 300000);
+r = system(concat(dsl_cli(report), ["--lmcode", "build/infra-report.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
@@ -98,7 +98,7 @@ let doc = docx.create("build/infra-change-report.pdf");
 doc.markdown(${body}).save();
 end _lmcode_
 savedsl(report_pdf, "build/infra-report-pdf.dslb");
-r = system(concat(dsl_cli(report_pdf), ["--dsl", "build/infra-report-pdf.dslb"]), 300000);
+r = system(concat(dsl_cli(report_pdf), ["--lmcode", "build/infra-report-pdf.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart (lmvideo): the outcome counts (the gallery output).
@@ -114,6 +114,6 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(chart, "build/infra-chart.dslb");
-r = system(concat(dsl_cli(chart), ["--dsl", "build/infra-chart.dslb"]), 300000);
+r = system(concat(dsl_cli(chart), ["--lmcode", "build/infra-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/infra-change-report.docx and images/showcase-49-cloud-plan.png");

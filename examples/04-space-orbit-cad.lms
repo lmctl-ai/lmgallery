@@ -17,7 +17,7 @@ assert_close(sqrt(out.get(60, 7) * out.get(60, 7) + out.get(60, 8) * out.get(60,
 out.save_csv("build/orbit.csv");
 end _lmcode_
 savedsl(sim, "build/space.dslb");
-r = system ${dsl_cli(sim)} --dsl build/space.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/space.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 hdr = "t,earth.x,earth.y,earth.z,earth.vx,earth.vy,earth.vz,sat.x,sat.y,sat.z,sat.vx,sat.vy,sat.vz\n";
@@ -61,6 +61,6 @@ scene.background(0.95, 0.97, 1.0);
 scene.render_png("images/showcase-04-space-orbit-cad.png", 900, 600);
 end _lmcode_
 savedsl(cad, "build/cad.dslb");
-r = system ${dsl_cli(cad)} --dsl build/cad.dslb;
+r = system ${dsl_cli(cad)} --lmcode build/cad.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-04-space-orbit-cad.png");

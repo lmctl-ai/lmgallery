@@ -19,7 +19,7 @@ w.run(1.4);
 w.save_csv("build/ramp.csv");
 end _lmcode_
 savedsl(sim, "build/ramp-sim.dslb");
-r = system(concat(dsl_cli(sim), ["--dsl", "build/ramp-sim.dslb"]), 300000);
+r = system(concat(dsl_cli(sim), ["--lmcode", "build/ramp-sim.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Measurement: along-ramp velocity at t = 0.2 s and t = 1.4 s (rows 200 and 1400, 1 ms apart).
@@ -68,7 +68,7 @@ let doc = docx.create("build/physics-lab-report.docx");
 doc.markdown(body + "\n" + limits).save();
 end _lmcode_
 savedsl(report, "build/physics-lab.dslb");
-r = system(concat(dsl_cli(report), ["--dsl", "build/physics-lab.dslb"]), 300000);
+r = system(concat(dsl_cli(report), ["--lmcode", "build/physics-lab.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
@@ -84,7 +84,7 @@ let doc = docx.create("build/physics-lab-report.pdf");
 doc.markdown(body + "\n" + limits).save();
 end _lmcode_
 savedsl(report_pdf, "build/physics-lab-pdf.dslb");
-r = system(concat(dsl_cli(report_pdf), ["--dsl", "build/physics-lab-pdf.dslb"]), 300000);
+r = system(concat(dsl_cli(report_pdf), ["--lmcode", "build/physics-lab-pdf.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart (lmvideo): measured and predicted acceleration (the gallery output).
@@ -100,6 +100,6 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(chart, "build/physics-chart.dslb");
-r = system(concat(dsl_cli(chart), ["--dsl", "build/physics-chart.dslb"]), 300000);
+r = system(concat(dsl_cli(chart), ["--lmcode", "build/physics-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/physics-lab-report.docx and images/showcase-43-physics-lab.png");

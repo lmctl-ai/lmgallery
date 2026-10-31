@@ -14,7 +14,7 @@ w.run(1.4);
 w.save_csv("build/examples/physics.csv");
 end _lmcode_
 savedsl(sim, "build/physics.dslb");
-r = system ${dsl_cli(sim)} --dsl build/physics.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/physics.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 rows = csv_parse(read_file("build/examples/physics.csv"));
 let a0 = rows.get(200, null); let a1 = rows.get(1400, null);
@@ -72,7 +72,7 @@ canvas.text(150.0, 550.0, 15.0, "24 deg cargo ramp; arrows are scaled by measure
 canvas.redraw(); canvas.png("build/rendered/physics-free-body.png", 900, 620, 1);
 end _lmcode_
 savedsl(d, "build/draw.dslb");
-r = system ${dsl_cli(d)} --dsl build/draw.dslb;
+r = system ${dsl_cli(d)} --lmcode build/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 copy_file("build/rendered/physics-free-body.png", "images/showcase-05-physics-free-body.png");
 println("wrote images/showcase-05-physics-free-body.png");

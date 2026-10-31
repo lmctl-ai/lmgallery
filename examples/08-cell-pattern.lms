@@ -15,7 +15,7 @@ cells.save_csv("build/cell/final_cells.csv");
 result.counts().save_csv("build/cell/counts.csv");
 end _lmcode_
 savedsl(compute, "build/cell/compute.dslb");
-r = system ${dsl_cli(compute)} --dsl build/cell/compute.dslb;
+r = system ${dsl_cli(compute)} --lmcode build/cell/compute.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 mkdir("images");
 plot = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -28,6 +28,6 @@ plot.cmd("plot 'build/cell/counts.csv' using 1:2 with lines lw 2.5 lc rgb '#5e4f
 plot.close();
 end _lmcode_
 savedsl(plot, "build/cell/draw.dslb");
-r = system ${dsl_cli(plot)} --dsl build/cell/draw.dslb;
+r = system ${dsl_cli(plot)} --lmcode build/cell/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-08-cell-pattern.png");

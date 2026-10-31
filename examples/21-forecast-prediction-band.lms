@@ -52,7 +52,7 @@ num.assert_close(covered, 11.0, 1.5);
 forecast.save_csv("build/forecast-band.csv");
 end _lmcode_
 savedsl(sim, "build/forecast-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl build/forecast-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/forecast-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -65,6 +65,6 @@ plot.cmd("plot 'build/forecast-band.csv' using 1:3:4 with filledcurves fc rgb '#
 plot.close();
 end _lmcode_
 savedsl(draw, "build/forecast-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl build/forecast-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode build/forecast-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-21-forecast-band.png");

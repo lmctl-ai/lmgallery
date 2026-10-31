@@ -35,7 +35,7 @@ Click a picture to explore its host. These are copied snapshots, credited in [im
 | **[lmimg](https://github.com/lmctl-ai/lmimg)** · preview | Image processing: Procedural colour and image transforms | [![latest release](https://img.shields.io/github/v/release/lmctl-ai/lmimg?label=release&color=2563eb)](https://github.com/lmctl-ai/lmimg/releases) | [repo](https://github.com/lmctl-ai/lmimg) · [examples](https://github.com/lmctl-ai/lmimg/tree/main/examples) · [releases](https://github.com/lmctl-ai/lmimg/releases) |
 | **[lmaudio](https://github.com/lmctl-ai/lmaudio)** · preview | Audio synthesis and analysis: Linear and exponential chirp spectrograms | [![latest release](https://img.shields.io/github/v/release/lmctl-ai/lmaudio?label=release&color=2563eb)](https://github.com/lmctl-ai/lmaudio/releases) | [repo](https://github.com/lmctl-ai/lmaudio) · [examples](https://github.com/lmctl-ai/lmaudio/tree/main/examples) · [releases](https://github.com/lmctl-ai/lmaudio/releases) |
 
-Each host is a separate program with its own `--dsl-schema`; one `.lms` program can bind several of them. The 50 compositions below do exactly that.
+Each host is a separate program with its own `--lmcode-schema`; one `.lms` program can bind several of them. The 50 compositions below do exactly that.
 
 ## Run a composition
 

@@ -37,7 +37,7 @@ for (i in range(0, n)) {
 num.assert_close(worst, 0.0, 0.005);
 end _lmcode_
 savedsl(sim, "build/heat-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl build/heat-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/heat-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 # lmnum writes space-separated rows, one per output time (first column t). Rows become the
@@ -90,6 +90,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "build/heat-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl build/heat-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode build/heat-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-20-heat-spacetime.png");

@@ -31,7 +31,7 @@ for (i in range(0, 6)) {
 }
 end _lmcode_
 savedsl(sim, "build/sweep/sim.dslb");
-r = system ${dsl_cli(sim)} --dsl build/sweep/sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode build/sweep/sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 overshoot = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
 for (line in lines(r.stdout)) {
@@ -67,7 +67,7 @@ for (i in range(0, 6)) {
 }
 end _lmcode_
 savedsl(draw, "build/sweep/draw.dslb");
-r = system ${dsl_cli(draw)} --dsl build/sweep/draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode build/sweep/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 sheet = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
@@ -86,6 +86,6 @@ board.text(720.0, 524.0, "sheet assembled by lmvideo", 10.0, 0.45, 0.50, 0.58, 1
 board.save("images/showcase-14-num-sweep-contact-sheet.png");
 end _lmcode_
 savedsl(sheet, "build/sweep/sheet.dslb");
-r = system ${dsl_cli(sheet)} --dsl build/sweep/sheet.dslb;
+r = system ${dsl_cli(sheet)} --lmcode build/sweep/sheet.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-14-num-sweep-contact-sheet.png");

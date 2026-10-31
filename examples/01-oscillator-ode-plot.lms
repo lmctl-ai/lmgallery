@@ -23,7 +23,7 @@ num.assert_close(sol.get(1200, 1), x12, 0.00001);
 num.assert_close(sol.get(1200, 1), 0.04079380257785417, 0.000001);
 end _lmcode_
 savedsl(sim, "data/oscillator-sim.dslb");
-r = system ${dsl_cli(sim)} --dsl data/oscillator-sim.dslb;
+r = system ${dsl_cli(sim)} --lmcode data/oscillator-sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 draw = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -53,6 +53,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(draw, "data/oscillator-draw.dslb");
-r = system ${dsl_cli(draw)} --dsl data/oscillator-draw.dslb;
+r = system ${dsl_cli(draw)} --lmcode data/oscillator-draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-01-oscillator.png");

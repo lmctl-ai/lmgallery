@@ -51,7 +51,7 @@ Click a picture to explore its host. These are copied snapshots, credited in [im
 
 {chr(10).join(table)}
 
-Each host is a separate program with its own `--dsl-schema`; one `.lms` program can bind several of them. The {len(examples)} compositions below do exactly that.
+Each host is a separate program with its own `--lmcode-schema`; one `.lms` program can bind several of them. The {len(examples)} compositions below do exactly that.
 
 ## Run a composition
 

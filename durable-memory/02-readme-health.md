@@ -88,7 +88,7 @@ Comprehensive audit following the `_lmcode_` spelling rollout and `@lmctl-ai/lmc
 
 ### 1. Compiler Upgrade & Standard Library Integration
 - **Compiler Minimum Pin (0.2.420)**: Upgraded compiler pins across CI workflows and scripts from 0.2.419 (or older 0.2.369/0.2.401) to `@lmctl-ai/lmctl@0.2.420`.
-- **Implicit Standard Library**: `lmscript 0.2.420` builds the standard library catalog into compiler invocations by default. Schema signature parity tests in hosts comparing their own registrations against compiler schemas (`lmcad`, `lmcell`, `lmdraw`, `lmfluid`, `lmmagnum`) were updated to invoke `lmscript --dsl-signatures <schema> --without-std` so checks test host-declared signatures without tripping on built-in standard library signatures.
+- **Implicit Standard Library**: `lmscript 0.2.420` builds the standard library catalog into compiler invocations by default. Schema signature parity tests in hosts comparing their own registrations against compiler schemas (`lmcad`, `lmcell`, `lmdraw`, `lmfluid`, `lmmagnum`) were updated to invoke `lmscript --lmcode-signatures <schema> --without-std` so checks test host-declared signatures without tripping on built-in standard library signatures.
 - **SDK Parity Updates**: Core SDK runtimes (`lmcode-cpp`, `lmcode-rust`, `lmcode-go`, `lmcode-csharp`) adapted their signature parity suites for the compiler's implicit standard library.
 - **Std Migration Status**:
   - `lmnet`: Migrated schema by stripping redundant standard library functions, updated CI pin to 0.2.420, and established `durable-memory/index.md`.

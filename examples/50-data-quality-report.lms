@@ -59,7 +59,7 @@ num.print("temp_mean=" + str(temp.mean()) + " temp_std=" + str(temp.std()) + " t
 num.print("pres_mean=" + str(pres.mean()) + " pres_std=" + str(pres.std()) + " pres_min=" + str(pres.min()) + " pres_max=" + str(pres.max()));
 end _lmcode_
 savedsl(stats, "build/stats.dslb");
-r = system(concat(dsl_cli(stats), ["--dsl", "build/stats.dslb"]), 120000);
+r = system(concat(dsl_cli(stats), ["--lmcode", "build/stats.dslb"]), 120000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 let t_mean = 0.0; let t_std = 0.0; let t_min = 0.0; let t_max = 0.0;
@@ -117,7 +117,7 @@ let doc = docx.create("build/quality-report.docx");
 doc.markdown(${body} + "\n" + limits).save();
 end _lmcode_
 savedsl(report, "build/quality.dslb");
-r = system(concat(dsl_cli(report), ["--dsl", "build/quality.dslb"]), 300000);
+r = system(concat(dsl_cli(report), ["--lmcode", "build/quality.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
@@ -132,7 +132,7 @@ let doc = docx.create("build/quality-report.pdf");
 doc.markdown(${body} + "\n" + limits).save();
 end _lmcode_
 savedsl(report_pdf, "build/quality-pdf.dslb");
-r = system(concat(dsl_cli(report_pdf), ["--dsl", "build/quality-pdf.dslb"]), 300000);
+r = system(concat(dsl_cli(report_pdf), ["--lmcode", "build/quality-pdf.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart (lmvideo): the issue counts (the gallery output).
@@ -148,6 +148,6 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(chart, "build/quality-chart.dslb");
-r = system(concat(dsl_cli(chart), ["--dsl", "build/quality-chart.dslb"]), 300000);
+r = system(concat(dsl_cli(chart), ["--lmcode", "build/quality-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/quality-report.docx and images/showcase-50-data-quality.png");

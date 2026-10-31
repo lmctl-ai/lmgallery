@@ -38,7 +38,7 @@ eq_string.spectrum("hann", 16384).save_csv("build/eq/string_eq.csv", 12000.0);
 string.concat(audio.silence(sr, 0.3)).concat(eq_string).normalize(0.9).save_wav("build/eq/pluck_dry_then_eq.wav", 16);
 end _lmcode_
 savedsl(a, "build/eq/audio.dslb");
-r = system ${dsl_cli(a)} --dsl build/eq/audio.dslb;
+r = system ${dsl_cli(a)} --lmcode build/eq/audio.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 # reference level: the dB column of the flat impulse spectrum at its 1 kHz bin
 ref_db = 0.0; found = 0;
@@ -67,6 +67,6 @@ plot.cmd("unset multiplot");
 plot.close();
 end _lmcode_
 savedsl(plot, "build/eq/plot.dslb");
-r = system ${dsl_cli(plot)} --dsl build/eq/plot.dslb;
+r = system ${dsl_cli(plot)} --lmcode build/eq/plot.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-15-audio-eq-measurement.png");

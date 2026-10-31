@@ -64,7 +64,7 @@ md.assert_close(r_oo, 0.274, 0.01);
 md.print("summary," + str(r_oo) + "," + str(e_min) + "," + str(angle_deg) + "," + str(donor));
 end _lmcode_
 savedsl(sim_prog, "build/dimer/sim.dslb");
-r = system ${dsl_cli(sim_prog)} --dsl build/dimer/sim.dslb;
+r = system ${dsl_cli(sim_prog)} --lmcode build/dimer/sim.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Parse: six atoms become lmcad keyframes (t,x,y,z,r,g,b); the scan becomes a CSV.
@@ -134,7 +134,7 @@ scene.camera(30.0, ${ex}, ${ey}, ${ez}, ${cx}, ${cy}, ${cz});
 scene.render_png("build/dimer/render.png", 520, 520);
 end _lmcode_
 savedsl(cad, "build/dimer/cad.dslb");
-r = system ${dsl_cli(cad)} --dsl build/dimer/cad.dslb;
+r = system ${dsl_cli(cad)} --lmcode build/dimer/cad.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
 plot = _lmcode_ cli="lmplot" install="github:lmctl-ai/lmplot@latest";
@@ -154,6 +154,6 @@ plot.cmd("plot 'build/dimer/scan.csv' using 1:2 with lines lw 2.6 lc rgb '#2563e
 plot.close();
 end _lmcode_
 savedsl(plot, "build/dimer/plot.dslb");
-r = system ${dsl_cli(plot)} --dsl build/dimer/plot.dslb;
+r = system ${dsl_cli(plot)} --lmcode build/dimer/plot.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote images/showcase-10-molecule-dimer-cad.png");

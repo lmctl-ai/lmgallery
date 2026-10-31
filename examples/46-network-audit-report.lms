@@ -32,7 +32,7 @@ out.line("api.self=" + str(api.self_signed()));
 out.line("api.host=" + str(api.matches_host("api.example.test")));
 end _lmcode_
 savedsl(certs, "build/certs.dslb");
-r = system(concat(dsl_cli(certs), ["--dsl", "build/certs.dslb"]), 300000);
+r = system(concat(dsl_cli(certs), ["--lmcode", "build/certs.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 let shop_subject = ""; let shop_not_after = ""; let shop_key = ""; let shop_self = ""; let shop_host = "";
@@ -70,7 +70,7 @@ for (i in range(0, pages.len())) {
 report.write_text("build/links.txt");
 end _lmcode_
 savedsl(check, "build/links.dslb");
-r = system(concat(dsl_cli(check), ["--dsl", "build/links.dslb"]), 300000);
+r = system(concat(dsl_cli(check), ["--lmcode", "build/links.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 let report_text = read_file("build/links.txt");
 let broken = 0;
@@ -110,7 +110,7 @@ let doc = docx.create("build/network-audit.docx");
 doc.markdown(${findings} + "\n" + scope).save();
 end _lmcode_
 savedsl(audit, "build/audit.dslb");
-r = system(concat(dsl_cli(audit), ["--dsl", "build/audit.dslb"]), 300000);
+r = system(concat(dsl_cli(audit), ["--lmcode", "build/audit.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # The same lmcode block with only cli= and the file extension changed: lmpdf writes the PDF.
@@ -125,7 +125,7 @@ let doc = docx.create("build/network-audit.pdf");
 doc.markdown(${findings} + "\n" + scope).save();
 end _lmcode_
 savedsl(audit_pdf, "build/audit-pdf.dslb");
-r = system(concat(dsl_cli(audit_pdf), ["--dsl", "build/audit-pdf.dslb"]), 300000);
+r = system(concat(dsl_cli(audit_pdf), ["--lmcode", "build/audit-pdf.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Counts for the chart: certificates checked, self-signed, names that match, broken links.
@@ -150,6 +150,6 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(chart, "build/audit-chart.dslb");
-r = system(concat(dsl_cli(chart), ["--dsl", "build/audit-chart.dslb"]), 300000);
+r = system(concat(dsl_cli(chart), ["--lmcode", "build/audit-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/network-audit.docx and images/showcase-46-network-audit.png");

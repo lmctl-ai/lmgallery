@@ -20,7 +20,7 @@ wx.assert_close(m400.wave_speed(), sqrt(9.80616 * 400.0), 0.01 * sqrt(9.80616 * 
 wx.assert_close(m1000.wave_speed(), sqrt(9.80616 * 1000.0), 0.01 * sqrt(9.80616 * 1000.0));
 end _lmcode_
 savedsl(sim, "build/weather-sim.dslb");
-r = system(concat(dsl_cli(sim), ["--dsl", "build/weather-sim.dslb"]), 300000);
+r = system(concat(dsl_cli(sim), ["--lmcode", "build/weather-sim.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 let c100 = 0.0; let c400 = 0.0; let c1000 = 0.0;
@@ -74,7 +74,7 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(chart, "build/weather-chart.dslb");
-r = system(concat(dsl_cli(chart), ["--dsl", "build/weather-chart.dslb"]), 300000);
+r = system(concat(dsl_cli(chart), ["--lmcode", "build/weather-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 deck = _lmcode_ cli="lmoffice pptx" install="github:lmctl-ai/lmoffice@v0.1.29";
@@ -82,7 +82,7 @@ let slides = pptx.create("build/weather-briefing.pptx");
 slides.markdown(${deck_md}).save();
 end _lmcode_
 savedsl(deck, "build/weather-deck.dslb");
-r = system(concat(dsl_cli(deck), ["--dsl", "build/weather-deck.dslb"]), 300000);
+r = system(concat(dsl_cli(deck), ["--lmcode", "build/weather-deck.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 println("wrote build/weather-briefing.pptx and images/showcase-47-weather-briefing.png");

@@ -27,7 +27,7 @@ out.line("api.self=" + str(api.self_signed()));
 out.line("api.host=" + str(api.matches_host("api.example.test")));
 end _lmcode_
 savedsl(inventory, "build/inventory.dslb");
-r = system(concat(dsl_cli(inventory), ["--dsl", "build/inventory.dslb"]), 300000);
+r = system(concat(dsl_cli(inventory), ["--lmcode", "build/inventory.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Read the parsed values back (each line is key=value; the value keeps any later '=').
@@ -80,7 +80,7 @@ canvas.text("SHA-256 " + ${api_fp_short}, 476.0, 230.0, font(14.0), paint().colo
 video.end();
 end _lmcode_
 savedsl(cards, "build/cards.dslb");
-r = system(concat(dsl_cli(cards), ["--dsl", "build/cards.dslb"]), 300000);
+r = system(concat(dsl_cli(cards), ["--lmcode", "build/cards.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Word inventory (lmoffice).
@@ -99,6 +99,6 @@ doc.paragraph("Renew both certificates from the internal CA before the api certi
 doc.save();
 end _lmcode_
 savedsl(word, "build/cert-inventory.dslb");
-r = system(concat(dsl_cli(word), ["--dsl", "build/cert-inventory.dslb"]), 300000);
+r = system(concat(dsl_cli(word), ["--lmcode", "build/cert-inventory.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/cert-inventory.docx and images/showcase-37-cert-inventory.png");

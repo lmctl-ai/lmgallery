@@ -29,7 +29,7 @@ cell.print("n11=" + str(h.get(176, 1)));
 h.save_csv("build/cell-counts.csv");
 end _lmcode_
 savedsl(sim, "build/cell-sim.dslb");
-r = system(concat(dsl_cli(sim), ["--dsl", "build/cell-sim.dslb"]), 900000);
+r = system(concat(dsl_cli(sim), ["--lmcode", "build/cell-sim.dslb"]), 900000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 let n0 = 0.0; let n1 = 0.0; let n2 = 0.0; let n3 = 0.0; let n4 = 0.0; let n5 = 0.0; let n6 = 0.0; let n7 = 0.0; let n8 = 0.0; let n9 = 0.0; let n10 = 0.0; let n11 = 0.0;
@@ -69,7 +69,7 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(figure, "build/cell-figure.dslb");
-r = system(concat(dsl_cli(figure), ["--dsl", "build/cell-figure.dslb"]), 300000);
+r = system(concat(dsl_cli(figure), ["--lmcode", "build/cell-figure.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Lab report (lmoffice).
@@ -89,6 +89,6 @@ doc.paragraph("The simulated count follows the exponential growth expected from 
 doc.save();
 end _lmcode_
 savedsl(report, "build/cell-growth-report.dslb");
-r = system(concat(dsl_cli(report), ["--dsl", "build/cell-growth-report.dslb"]), 300000);
+r = system(concat(dsl_cli(report), ["--lmcode", "build/cell-growth-report.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/cell-growth-report.docx and images/showcase-42-cell-growth.png");

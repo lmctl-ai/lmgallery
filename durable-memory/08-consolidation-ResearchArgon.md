@@ -689,7 +689,7 @@ Renaming `lmvideo` to `lmstudio` or `lmscene` would touch:
 1. **Keep `lmvideo` as the canonical binary and repository name** (`cli="lmvideo"`), described in the gallery as **"2D/3D scenes, scientific plots, diagrams, vector figures, and video (Skia + CPU 3D + FFmpeg)"**.
 2. **Support explicit subcommands and `argv[0]` dispatch** inside the `lmvideo` binary:
    - `lmvideo` (no subcommand) or `lmvideo scene`: exposes the unified v3 schema (`canvas`, `video`, `scene3d()`, `out`).
-   - `lmvideo draw` (or invoked via symlink/alias `lmdraw`): exposes `canvas` + `out` with `lmdraw` CLI flag compatibility (`--dsl-schema`, `--dsl-signatures`).
+   - `lmvideo draw` (or invoked via symlink/alias `lmdraw`): exposes `canvas` + `out` with `lmdraw` CLI flag compatibility (`--lmcode-schema`, `--lmcode-signatures`).
    - `lmvideo magnum` (or invoked via symlink/alias `lmmagnum`): exposes `scene: Scene` + `out: Output` matching `lmmagnum.dsl.json` v0.1.0 for 100% backward compatibility.
    - `lmvideo filament` (or invoked via symlink/alias `lmfilament`): exposes `scene: Scene` + `out: Output` matching `lmfilament.dsl.json` v0.1.0 for 100% backward compatibility.
 

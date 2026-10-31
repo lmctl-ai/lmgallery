@@ -28,7 +28,7 @@ lmf.print("p110=" + str(pricing.price(call, base.with_spot(110.0), pricing.analy
 lmf.print("p120=" + str(pricing.price(call, base.with_spot(120.0), pricing.analytic()).price()));
 end _lmcode_
 savedsl(desk, "build/desk.dslb");
-r = system(concat(dsl_cli(desk), ["--dsl", "build/desk.dslb"]), 300000);
+r = system(concat(dsl_cli(desk), ["--lmcode", "build/desk.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Read the lmfinance results back.
@@ -64,7 +64,7 @@ fig.draw();
 video.end();
 end _lmcode_
 savedsl(chart, "build/rates-chart.dslb");
-r = system(concat(dsl_cli(chart), ["--dsl", "build/rates-chart.dslb"]), 300000);
+r = system(concat(dsl_cli(chart), ["--lmcode", "build/rates-chart.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Workbook: yield curve and option tables, formulas stored, native charts beside each table.
@@ -105,7 +105,7 @@ option_sheet.bar_chart(1, 5, 18, 12, "Call price against payoff", "A2:A6", "C2:C
 xl.save();
 end _lmcode_
 savedsl(book, "build/desk-book.dslb");
-r = system(concat(dsl_cli(book), ["--dsl", "build/desk-book.dslb"]), 300000);
+r = system(concat(dsl_cli(book), ["--lmcode", "build/desk-book.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 memo_program = _lmcode_ cli="lmoffice docx" install="github:lmctl-ai/lmoffice@v0.1.29";
@@ -123,6 +123,6 @@ memo.paragraph("Prices are model values from a flat-volatility Black-Scholes mod
 memo.save();
 end _lmcode_
 savedsl(memo_program, "build/desk-memo.dslb");
-r = system(concat(dsl_cli(memo_program), ["--dsl", "build/desk-memo.dslb"]), 300000);
+r = system(concat(dsl_cli(memo_program), ["--lmcode", "build/desk-memo.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 println("wrote build/rates-and-options.xlsx and build/desk-memo.docx");
