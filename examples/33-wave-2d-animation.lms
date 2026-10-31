@@ -53,7 +53,7 @@ for (line in split(r.stdout, "\n")) {
 }
 let period = 6.283185307179586 / w11;
 
-film = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+film = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 fn field_color(u: float) -> string {
   let c = "#ffffff";
   if (u < 0.0) { c = mix("#1e3a8a", "#ffffff", u + 1.0); } else { c = mix("#ffffff", "#9a3412", u); }

@@ -7,7 +7,7 @@ mkdir("images");
 mkdir("build");
 
 # Chart 1: revenue by quarter (bars).
-charts_1 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+charts_1 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-26-qbr-deck.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -28,7 +28,7 @@ r = system(concat(dsl_cli(charts_1), ["--dsl", "build/qbr-chart1.dslb"]), 300000
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart 2: net margin trend (line).
-charts_2 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+charts_2 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("build/qbr-margin.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -49,7 +49,7 @@ r = system(concat(dsl_cli(charts_2), ["--dsl", "build/qbr-chart2.dslb"]), 300000
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart 3: revenue by region (bars) for the latest quarter.
-charts_3 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+charts_3 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("build/qbr-regions.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

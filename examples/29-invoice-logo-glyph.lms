@@ -15,7 +15,7 @@ assert(abs(subtotal - 2020.0) < 0.0001);
 assert(abs(total - 2181.6) < 0.0001);
 
 # Logo and glyph images for the invoice (lmvideo).
-art = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+art = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(400, 400); video.frames(1); video.output("build/logo.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -27,7 +27,7 @@ savedsl(art, "build/logo-art.dslb");
 r = system(concat(dsl_cli(art), ["--dsl", "build/logo-art.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
-glyph = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+glyph = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(330, 330); video.frames(1); video.output("build/glyph.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -57,7 +57,7 @@ r = system(concat(dsl_cli(glyph), ["--dsl", "build/glyph-art.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Gallery output: the brand sheet, 900 px wide, with the logo and glyph.
-sheet = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+sheet = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-29-invoice-logo.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

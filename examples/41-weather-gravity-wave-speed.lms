@@ -88,7 +88,7 @@ let measured = (p5 - p1) / 8000.0;
 assert(abs(measured - c) / c < 0.03);
 
 # Figure (lmvideo): crest distance against time, measured points and the predicted line.
-figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-41-gravity-wave-speed.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

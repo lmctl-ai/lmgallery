@@ -97,7 +97,7 @@ for (j in range(0, 7)) {
 }
 
 # Chart (lmvideo): the three compartments over time (the gallery output).
-chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-48-sir-epidemic.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

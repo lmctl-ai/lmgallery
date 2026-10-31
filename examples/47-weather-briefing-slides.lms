@@ -62,7 +62,7 @@ Note: all three speeds agree with sqrt(g H) to 1 %; the check is asserted in the
 """;
 
 # Chart (lmvideo): wave speed against depth (the gallery output).
-chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-47-weather-briefing.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

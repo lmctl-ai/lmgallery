@@ -52,7 +52,7 @@ let expected_end = 2000.0 * pow(2.718281828459045, 0.6);
 assert(abs(n11 - expected_end) / expected_end < 0.1);
 
 # Figure (lmvideo): simulated live cells and the expected exponential.
-figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-42-cell-growth.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

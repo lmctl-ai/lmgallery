@@ -48,7 +48,7 @@ assert(contains(report_text, "missing.html not found"));
 assert(contains(report_text, "#missing not found"));
 
 # Terminal-style picture of the run (lmvideo), the gallery output.
-term = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+term = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 360); video.frames(1); video.output("images/showcase-36-link-check.png"); video.begin();
 video.frame();
 canvas.clear("#0f172a");

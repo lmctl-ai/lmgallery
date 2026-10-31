@@ -88,7 +88,7 @@ r = system(concat(dsl_cli(report_pdf), ["--dsl", "build/physics-lab-pdf.dslb"]),
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart (lmvideo): measured and predicted acceleration (the gallery output).
-chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-43-physics-lab.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

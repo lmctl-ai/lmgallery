@@ -102,7 +102,7 @@ assert(pred_peak > 5.0);
 assert(pred_peak_t > prey_peak_t);
 
 # Figure (lmvideo): the two trajectories from twelve samples of the run.
-figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-40-predator-prey.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

@@ -125,7 +125,7 @@ r = system(concat(dsl_cli(workbook), ["--dsl", "build/desk-book.dslb"]), 300000)
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart (lmvideo): zero rates at the four pillars (the gallery output).
-chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-45-finance-bond-memo.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

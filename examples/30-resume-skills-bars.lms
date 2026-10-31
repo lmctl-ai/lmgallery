@@ -6,7 +6,7 @@
 mkdir("images");
 mkdir("build");
 
-skills = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+skills = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 fn skill_bar(canvas_row: int, label: string, level: float) -> void {
   let y = 56.0 + float(canvas_row - 1) * 50.0;
   canvas.text(label, 40.0, y + 24.0, font(20.0), paint().color("#0f172a"));

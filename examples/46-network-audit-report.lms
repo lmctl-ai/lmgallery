@@ -138,7 +138,7 @@ if (shop_host == "true") { match_n = match_n + 1.0; }
 if (api_host == "true") { match_n = match_n + 1.0; }
 
 # Chart (lmvideo): the audit counts (the gallery output).
-chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-46-network-audit.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

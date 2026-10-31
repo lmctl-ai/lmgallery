@@ -59,7 +59,7 @@ assert(shop_not_after == "2036-10-21T23:58:13Z");
 assert(api_not_after == "2027-10-24T23:58:13Z");
 
 # Card view (lmvideo): one card per certificate, the gallery output.
-cards = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+cards = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 360); video.frames(1); video.output("images/showcase-37-cert-inventory.png"); video.begin();
 video.frame();
 canvas.clear("#f1f5f9");

@@ -52,7 +52,7 @@ assert(z1 < z2 && z2 < z5 && z5 < z10 && z10 < z20 && z20 < z30);
 assert(p80 < p90 && p90 < p100 && p100 < p110 && p110 < p120);
 
 # Chart (lmvideo): the zero-rate curve, also the gallery output (900 px wide).
-chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.28";
+chart = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-35-rates-options.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

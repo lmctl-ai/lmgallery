@@ -63,7 +63,7 @@ for (line in split(r.stdout, "\n")) {
 }
 
 # Figure (lmvideo): measured against set damping ratio, with the identity line.
-figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+figure = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-31-science-report.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");

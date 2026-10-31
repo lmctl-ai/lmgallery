@@ -9,7 +9,7 @@ mkdir("images");
 mkdir("build");
 
 # Chart 1: revenue by region, Q3 2026 ($M).
-charts_1 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+charts_1 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("images/showcase-27-sales-report.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -29,7 +29,7 @@ r = system(concat(dsl_cli(charts_1), ["--dsl", "build/sales-chart1.dslb"]), 3000
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart 2: revenue by product line, Q3 2026 ($M).
-charts_2 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+charts_2 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("build/sales-products.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
@@ -48,7 +48,7 @@ r = system(concat(dsl_cli(charts_2), ["--dsl", "build/sales-chart2.dslb"]), 3000
 assert(r.code == 0, r.stdout + r.stderr);
 
 # Chart 3: monthly revenue trend, July to June ($M).
-charts_3 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.25";
+charts_3 = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
 video.size(900, 480); video.frames(1); video.output("build/sales-trend.png"); video.begin();
 video.frame();
 canvas.clear("#ffffff");
