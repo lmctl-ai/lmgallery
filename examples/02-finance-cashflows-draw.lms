@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # A discounted project decision: lmfinance supplies the zero curve and present
-# values; lmdraw turns those computed cashflows into an annotated diagram.
+# values; lmvideo turns those computed cashflows into an annotated diagram.
 mkdir("images");
 mkdir("data");
 mkdir("build/rendered");
@@ -31,13 +31,13 @@ savedsl(calc, "data/cashflows-calc.dslb");
 r = system ${dsl_cli(calc)} --dsl data/cashflows-calc.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-# Read the generated CSV with lmnum, then generate the lmdraw source from its
+# Read the generated CSV with lmnum, then generate the lmvideo source from its
 # numeric columns. This keeps every arrow, PV label, and the NPV metric tied to
 # the actual lmfinance output rather than duplicating computed values.
 read = _lmcode_ cli="lmnum" install="github:lmctl-ai/lmnum@latest";
 let table = num.load_csv("data/cashflows.csv");
 let npv_read = 0.0;
-let source = "mkdir(\"images\");\np = _dsl_ cli=\"lmdraw\" install=\"github:lmctl-ai/lmdraw@latest\";\nscene.canvas(900, 540, \"#f8fafc\");\nscene.text(40.0, 42.0, 23.0, \"Capital project cashflows at an 8% discount rate\", \"#0f172a\").set_attr(\"font-weight\", \"700\");\nscene.text(40.0, 68.0, 13.0, \"Continuous 8% discounting: finance computes, num reads, draw annotates\", \"#475569\");\nscene.line(90.0, 250.0, 760.0, 250.0, \"#64748b\", 2.0).set_attr(\"marker-end\", \"arrow\");\n";
+let source = "mkdir(\"images\");\np = _dsl_ cli=\"lmvideo\" install=\"github:lmctl-ai/lmvideo@v0.1.36\";\nlet __lmvideo_font_regular = font_load(\"https://raw.githubusercontent.com/lmctl-ai/lmdraw/7e8623f88b7baef858a405064823c2244fac7420/assets/fonts/NotoSans-Regular.ttf\", \"478c558ea716033cd60c03438f628dfa75694dcf6b5f6d505a2f05fd2b4f3823\");\nlet __lmvideo_font_bold = font_load(\"https://raw.githubusercontent.com/lmctl-ai/lmdraw/7e8623f88b7baef858a405064823c2244fac7420/assets/fonts/NotoSans-Bold.ttf\", \"1df075a380fc7cb898acf64c1f7b3b4dd780de3caa860178bf929de35817a913\");\nlet __lmvideo_font_math = font_load(\"https://raw.githubusercontent.com/lmctl-ai/lmdraw/ca2f5a635519fcc2200dbdc73a04e7388773dfb7/assets/fonts/NotoSansMath-Regular.ttf\", \"d51afd5739c7ba6c44fcab35a88160e25dfb69a2d4ad0bd99533f8d894af1f96\");\ncanvas.typeface(__lmvideo_font_regular);\ncanvas.target(surface(900, 540)); canvas.clear(\"#f8fafc\");\ncanvas.text(40.0, 42.0, 23.0, \"Capital project cashflows at an 8% discount rate\", \"#0f172a\").set_attr(\"font-weight\", \"700\");\ncanvas.text(40.0, 68.0, 13.0, \"Continuous 8% discounting: finance computes, num reads, draw annotates\", \"#475569\");\ncanvas.line(90.0, 250.0, 760.0, 250.0, \"#64748b\", 2.0).set_attr(\"marker-end\", \"arrow\");\n";
 for (t in range(0, 7)) {
   let x = 110.0 + 105.0 * float(t);
   let cash = table.get(t, 1);
@@ -50,14 +50,14 @@ for (t in range(0, 7)) {
   if (cash < 0.0) { color = "#dc2626"; year_y = 235.0; }
   let label_y = y - 10.0 + 0.001;
   if (cash < 0.0) { label_y = y + 20.0 + 0.001; }
-  source = source + "scene.line(" + str(x) + ".0, 246.0, " + str(x) + ".0, 254.0, \"#64748b\", 1.0);\n";
-  source = source + "scene.text(" + str(x) + ".0, " + str(year_y) + ".0, 12.0, \"year " + str(t) + "\", \"#475569\").set_attr(\"text-anchor\", \"middle\");\n";
-  source = source + "scene.arrow(" + str(x) + ".0, 250.0, " + str(x) + ".0, " + str(y) + ", \"" + color + "\", 4.0);\n";
-  source = source + "scene.text(" + str(x) + ".0, " + str(label_y) + ", 12.0, \"" + str(cash) + "k\", \"" + color + "\").set_attr(\"text-anchor\", \"middle\");\n";
-  source = source + "scene.text(" + str(x) + ".0, 410.0, 10.5, \"PV " + str(pv_short) + "k\", \"#475569\").set_attr(\"text-anchor\", \"middle\");\n";
+  source = source + "canvas.line(" + str(x) + ".0, 246.0, " + str(x) + ".0, 254.0, \"#64748b\", 1.0);\n";
+  source = source + "canvas.text(" + str(x) + ".0, " + str(year_y) + ".0, 12.0, \"year " + str(t) + "\", \"#475569\").set_attr(\"text-anchor\", \"middle\");\n";
+  source = source + "canvas.arrow(" + str(x) + ".0, 250.0, " + str(x) + ".0, " + str(y) + ", \"" + color + "\", 4.0);\n";
+  source = source + "canvas.text(" + str(x) + ".0, " + str(label_y) + ", 12.0, \"" + str(cash) + "k\", \"" + color + "\").set_attr(\"text-anchor\", \"middle\");\n";
+  source = source + "canvas.text(" + str(x) + ".0, 410.0, 10.5, \"PV " + str(pv_short) + "k\", \"#475569\").set_attr(\"text-anchor\", \"middle\");\n";
 }
-source = source + "scene.rect(610.0, 420.0, 245.0, 92.0, \"#e0f2fe\").set_attr(\"rx\", \"8\"); scene.text(632.0, 450.0, 12.0, \"Decision metric\", \"#075985\").set_attr(\"font-weight\", \"700\"); scene.text(632.0, 480.0, 21.0, \"NPV ";
-source = source + str(floor(npv_read * 10.0 + 0.5) / 10.0) + "k\", \"#047857\").set_attr(\"font-weight\", \"700\"); scene.text(40.0, 445.0, 15.0, \"How to read the diagram\", \"#0f172a\").set_attr(\"font-weight\", \"700\"); scene.text(40.0, 470.0, 13.0, \"Red is the initial investment; green arrows are future receipts.\", \"#334155\"); scene.text(40.0, 495.0, 13.0, \"The PV labels are read directly from lmfinance's generated CSV.\", \"#334155\"); scene.text(40.0, 520.0, 13.0, \"Positive NPV means the receipts beat the 8% cost of capital.\", \"#334155\"); scene.render_png(\"build/rendered/showcase-02-finance-cashflows.png\", 900, 540, 1);\nend _dsl_\nsavedsl(p, \"data/cashflows-draw.dslb\");\nargv = dsl_cli(p); push(argv, \"--dsl\"); push(argv, \"data/cashflows-draw.dslb\"); r = system(argv);\nassert(r.code == 0, r.stdout + r.stderr);\n";
+source = source + "canvas.rect(610.0, 420.0, 245.0, 92.0, \"#e0f2fe\").set_attr(\"rx\", \"8\"); canvas.text(632.0, 450.0, 12.0, \"Decision metric\", \"#075985\").set_attr(\"font-weight\", \"700\"); canvas.text(632.0, 480.0, 21.0, \"NPV ";
+source = source + str(floor(npv_read * 10.0 + 0.5) / 10.0) + "k\", \"#047857\").set_attr(\"font-weight\", \"700\"); canvas.text(40.0, 445.0, 15.0, \"How to read the diagram\", \"#0f172a\").set_attr(\"font-weight\", \"700\"); canvas.text(40.0, 470.0, 13.0, \"Red is the initial investment; green arrows are future receipts.\", \"#334155\"); canvas.text(40.0, 495.0, 13.0, \"The PV labels are read directly from lmfinance's generated CSV.\", \"#334155\"); canvas.text(40.0, 520.0, 13.0, \"Positive NPV means the receipts beat the 8% cost of capital.\", \"#334155\"); canvas.redraw(); canvas.png(\"build/rendered/showcase-02-finance-cashflows.png\", 900, 540, 1);\nend _dsl_\nsavedsl(p, \"data/cashflows-draw.dslb\");\nargv = dsl_cli(p); push(argv, \"--dsl\"); push(argv, \"data/cashflows-draw.dslb\"); r = system(argv);\nassert(r.code == 0, r.stdout + r.stderr);\n";
 num.assert_close(npv_read, 18.6244988084, 0.0000001);
 num.print(source);
 end _lmcode_

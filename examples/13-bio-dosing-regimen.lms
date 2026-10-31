@@ -4,7 +4,7 @@
 # 400 mg every 12 h or 800 mg once a day, restarting from the previous state at
 # every dose. Both regimens have the same average level (dose / (CL tau) =
 # 7.2 mg/L, asserted) but only the twice-daily one stays inside the 3-12 mg/L
-# therapeutic window. lmdraw draws the compartment model; lmplot overlays the
+# therapeutic window. lmvideo draws the compartment model; lmplot overlays the
 # window, the shared average and the two concentration profiles.
 mkdir("build/pk");
 mkdir("build/rendered");
@@ -59,30 +59,34 @@ cov12 = coverage["q12"]; cov24 = coverage["q24"];
 half_life = 0.6931471805599453 / ke;
 println(sprintf("Css,avg = %.2f mg/L; time in window at steady state: q12 %.0f%%, q24 %.0f%%", css, coverage["q12"], coverage["q24"]));
 
-d = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
-scene.canvas(400, 560, "#f8fafc");
-scene.text(20.0, 36.0, 17.0, "One-compartment oral model", "#0f172a").set_attr("font-weight", "700");
-scene.text(20.0, 58.0, 12.0, "first-order absorption and elimination", "#475569");
-scene.rect(120.0, 90.0, 160.0, 54.0, "#fde68a").set_attr("rx", "10");
-scene.text(200.0, 112.0, 13.0, "oral dose", "#78350f").set_attr("text-anchor", "middle").set_attr("font-weight", "700");
-scene.text(200.0, 131.0, 11.0, "400 mg q12h  or  800 mg q24h", "#78350f").set_attr("text-anchor", "middle");
-scene.arrow(200.0, 146.0, 200.0, 194.0, "#334155", 2.5).set_attr("marker-end", "arrow");
-scene.rect(110.0, 200.0, 180.0, 60.0, "#bfdbfe").set_attr("rx", "10");
-scene.text(200.0, 225.0, 13.0, "gut depot G", "#1e3a8a").set_attr("text-anchor", "middle").set_attr("font-weight", "700");
-scene.text(200.0, 246.0, 11.0, "absorbed at ka = 1.0 /h", "#1e3a8a").set_attr("text-anchor", "middle");
-scene.arrow(200.0, 262.0, 200.0, 314.0, "#334155", 2.5).set_attr("marker-end", "arrow");
-scene.text(214.0, 293.0, 11.0, "ka G", "#334155");
-scene.rect(110.0, 320.0, 180.0, 70.0, "#bbf7d0").set_attr("rx", "10");
-scene.text(200.0, 345.0, 13.0, "plasma C", "#14532d").set_attr("text-anchor", "middle").set_attr("font-weight", "700");
-scene.text(200.0, 364.0, 11.0, ${sprintf("V = %.0f L, measured in mg/L", volume)}, "#14532d").set_attr("text-anchor", "middle");
-scene.text(200.0, 380.0, 11.0, ${sprintf("half-life %.1f h", half_life)}, "#14532d").set_attr("text-anchor", "middle");
-scene.arrow(200.0, 392.0, 200.0, 444.0, "#334155", 2.5).set_attr("marker-end", "arrow");
-scene.text(214.0, 423.0, 11.0, "ke C", "#334155");
-scene.rect(110.0, 450.0, 180.0, 54.0, "#e2e8f0").set_attr("rx", "10");
-scene.text(200.0, 473.0, 13.0, "elimination", "#334155").set_attr("text-anchor", "middle").set_attr("font-weight", "700");
-scene.text(200.0, 492.0, 11.0, ${sprintf("CL = ke V = %.2f L/h", clearance)}, "#334155").set_attr("text-anchor", "middle");
-scene.text(20.0, 540.0, 11.0, ${sprintf("Css,avg = dose / (CL tau) = %.1f mg/L for both regimens", css)}, "#0f172a");
-scene.render_png("build/rendered/pk_model.png", 400, 560, 1);
+d = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
+let __lmvideo_font_regular = font_load("https://raw.githubusercontent.com/lmctl-ai/lmdraw/7e8623f88b7baef858a405064823c2244fac7420/assets/fonts/NotoSans-Regular.ttf", "478c558ea716033cd60c03438f628dfa75694dcf6b5f6d505a2f05fd2b4f3823");
+let __lmvideo_font_bold = font_load("https://raw.githubusercontent.com/lmctl-ai/lmdraw/7e8623f88b7baef858a405064823c2244fac7420/assets/fonts/NotoSans-Bold.ttf", "1df075a380fc7cb898acf64c1f7b3b4dd780de3caa860178bf929de35817a913");
+let __lmvideo_font_math = font_load("https://raw.githubusercontent.com/lmctl-ai/lmdraw/ca2f5a635519fcc2200dbdc73a04e7388773dfb7/assets/fonts/NotoSansMath-Regular.ttf", "d51afd5739c7ba6c44fcab35a88160e25dfb69a2d4ad0bd99533f8d894af1f96");
+canvas.typeface(__lmvideo_font_regular);
+canvas.target(surface(400, 560)); canvas.clear("#f8fafc");
+canvas.text(20.0, 36.0, 17.0, "One-compartment oral model", "#0f172a").set_attr("font-weight", "700");
+canvas.text(20.0, 58.0, 12.0, "first-order absorption and elimination", "#475569");
+canvas.rect(120.0, 90.0, 160.0, 54.0, "#fde68a").set_attr("rx", "10");
+canvas.text(200.0, 112.0, 13.0, "oral dose", "#78350f").set_attr("text-anchor", "middle").set_attr("font-weight", "700");
+canvas.text(200.0, 131.0, 11.0, "400 mg q12h  or  800 mg q24h", "#78350f").set_attr("text-anchor", "middle");
+canvas.arrow(200.0, 146.0, 200.0, 194.0, "#334155", 2.5).set_attr("marker-end", "arrow");
+canvas.rect(110.0, 200.0, 180.0, 60.0, "#bfdbfe").set_attr("rx", "10");
+canvas.text(200.0, 225.0, 13.0, "gut depot G", "#1e3a8a").set_attr("text-anchor", "middle").set_attr("font-weight", "700");
+canvas.text(200.0, 246.0, 11.0, "absorbed at ka = 1.0 /h", "#1e3a8a").set_attr("text-anchor", "middle");
+canvas.arrow(200.0, 262.0, 200.0, 314.0, "#334155", 2.5).set_attr("marker-end", "arrow");
+canvas.text(214.0, 293.0, 11.0, "ka G", "#334155");
+canvas.rect(110.0, 320.0, 180.0, 70.0, "#bbf7d0").set_attr("rx", "10");
+canvas.text(200.0, 345.0, 13.0, "plasma C", "#14532d").set_attr("text-anchor", "middle").set_attr("font-weight", "700");
+canvas.text(200.0, 364.0, 11.0, ${sprintf("V = %.0f L, measured in mg/L", volume)}, "#14532d").set_attr("text-anchor", "middle");
+canvas.text(200.0, 380.0, 11.0, ${sprintf("half-life %.1f h", half_life)}, "#14532d").set_attr("text-anchor", "middle");
+canvas.arrow(200.0, 392.0, 200.0, 444.0, "#334155", 2.5).set_attr("marker-end", "arrow");
+canvas.text(214.0, 423.0, 11.0, "ke C", "#334155");
+canvas.rect(110.0, 450.0, 180.0, 54.0, "#e2e8f0").set_attr("rx", "10");
+canvas.text(200.0, 473.0, 13.0, "elimination", "#334155").set_attr("text-anchor", "middle").set_attr("font-weight", "700");
+canvas.text(200.0, 492.0, 11.0, ${sprintf("CL = ke V = %.2f L/h", clearance)}, "#334155").set_attr("text-anchor", "middle");
+canvas.text(20.0, 540.0, 11.0, ${sprintf("Css,avg = dose / (CL tau) = %.1f mg/L for both regimens", css)}, "#0f172a");
+canvas.redraw(); canvas.png("build/rendered/pk_model.png", 400, 560, 1);
 end _lmcode_
 savedsl(d, "build/pk/draw.dslb");
 r = system ${dsl_cli(d)} --dsl build/pk/draw.dslb;

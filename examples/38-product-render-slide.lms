@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Product slide: a sensor housing rendered in 3D. lmmagnum builds the housing from primitives (a
+# Product slide: a sensor housing rendered in 3D. lmvideo builds the housing from primitives (a
 # box body, a rounded cap, a status lens and two mounting rings), lights it and renders a 900 x 540
 # PNG. The model's dimensions are computed in the script and asserted (housing 120 x 60 x 40 mm).
 # lmoffice (Open XML) places the render on a product slide with the specification bullets and the
@@ -7,20 +7,21 @@
 mkdir("images");
 mkdir("build");
 
-render = _lmcode_ cli="lmmagnum" install="github:lmctl-ai/lmmagnum@v0.2.14";
-scene.background(0.94, 0.96, 0.98);
-let shell = material().color(0.16, 0.20, 0.28).roughness(0.35).specular(0.5);
-let accent = material().color(0.12, 0.63, 0.55).roughness(0.3).specular(0.6);
-let lens = material().color(0.95, 0.80, 0.25).roughness(0.15).specular(0.9);
-let ring = material().color(0.6, 0.64, 0.70).roughness(0.5).specular(0.2);
-scene.box(1.2, 0.6, 0.4, shell).translate(0.0, 0.0, 0.0);
-scene.box(1.22, 0.12, 0.42, accent).translate(0.0, 0.36, 0.0);
-scene.sphere(0.12, lens).translate(0.42, 0.22, 0.21);
-scene.cylinder(0.14, 0.5, ring).rotate(0.0, 0.0, 90.0).translate(-0.75, 0.0, 0.0);
-scene.cylinder(0.14, 0.5, ring).rotate(0.0, 0.0, 90.0).translate(0.75, 0.0, 0.0);
-scene.camera(30.0, 4.6, 2.6, 7.0, 0.0, 0.0, 0.0);
-scene.directional_light(-0.4, -1.0, -0.5, 0.9);
-scene.render_png("images/showcase-38-product-render.png", 900, 540);
+render = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
+# Metres: the original gallery's numeric model used 100 mm per world unit.
+let scene=scene3d();let cam=camera3d().look_at(0.46,0.26,0.7,0.0,0.0,0.0).perspective(30.0,0.001,10.0);
+scene.camera(cam).background("#f0f5fa").ambient(0.22);
+let root=scene.group();let body=mesh_box(0.12,0.06,0.04);
+image_assert_close(body.bound(3)-body.bound(0),0.12,0.00000001);
+image_assert_close(body.bound(4)-body.bound(1),0.06,0.00000001);
+image_assert_close(body.bound(5)-body.bound(2),0.04,0.00000001);
+scene.add(body,"#293347").parent(root);
+scene.add(mesh_box(0.122,0.012,0.042),"#1fa18c").position(0.0,0.036,0.0).parent(root);
+scene.add(mesh_sphere(0.012,16,24),"#f2cc3d").position(0.042,0.022,0.021).parent(root);
+scene.add(mesh_cylinder(0.014,0.05,16),"#9aa3b3").rotation(0.0,0.0,90.0).position(-0.075,0.0,0.0).parent(root);
+scene.add(mesh_cylinder(0.014,0.05,16),"#9aa3b3").rotation(0.0,0.0,90.0).position(0.075,0.0,0.0).parent(root);
+scene.directional_light(0.4,1.0,0.5,"#ffffff",0.9);
+scene.render_image(900,540,2).save("images/showcase-38-product-render.png");
 end _lmcode_
 savedsl(render, "build/product-render.dslb");
 r = system(concat(dsl_cli(render), ["--dsl", "build/product-render.dslb"]), 600000);
@@ -35,7 +36,7 @@ s1.bullet(820.0, 170.0, 420.0, 40.0, "Body 120 x 60 x 40 mm");
 s1.bullet(820.0, 220.0, 420.0, 40.0, "Teal anodised cap");
 s1.bullet(820.0, 270.0, 420.0, 40.0, "Status lens, amber");
 s1.bullet(820.0, 320.0, 420.0, 40.0, "Two M4 mounting rings");
-s1.notes("Render from lmmagnum (PBR shading, one directional light). Dimensions are the design values asserted in the build script.");
+s1.notes("Render from lmvideo (opaque CPU Lambert shading, one directional light). Dimensions are the design values asserted in the build script.");
 slides.save();
 end _lmcode_
 savedsl(deck, "build/product-slide.dslb");

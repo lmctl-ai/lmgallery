@@ -2,7 +2,7 @@
 # A design sweep assembled into a report figure: lmnum integrates the unit-step
 # response of a second-order system for six damping ratios and measures each
 # overshoot against the textbook value exp(-pi zeta / sqrt(1 - zeta^2)); lmplot
-# draws one small panel per case; lmimg assembles the six panels into a labelled
+# draws one small panel per case; lmvideo assembles the six panels into a labelled
 # contact sheet with a header band, the way a batch of results is prepared for
 # a report, without any image tools outside the hosts.
 mkdir("build/sweep");
@@ -70,19 +70,19 @@ savedsl(draw, "build/sweep/draw.dslb");
 r = system ${dsl_cli(draw)} --dsl build/sweep/draw.dslb;
 assert(r.code == 0, r.stdout + r.stderr);
 
-sheet = _lmcode_ cli="lmimg" install="github:lmctl-ai/lmimg@latest";
-let grid = img.montage();
+sheet = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
+let grid = layout_sheet();
 for (i in range(0, 6)) {
-  grid.add(img.open("build/sweep/panel_" + str(i) + ".png"));
+  grid.add(image_file("build/sweep/panel_" + str(i) + ".png"));
 }
 let panels = grid.render(3, 0, 1.0, 1.0, 1.0, 1.0);
-img.assert_true(panels.width() == 900 && panels.height() == 460);
-let board = img.canvas(900, 540, 1.0, 1.0, 1.0, 1.0);
+image_assert_true(panels.width() == 900 && panels.height() == 460);
+let board = image_create(900, 540, 1.0, 1.0, 1.0, 1.0);
 board.rect(0.0, 0.0, 900.0, 56.0, 0.06, 0.09, 0.16, 1.0);
 board.text(16.0, 16.0, "Second-order step response: damping ratio sweep", 20.0, 1.0, 1.0, 1.0, 1.0);
-board.text(16.0, 40.0, "lmnum integrates each case and checks its overshoot (the percentage in each title) against exp(-pi zeta / sqrt(1 - zeta^2)); lmplot draws the panels; lmimg assembles the sheet", 11.0, 0.80, 0.85, 0.92, 1.0);
+board.text(16.0, 40.0, "lmnum integrates each case and checks its overshoot (the percentage in each title) against exp(-pi zeta / sqrt(1 - zeta^2));\nlmplot draws the panels; lmvideo assembles the sheet", 11.0, 0.80, 0.85, 0.92, 1.0);
 board.blend(panels, "over", 1.0, 0, 64);
-board.text(720.0, 524.0, "sheet assembled by lmimg", 10.0, 0.45, 0.50, 0.58, 1.0);
+board.text(720.0, 524.0, "sheet assembled by lmvideo", 10.0, 0.45, 0.50, 0.58, 1.0);
 board.save("images/showcase-14-num-sweep-contact-sheet.png");
 end _lmcode_
 savedsl(sheet, "build/sweep/sheet.dslb");

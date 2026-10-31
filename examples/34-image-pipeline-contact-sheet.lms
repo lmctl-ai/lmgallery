@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-# Image-processing pipeline and a before/after contact sheet. lmimg builds a procedural
+# Image-processing pipeline and a before/after contact sheet. lmvideo builds a procedural
 # landscape, runs a three-step pipeline (levels, unsharp mask, colour curve), and
 # measures how far the pipeline moves the picture (SSIM and PSNR against the original). It writes a
 # three-panel contact sheet. lmoffice (Open XML) places the contact sheet on a slide with the
@@ -9,39 +9,40 @@
 mkdir("images");
 mkdir("build");
 
-pipeline = _lmcode_ cli="lmimg" install="github:lmctl-ai/lmimg@v0.1.3";
-let original = img.pattern(288, 180, "0.18 + 0.62*x", "0.12 + 0.50*y + 0.08*noise(9*x, 6*y, 3)", "0.76 - 0.30*y", "1");
-# lmimg operations work in place and return the same image, so each step copies its input.
+pipeline = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
+let original = image_pattern(288, 180, "0.18 + 0.62*x", "0.12 + 0.50*y + 0.08*noise(9*x, 6*y, 3)", "0.76 - 0.30*y", "1");
+# lmvideo image operations work in place and return the same image, so each step copies its input.
 let leveled = original.copy().levels(0.05, 1.0, 0.95);
-let graded = leveled.copy().unsharp(0.6, 0.2, 0.0, 0.0).curves(img.curve().point(0.0, 0.0).point(0.5, 0.52).point(1.0, 1.0));
+let graded = leveled.copy().unsharp(0.6, 0.2, 0.0, 0.0).curves(image_curve().point(0.0, 0.0).point(0.5, 0.52).point(1.0, 1.0));
 let levels_ssim = leveled.ssim(original);
 let after_ssim = graded.ssim(original);
 let after_psnr = graded.psnr(original);
-img.assert_true(after_ssim < 1.0);
-img.assert_true(after_ssim > 0.6);
-let sheet = img.montage().add(original).add(leveled).add(graded).render(3, 12, 1.0, 1.0, 1.0, 1.0).resize(900, 202);
+image_assert_true(after_ssim < 1.0);
+image_assert_true(after_ssim > 0.6);
+let sheet = layout_sheet().add(original).add(leveled).add(graded).render(3, 12, 1.0, 1.0, 1.0, 1.0).resize(900, 202);
 sheet.save("build/pipeline-sheet.png");
 original.save("build/pipeline-original.png");
 graded.save("build/pipeline-graded.png");
-img.print("ssim=" + str(after_ssim));
-img.print("psnr=" + str(after_psnr));
-img.print("levels_ssim=" + str(levels_ssim));
+out.print("ssim=" + str(after_ssim));
+out.print("psnr=" + str(after_psnr));
+out.print("levels_ssim=" + str(levels_ssim));
 end _lmcode_
 savedsl(pipeline, "build/pipeline.dslb");
 r = system(concat(dsl_cli(pipeline), ["--dsl", "build/pipeline.dslb"]), 300000);
 assert(r.code == 0, r.stdout + r.stderr);
 
-# Read the measured values back from the lmimg output lines.
+# Read the measured values back from the lmvideo output lines.
 let ssim_text = "";
 let psnr_text = "";
 let levels_text = "";
-for (line in split(r.stdout, "\n")) {
+for (line in json_parse(r.stdout).result.output) {
   let parts = split(line, "=");
   if (starts_with(line, "ssim=")) { ssim_text = parts[1]; }
   if (starts_with(line, "psnr=")) { psnr_text = parts[1]; }
   if (starts_with(line, "levels_ssim=")) { levels_text = parts[1]; }
 }
-# The contact sheet is also the gallery picture (900 px wide, copied from lmimg's montage).
+assert(ssim_text != "" && psnr_text != "" && levels_text != "");
+# The contact sheet is also the gallery picture (900 px wide, assembled by lmvideo's layout sheet).
 cp = system cp build/pipeline-sheet.png images/showcase-34-image-pipeline.png;
 assert(cp.code == 0);
 
@@ -53,7 +54,7 @@ s1.image("build/pipeline-sheet.png", 60.0, 170.0, 1160.0, 260.0);
 s1.bullet(60.0, 470.0, 1160.0, 40.0, "Original, after levels, and after the full pipeline (left to right)");
 s1.bullet(60.0, 520.0, 1160.0, 40.0, "SSIM of the graded image against the original: " + ${ssim_text});
 s1.bullet(60.0, 570.0, 1160.0, 40.0, "PSNR of the graded image against the original (dB): " + ${psnr_text});
-s1.notes("Steps: levels 0.05-0.95, unsharp mask (radius 0.6, amount 0.2), S-curve grade.");
+s1.notes("Steps: levels 0.05-0.95, unsharp configuration (radius 0.6, sigma 0.2, amount 0; intentionally off), S-curve grade.");
 slides.save();
 end _lmcode_
 savedsl(deck, "build/image-pipeline.dslb");

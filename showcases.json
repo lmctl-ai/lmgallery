@@ -13,11 +13,11 @@
   {
     "file": "examples/02-finance-cashflows-draw.lms",
     "title": "Discounted project cashflows",
-    "description": "lmfinance discounts project cashflows continuously at 8%; lmnum reads those computed values and lmdraw draws their amounts, present values and net present value.",
+    "description": "lmfinance discounts project cashflows continuously at 8%; lmnum reads those computed values and lmvideo draws their amounts, present values and net present value.",
     "hosts": [
       "lmfinance",
       "lmnum",
-      "lmdraw"
+      "lmvideo"
     ],
     "output": "images/showcase-02-finance-cashflows.png",
     "image": "docs/images/showcase-02-finance-cashflows.png"
@@ -47,10 +47,10 @@
   {
     "file": "examples/05-physics-free-body.lms",
     "title": "Cargo-ramp force balance",
-    "description": "lmphysics measures acceleration of a six-kilogram cargo block on a 24-degree ramp; lmdraw draws the force balance with correctly oriented, consistently scaled vectors.",
+    "description": "lmphysics measures acceleration of a six-kilogram cargo block on a 24-degree ramp; lmvideo draws the force balance with correctly oriented, consistently scaled vectors.",
     "hosts": [
       "lmphysics",
-      "lmdraw"
+      "lmvideo"
     ],
     "output": "images/showcase-05-physics-free-body.png",
     "image": "docs/images/showcase-05-physics-free-body.png"
@@ -114,10 +114,10 @@
   {
     "file": "examples/11-particle-shield-layout.lms",
     "title": "Shielding by mass: lead, aluminum, water",
-    "description": "lmparticle transports 662 keV photons through lead, aluminum and water slabs of equal mass per area; lmdraw draws the three layouts to scale; lmplot combines that layout with the measured transmission curves, showing that per gram lead is only modestly better where Compton scattering dominates.",
+    "description": "lmparticle transports 662 keV photons through lead, aluminum and water slabs of equal mass per area; lmvideo draws the three layouts to scale; lmplot combines that layout with the measured transmission curves, showing that per gram lead is only modestly better where Compton scattering dominates.",
     "hosts": [
       "lmparticle",
-      "lmdraw",
+      "lmvideo",
       "lmplot"
     ],
     "output": "images/showcase-11-particle-shield-layout.png",
@@ -137,10 +137,10 @@
   {
     "file": "examples/13-bio-dosing-regimen.lms",
     "title": "Dosing regimen inside a therapeutic window",
-    "description": "lmbio integrates a one-compartment oral model for 800 mg a day given as 400 mg every 12 h or 800 mg daily, restarting at each dose; both share the asserted average level 7.2 mg/L but only the twice-daily regimen stays inside 3-12 mg/L. lmdraw draws the compartment model; lmplot overlays window, average and both profiles.",
+    "description": "lmbio integrates a one-compartment oral model for 800 mg a day given as 400 mg every 12 h or 800 mg daily, restarting at each dose; both share the asserted average level 7.2 mg/L but only the twice-daily regimen stays inside 3-12 mg/L. lmvideo draws the compartment model; lmplot overlays window, average and both profiles.",
     "hosts": [
       "lmbio",
-      "lmdraw",
+      "lmvideo",
       "lmplot"
     ],
     "output": "images/showcase-13-bio-dosing-regimen.png",
@@ -149,11 +149,11 @@
   {
     "file": "examples/14-num-sweep-contact-sheet.lms",
     "title": "Damping-ratio sweep as a contact sheet",
-    "description": "lmnum integrates the unit-step response of a second-order system for six damping ratios and checks each overshoot against exp(-pi zeta / sqrt(1 - zeta^2)); lmplot draws one panel per case; lmimg assembles the panels into a labelled report sheet with a header band.",
+    "description": "lmnum integrates the unit-step response of a second-order system for six damping ratios and checks each overshoot against exp(-pi zeta / sqrt(1 - zeta^2)); lmplot draws one panel per case; lmvideo assembles the panels into a labelled report sheet with a header band.",
     "hosts": [
       "lmnum",
       "lmplot",
-      "lmimg"
+      "lmvideo"
     ],
     "output": "images/showcase-14-num-sweep-contact-sheet.png",
     "image": "docs/images/showcase-14-num-sweep-contact-sheet.png"
@@ -372,9 +372,9 @@
   {
     "file": "examples/34-image-pipeline-contact-sheet.lms",
     "title": "Image pipeline with a before/after contact sheet",
-    "description": "lmimg builds a procedural landscape, runs levels, unsharp and colour-curve steps, measures SSIM and PSNR against the original, and writes a three-panel contact sheet; lmoffice places the sheet on an Open XML slide with the measured values as bullets. The picture is a LibreOffice render of the slide.",
+    "description": "lmvideo builds a procedural landscape, runs levels, unsharp and colour-curve steps, measures SSIM and PSNR against the original, and writes a three-panel contact sheet; lmoffice places the sheet on an Open XML slide with the measured values as bullets. The picture is a LibreOffice render of the slide.",
     "hosts": [
-      "lmimg",
+      "lmvideo",
       "lmoffice"
     ],
     "output": "images/showcase-34-image-pipeline.png",
@@ -418,10 +418,10 @@
   },
   {
     "file": "examples/38-product-render-slide.lms",
-    "title": "Product slide with a lmmagnum 3D render",
-    "description": "lmmagnum builds a sensor housing from primitives (box body, teal cap, lens, mounting rings), lights it and renders a 900 x 540 PNG; lmoffice places the render on a product slide with the specification bullets and speaker notes. The picture is a LibreOffice render of the slide.",
+    "title": "Product slide with an lmvideo 3D render",
+    "description": "lmvideo builds a sensor housing from primitives (box body, teal cap, lens, mounting rings), lights it and renders a 900 x 540 PNG; lmoffice places the render on a product slide with the specification bullets and speaker notes. The picture is a LibreOffice render of the slide.",
     "hosts": [
-      "lmmagnum",
+      "lmvideo",
       "lmoffice"
     ],
     "output": "images/showcase-38-product-render.png",

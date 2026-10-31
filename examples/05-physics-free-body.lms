@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # lmphysics measures a cargo block's velocity; the measured acceleration and
-# force balance are then passed to lmdraw for a data-driven loading diagram.
+# force balance are then passed to lmvideo for a data-driven loading diagram.
 mkdir("build/examples"); mkdir("build/rendered"); mkdir("images");
 sim = _lmcode_ cli="lmphysics" install="github:lmctl-ai/lmphysics@latest";
 let th = 0.41887902047863906;
@@ -48,24 +48,28 @@ let normal_x2 = center_x - scale * normal * 0.4067366430758002;
 let normal_y2 = center_y - scale * normal * 0.9135454576426009;
 let friction_x2 = center_x + scale * friction * 0.9135454576426009;
 let friction_y2 = center_y - scale * friction * 0.4067366430758002;
-d = _lmcode_ cli="lmdraw" install="github:lmctl-ai/lmdraw@latest";
-scene.canvas(900, 620, "#0f1720");
-scene.text(40.0, 45.0, 25.0, ${title}, "#e6edf3").set_attr("font-weight", "700");
-scene.text(40.0, 73.0, 14.0, ${subtitle}, "#9fb3c8");
-scene.path(${ramp_path}, "#26384a", "#6f8da8", 3.0);
-scene.rect(${block_x}, ${block_y}, 88.0, 58.0, "#3c82a8").set_attr("transform", ${block_transform});
-scene.arrow(${center_x}, ${center_y}, ${weight_x2}, ${weight_y2}, "#ffd166", 3.5).set_attr("marker-end", "arrow");
-scene.arrow(${center_x}, ${center_y}, ${normal_x2}, ${normal_y2}, "#7bd88f", 3.5).set_attr("marker-end", "arrow");
-scene.arrow(${center_x}, ${center_y}, ${friction_x2}, ${friction_y2}, "#ff6b6b", 3.5).set_attr("marker-end", "arrow");
-scene.text(660.0, 190.0, 18.0, "Force balance", "#e6edf3");
-scene.rect(640.0, 215.0, 220.0, 150.0, "#16222e").set_attr("rx", "8");
-scene.text(660.0, 250.0, 15.0, ${weight_label}, "#c9d6e2");
-scene.text(660.0, 278.0, 15.0, ${normal_label}, "#c9d6e2");
-scene.text(660.0, 306.0, 15.0, ${friction_label}, "#c9d6e2");
-scene.text(660.0, 334.0, 15.0, ${net_label}, "#c9d6e2");
-scene.text(660.0, 410.0, 18.0, ${accel_label}, "#f5c16c");
-scene.text(150.0, 550.0, 15.0, "24 deg cargo ramp; arrows are scaled by measured forces", "#9fb3c8");
-scene.render_png("build/rendered/physics-free-body.png", 900, 620, 1);
+d = _lmcode_ cli="lmvideo" install="github:lmctl-ai/lmvideo@v0.1.36";
+let __lmvideo_font_regular = font_load("https://raw.githubusercontent.com/lmctl-ai/lmdraw/7e8623f88b7baef858a405064823c2244fac7420/assets/fonts/NotoSans-Regular.ttf", "478c558ea716033cd60c03438f628dfa75694dcf6b5f6d505a2f05fd2b4f3823");
+let __lmvideo_font_bold = font_load("https://raw.githubusercontent.com/lmctl-ai/lmdraw/7e8623f88b7baef858a405064823c2244fac7420/assets/fonts/NotoSans-Bold.ttf", "1df075a380fc7cb898acf64c1f7b3b4dd780de3caa860178bf929de35817a913");
+let __lmvideo_font_math = font_load("https://raw.githubusercontent.com/lmctl-ai/lmdraw/ca2f5a635519fcc2200dbdc73a04e7388773dfb7/assets/fonts/NotoSansMath-Regular.ttf", "d51afd5739c7ba6c44fcab35a88160e25dfb69a2d4ad0bd99533f8d894af1f96");
+canvas.typeface(__lmvideo_font_regular);
+canvas.target(surface(900, 620)); canvas.clear("#0f1720");
+canvas.text(40.0, 45.0, 25.0, ${title}, "#e6edf3").set_attr("font-weight", "700");
+canvas.text(40.0, 73.0, 14.0, ${subtitle}, "#9fb3c8");
+canvas.path(${ramp_path}, "#26384a", "#6f8da8", 3.0);
+canvas.rect(${block_x}, ${block_y}, 88.0, 58.0, "#3c82a8").set_attr("transform", ${block_transform});
+canvas.arrow(${center_x}, ${center_y}, ${weight_x2}, ${weight_y2}, "#ffd166", 3.5).set_attr("marker-end", "arrow");
+canvas.arrow(${center_x}, ${center_y}, ${normal_x2}, ${normal_y2}, "#7bd88f", 3.5).set_attr("marker-end", "arrow");
+canvas.arrow(${center_x}, ${center_y}, ${friction_x2}, ${friction_y2}, "#ff6b6b", 3.5).set_attr("marker-end", "arrow");
+canvas.text(660.0, 190.0, 18.0, "Force balance", "#e6edf3");
+canvas.rect(640.0, 215.0, 220.0, 150.0, "#16222e").set_attr("rx", "8");
+canvas.text(660.0, 250.0, 15.0, ${weight_label}, "#c9d6e2");
+canvas.text(660.0, 278.0, 15.0, ${normal_label}, "#c9d6e2");
+canvas.text(660.0, 306.0, 15.0, ${friction_label}, "#c9d6e2");
+canvas.text(660.0, 334.0, 15.0, ${net_label}, "#c9d6e2");
+canvas.text(660.0, 410.0, 18.0, ${accel_label}, "#f5c16c");
+canvas.text(150.0, 550.0, 15.0, "24 deg cargo ramp; arrows are scaled by measured forces", "#9fb3c8");
+canvas.redraw(); canvas.png("build/rendered/physics-free-body.png", 900, 620, 1);
 end _lmcode_
 savedsl(d, "build/draw.dslb");
 r = system ${dsl_cli(d)} --dsl build/draw.dslb;

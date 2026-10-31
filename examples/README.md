@@ -22,7 +22,7 @@ Every command runs from an empty directory and writes the listed image. Each com
 | <a href="#science-report-damping-recovered-from-simulated-peaks"><img src="../docs/images/showcase-31-science-report.png" width="400" alt="Science report: damping recovered from simulated peaks"></a><br>Science report: damping recovered from simulated peaks | <a href="#annual-revenue-bars-with-currency-ticks"><img src="../docs/images/showcase-32-revenue-bars.png" width="400" alt="Annual revenue bars with currency ticks"></a><br>Annual revenue bars with currency ticks |
 | <a href="#standing-waves-on-a-membrane-animated"><img src="../docs/images/showcase-33-wave-2d.png" width="400" alt="Standing waves on a membrane, animated"></a><br>Standing waves on a membrane, animated | <a href="#image-pipeline-with-a-before/after-contact-sheet"><img src="../docs/images/showcase-34-image-pipeline.png" width="400" alt="Image pipeline with a before/after contact sheet"></a><br>Image pipeline with a before/after contact sheet |
 | <a href="#rates-and-options-desk-pack-curve-option-table-and-memo"><img src="../docs/images/showcase-35-rates-options.png" width="400" alt="Rates and options desk pack: curve, option table and memo"></a><br>Rates and options desk pack: curve, option table and memo | <a href="#html-link-check-report-with-a-terminal-picture"><img src="../docs/images/showcase-36-link-check.png" width="400" alt="HTML link-check report with a terminal picture"></a><br>HTML link-check report with a terminal picture |
-| <a href="#certificate-inventory-from-lmssl"><img src="../docs/images/showcase-37-cert-inventory.png" width="400" alt="Certificate inventory from lmssl"></a><br>Certificate inventory from lmssl | <a href="#product-slide-with-a-lmmagnum-3d-render"><img src="../docs/images/showcase-38-product-render.png" width="400" alt="Product slide with a lmmagnum 3D render"></a><br>Product slide with a lmmagnum 3D render |
+| <a href="#certificate-inventory-from-lmssl"><img src="../docs/images/showcase-37-cert-inventory.png" width="400" alt="Certificate inventory from lmssl"></a><br>Certificate inventory from lmssl | <a href="#product-slide-with-an-lmvideo-3d-render"><img src="../docs/images/showcase-38-product-render.png" width="400" alt="Product slide with an lmvideo 3D render"></a><br>Product slide with an lmvideo 3D render |
 | <a href="#audio-harmonics-slide-with-a-wav-file"><img src="../docs/images/showcase-39-audio-harmonics.png" width="400" alt="Audio harmonics slide with a WAV file"></a><br>Audio harmonics slide with a WAV file | <a href="#predator-prey-lab-report-with-an-lmvideo-figure"><img src="../docs/images/showcase-40-predator-prey-report.png" width="400" alt="Predator-prey lab report with an lmvideo figure"></a><br>Predator-prey lab report with an lmvideo figure |
 | <a href="#gravity-wave-speed-from-a-shallow-water-pulse"><img src="../docs/images/showcase-41-gravity-wave-speed-report.png" width="400" alt="Gravity-wave speed from a shallow-water pulse"></a><br>Gravity-wave speed from a shallow-water pulse | <a href="#cell-growth-lab-report-with-an-lmvideo-figure"><img src="../docs/images/showcase-42-cell-growth-report.png" width="400" alt="Cell growth lab report with an lmvideo figure"></a><br>Cell growth lab report with an lmvideo figure |
 | <a href="#physics-lab-report-friction-on-a-ramp-measured-and-checked"><img src="../docs/images/showcase-43-physics-lab-report.png" width="400" alt="Physics lab report: friction on a ramp, measured and checked"></a><br>Physics lab report: friction on a ramp, measured and checked | <a href="#observing-plan-word-and-slides-from-one-markdown-body"><img src="../docs/images/showcase-44-observing-plan.png" width="400" alt="Observing plan: Word and slides from one Markdown body"></a><br>Observing plan: Word and slides from one Markdown body |
@@ -42,9 +42,9 @@ lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/01-osci
 
 ## Discounted project cashflows
 
-lmfinance discounts project cashflows continuously at 8%; lmnum reads those computed values and lmdraw draws their amounts, present values and net present value.
+lmfinance discounts project cashflows continuously at 8%; lmnum reads those computed values and lmvideo draws their amounts, present values and net present value.
 
-Hosts: lmfinance → lmnum → lmdraw. Output: `images/showcase-02-finance-cashflows.png`.
+Hosts: lmfinance → lmnum → lmvideo. Output: `images/showcase-02-finance-cashflows.png`.
 
 ```sh
 lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/02-finance-cashflows-draw.lms
@@ -72,9 +72,9 @@ lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/04-spac
 
 ## Cargo-ramp force balance
 
-lmphysics measures acceleration of a six-kilogram cargo block on a 24-degree ramp; lmdraw draws the force balance with correctly oriented, consistently scaled vectors.
+lmphysics measures acceleration of a six-kilogram cargo block on a 24-degree ramp; lmvideo draws the force balance with correctly oriented, consistently scaled vectors.
 
-Hosts: lmphysics → lmdraw. Output: `images/showcase-05-physics-free-body.png`.
+Hosts: lmphysics → lmvideo. Output: `images/showcase-05-physics-free-body.png`.
 
 ```sh
 lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/05-physics-free-body.lms
@@ -132,9 +132,9 @@ lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/10-mole
 
 ## Shielding by mass: lead, aluminum, water
 
-lmparticle transports 662 keV photons through lead, aluminum and water slabs of equal mass per area; lmdraw draws the three layouts to scale; lmplot combines that layout with the measured transmission curves, showing that per gram lead is only modestly better where Compton scattering dominates.
+lmparticle transports 662 keV photons through lead, aluminum and water slabs of equal mass per area; lmvideo draws the three layouts to scale; lmplot combines that layout with the measured transmission curves, showing that per gram lead is only modestly better where Compton scattering dominates.
 
-Hosts: lmparticle → lmdraw → lmplot. Output: `images/showcase-11-particle-shield-layout.png`.
+Hosts: lmparticle → lmvideo → lmplot. Output: `images/showcase-11-particle-shield-layout.png`.
 
 ```sh
 lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/11-particle-shield-layout.lms
@@ -152,9 +152,9 @@ lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/12-weat
 
 ## Dosing regimen inside a therapeutic window
 
-lmbio integrates a one-compartment oral model for 800 mg a day given as 400 mg every 12 h or 800 mg daily, restarting at each dose; both share the asserted average level 7.2 mg/L but only the twice-daily regimen stays inside 3-12 mg/L. lmdraw draws the compartment model; lmplot overlays window, average and both profiles.
+lmbio integrates a one-compartment oral model for 800 mg a day given as 400 mg every 12 h or 800 mg daily, restarting at each dose; both share the asserted average level 7.2 mg/L but only the twice-daily regimen stays inside 3-12 mg/L. lmvideo draws the compartment model; lmplot overlays window, average and both profiles.
 
-Hosts: lmbio → lmdraw → lmplot. Output: `images/showcase-13-bio-dosing-regimen.png`.
+Hosts: lmbio → lmvideo → lmplot. Output: `images/showcase-13-bio-dosing-regimen.png`.
 
 ```sh
 lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/13-bio-dosing-regimen.lms
@@ -162,9 +162,9 @@ lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/13-bio-
 
 ## Damping-ratio sweep as a contact sheet
 
-lmnum integrates the unit-step response of a second-order system for six damping ratios and checks each overshoot against exp(-pi zeta / sqrt(1 - zeta^2)); lmplot draws one panel per case; lmimg assembles the panels into a labelled report sheet with a header band.
+lmnum integrates the unit-step response of a second-order system for six damping ratios and checks each overshoot against exp(-pi zeta / sqrt(1 - zeta^2)); lmplot draws one panel per case; lmvideo assembles the panels into a labelled report sheet with a header band.
 
-Hosts: lmnum → lmplot → lmimg. Output: `images/showcase-14-num-sweep-contact-sheet.png`.
+Hosts: lmnum → lmplot → lmvideo. Output: `images/showcase-14-num-sweep-contact-sheet.png`.
 
 ```sh
 lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/14-num-sweep-contact-sheet.lms
@@ -362,9 +362,9 @@ lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/33-wave
 
 ## Image pipeline with a before/after contact sheet
 
-lmimg builds a procedural landscape, runs levels, unsharp and colour-curve steps, measures SSIM and PSNR against the original, and writes a three-panel contact sheet; lmoffice places the sheet on an Open XML slide with the measured values as bullets. The picture is a LibreOffice render of the slide.
+lmvideo builds a procedural landscape, runs levels, unsharp and colour-curve steps, measures SSIM and PSNR against the original, and writes a three-panel contact sheet; lmoffice places the sheet on an Open XML slide with the measured values as bullets. The picture is a LibreOffice render of the slide.
 
-Hosts: lmimg → lmoffice. Output: `images/showcase-34-image-pipeline.png`.
+Hosts: lmvideo → lmoffice. Output: `images/showcase-34-image-pipeline.png`.
 
 ```sh
 lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/34-image-pipeline-contact-sheet.lms
@@ -400,11 +400,11 @@ Hosts: lmssl → lmvideo → lmoffice. Output: `images/showcase-37-cert-inventor
 lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/37-cert-inventory-docx.lms
 ```
 
-## Product slide with a lmmagnum 3D render
+## Product slide with an lmvideo 3D render
 
-lmmagnum builds a sensor housing from primitives (box body, teal cap, lens, mounting rings), lights it and renders a 900 x 540 PNG; lmoffice places the render on a product slide with the specification bullets and speaker notes. The picture is a LibreOffice render of the slide.
+lmvideo builds a sensor housing from primitives (box body, teal cap, lens, mounting rings), lights it and renders a 900 x 540 PNG; lmoffice places the render on a product slide with the specification bullets and speaker notes. The picture is a LibreOffice render of the slide.
 
-Hosts: lmmagnum → lmoffice. Output: `images/showcase-38-product-render.png`.
+Hosts: lmvideo → lmoffice. Output: `images/showcase-38-product-render.png`.
 
 ```sh
 lmctl https://raw.githubusercontent.com/lmctl-ai/lmgallery/main/examples/38-product-render-slide.lms
